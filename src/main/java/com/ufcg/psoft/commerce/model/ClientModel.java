@@ -2,16 +2,20 @@ package com.ufcg.psoft.commerce.model;
 
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Data;
 
 import java.util.UUID;
 
 @Entity
-@Data
-@Builder
 @DiscriminatorValue("C")
 public class ClientModel extends UserModel {
+
+    public ClientModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode, AddressModel address, PlanTypeEnum planType, double budget, WalletModel wallet) {
+        super(id, fullName, email, accessCode);
+        this.address = address;
+        this.planType = planType;
+        this.budget = budget;
+        this.wallet = wallet;
+    }
 
     @OneToOne
     private AddressModel address;
@@ -25,7 +29,7 @@ public class ClientModel extends UserModel {
     @OneToOne
     private WalletModel wallet;
 
-//    @OneToMany
+//    @ManyToMany
 //    @MapKey(name = "id")
 //    @JoinTable(
 //            name = "client_waiting_assets",
@@ -34,7 +38,7 @@ public class ClientModel extends UserModel {
 //    )
 //    private Map<UUID, Asset> interestedAssets;
 //
-//    @OneToMany
+//    @ManyToMany
 //    @MapKey(name = "id")
 //    @JoinTable(
 //            name = "client_waiting_assets",

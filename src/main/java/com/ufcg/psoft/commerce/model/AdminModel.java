@@ -2,11 +2,13 @@ package com.ufcg.psoft.commerce.model;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import lombok.Builder;
-import lombok.Data;
+
+import java.util.UUID;
 
 @Entity
-@Data
-@Builder
 @DiscriminatorValue("A")
-public class AdminModel extends UserModel { }
+public class AdminModel extends UserModel {
+    public AdminModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode) {
+        super(id, fullName, email, accessCode);
+    }
+}
