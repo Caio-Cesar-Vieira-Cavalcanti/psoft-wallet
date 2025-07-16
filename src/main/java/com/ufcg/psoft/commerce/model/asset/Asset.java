@@ -1,10 +1,7 @@
 package com.ufcg.psoft.commerce.model.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,8 +25,9 @@ public class Asset {
     @Column(nullable = false)
     private String name;
 
-    // jpa nao consegue persistir atributos de tipo interface
-    // private IAssetType type;
+    @JsonProperty("type")
+    @OneToOne
+    private AssetType type;
 
     @JsonProperty("description")
     @Column(nullable = false)

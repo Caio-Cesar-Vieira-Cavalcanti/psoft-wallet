@@ -1,11 +1,15 @@
 package com.ufcg.psoft.commerce.model.asset.types;
 
-import com.ufcg.psoft.commerce.model.asset.IAssetType;
+import com.ufcg.psoft.commerce.model.asset.AssetType;
+import jakarta.persistence.Entity;
 
-public class TreasuryBounds implements IAssetType {
+@Entity
+public class TreasuryBounds extends AssetType {
+
+    private static final double TAX = 0.10;
+
     @Override
     public double taxCalculate(double profit) {
-        // todo
-        return 0;
+        return TAX * profit;
     }
 }
