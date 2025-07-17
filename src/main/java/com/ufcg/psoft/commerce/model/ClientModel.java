@@ -14,7 +14,7 @@ public class ClientModel extends UserModel {
         this.address = address;
         this.planType = planType;
         this.budget = budget;
-        this.wallet = wallet;
+//        this.wallet = wallet;
     }
 
     @OneToOne
@@ -26,8 +26,8 @@ public class ClientModel extends UserModel {
     @Column(nullable = false)
     private double budget;
 
-    @OneToOne
-    private WalletModel wallet;
+//    @OneToOne
+//    private WalletModel wallet;
 
 //    @ManyToMany
 //    @MapKey(name = "id")
@@ -47,4 +47,16 @@ public class ClientModel extends UserModel {
 //    )
 //    private Map<UUID, Asset> waitingAssetAvailable;
 
+
+    public AddressModel getAddress() {
+        return address;
+    }
+
+    public PlanTypeEnum getPlanType() {
+        return planType;
+    }
+
+    public double getBudget() {
+        return budget;
+    }
 }

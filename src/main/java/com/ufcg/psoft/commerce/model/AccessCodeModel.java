@@ -18,4 +18,7 @@ public class AccessCodeModel {
         this.accessCode = accessCode;
     }
 
+    public String getAccessCode() {
+        return accessCode;
+    }
 }

@@ -10,13 +10,6 @@ import java.util.UUID;
 @DiscriminatorColumn(name = "user_type")
 public abstract class UserModel {
 
-    public UserModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode) {
-        this.id = id;
-        this.fullName = fullName;
-        this.email = email;
-        this.accessCode = accessCode;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
@@ -31,4 +24,30 @@ public abstract class UserModel {
     @Embedded
     private AccessCodeModel accessCode;
 
+    public UserModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode) {
+        this.id = id;
+        this.fullName = fullName;
+        this.email = email;
+        this.accessCode = accessCode;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public EmailModel getEmail() {
+        return email;
+    }
+
+    public AccessCodeModel getAccessCode() {
+        return accessCode;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
 }

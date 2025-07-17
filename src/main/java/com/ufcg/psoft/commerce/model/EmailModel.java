@@ -20,4 +20,7 @@ public class EmailModel {
         this.email = email;
     }
 
+    public String getEmail() {
+        return email;
+    }
 }
