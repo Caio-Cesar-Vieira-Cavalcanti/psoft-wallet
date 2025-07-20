@@ -9,12 +9,12 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Entity
+@Entity(name = "TB_ASSET" )
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Asset {
+public class AssetModel {
 
     @JsonProperty("id")
     @Id
@@ -34,15 +34,12 @@ public class Asset {
     private String description;
 
     @JsonProperty("status")
-    @Column(nullable = false)
-    private Boolean status;
+    private boolean status;
 
     @JsonProperty("quotation")
-    @Column(nullable = false)
-    private Double quotation;
+    private double quotation;
 
     @JsonProperty("quota_quantity")
-    @Column(nullable = false)
-    private Double quotaQuantity;
+    private double quotaQuantity;
 
 }

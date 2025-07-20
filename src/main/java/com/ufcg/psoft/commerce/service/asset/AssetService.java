@@ -1,0 +1,18 @@
+package com.ufcg.psoft.commerce.service.asset;
+
+import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetPutRequestDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+
+import java.util.UUID;
+
+public interface AssetService {
+    AssetResponseDTO create(AssetPostRequestDTO assetPostRequestDTO);
+
+    AssetResponseDTO getAssetById(UUID idAsset);
+
+    AssetResponseDTO update(UUID idAsset, AssetPutRequestDTO assetPutRequestDTO);
+
+    void delete(UUID idAsset);
+
+}

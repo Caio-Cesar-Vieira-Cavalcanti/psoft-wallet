@@ -1,5 +1,7 @@
-package com.ufcg.psoft.commerce.exception;
+package com.ufcg.psoft.commerce.exception.handler;
 
+import com.ufcg.psoft.commerce.exception.CommerceException;
+import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -50,10 +52,10 @@ public class ErrorHandlingControllerAdvice {
         return customErrorType;
     }
 
-    @ExceptionHandler(CommerceException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(AssetNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public CustomErrorType onCommerceException(CommerceException e) {
+    public CustomErrorType onAssetNotFoundException(AssetNotFoundException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
