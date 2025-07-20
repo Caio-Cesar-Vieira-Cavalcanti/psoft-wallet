@@ -1,6 +1,5 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
-import com.ufcg.psoft.commerce.exception.CommerceException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;

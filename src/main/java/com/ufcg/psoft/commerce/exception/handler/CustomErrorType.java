@@ -1,14 +1,12 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.exception.CommerceException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -24,9 +22,4 @@ public class CustomErrorType {
     @JsonProperty("errors")
     private List<String> errors;
 
-    public CustomErrorType(CommerceException e) {
-        this.timestamp = LocalDateTime.now();
-        this.message = e.getMessage();
-        this.errors = new ArrayList<>();
-    }
 }
