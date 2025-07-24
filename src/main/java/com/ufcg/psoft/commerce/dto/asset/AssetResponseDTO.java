@@ -2,7 +2,6 @@ package com.ufcg.psoft.commerce.dto.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
-import com.ufcg.psoft.commerce.model.asset.AssetType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
