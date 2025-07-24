@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -33,23 +34,30 @@ public class AssetController {
                 .body(assetService.create(assetPostRequestDTO));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<AssetResponseDTO> getAssetById(@PathVariable("id") UUID idAsset) {
+    @GetMapping
+    public ResponseEntity<List<AssetResponseDTO>> getAllAssets() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(assetService.getAllAssets());
+    }
+
+    @GetMapping("/{idAsset}")
+    public ResponseEntity<AssetResponseDTO> getAssetById(@PathVariable UUID idAsset) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(assetService.getAssetById(idAsset));
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<AssetResponseDTO> update(@PathVariable("id") UUID idAsset,
+    @PatchMapping("/{idAsset}")
+    public ResponseEntity<AssetResponseDTO> update(@PathVariable UUID idAsset,
                                                    @RequestBody @Valid AssetPatchRequestDTO assetPatchRequestDTO) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(assetService.update(idAsset, assetPatchRequestDTO));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") UUID idAsset) {
+    @DeleteMapping("/{idAsset}")
+    public ResponseEntity<?> delete(@PathVariable UUID idAsset) {
         assetService.delete(idAsset);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)

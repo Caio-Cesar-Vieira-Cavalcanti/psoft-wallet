@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AssetPatchRequestDTO {
 
-    @JsonProperty("status")
-    private Boolean status;
+    @JsonProperty("isActive")
+    private Boolean isActive;
 
     @JsonProperty("quotation")
     @PositiveOrZero(message = "Quotation must be zero or a positive number")
@@ -22,5 +22,5 @@ public class AssetPatchRequestDTO {
 
     @JsonProperty("quota_quantity")
     @PositiveOrZero(message = "Asset quotation quantity must be positive or zero!")
-    private Integer quotaQuantity;
+    private Double quotaQuantity;
 }

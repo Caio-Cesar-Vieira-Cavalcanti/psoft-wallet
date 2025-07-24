@@ -6,10 +6,13 @@ import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetStatusPatchDTO;
 import jakarta.validation.Valid;
 
+import java.util.List;
 import java.util.UUID;
 
 public interface AssetService {
     AssetResponseDTO create(AssetPostRequestDTO assetPostRequestDTO);
+
+    List<AssetResponseDTO> getAllAssets();
 
     AssetResponseDTO getAssetById(UUID idAsset);
 
