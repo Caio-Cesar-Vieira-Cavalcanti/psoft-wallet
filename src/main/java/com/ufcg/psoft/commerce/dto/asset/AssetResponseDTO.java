@@ -21,8 +21,8 @@ public class AssetResponseDTO {
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("type")
-    private AssetType type;
+    @JsonProperty("assetType")
+    private AssetTypeResponseDTO assetType;
 
     @JsonProperty("description")
     private String description;
@@ -34,12 +34,12 @@ public class AssetResponseDTO {
     private double quotation;
 
     @JsonProperty("quota_quantity")
-    private int quotaQuantity;
+    private double quotaQuantity;
 
     public AssetResponseDTO(AssetModel assetModel) {
         this.id = assetModel.getId();
         this.name = assetModel.getName();
-        this.type = assetModel.getType();
+        this.assetType = new AssetTypeResponseDTO(assetModel.getAssetType().getId(), assetModel.getAssetType().getName());
         this.description = assetModel.getDescription();
         this.isActive = assetModel.isActive();
         this.quotation = assetModel.getQuotation();

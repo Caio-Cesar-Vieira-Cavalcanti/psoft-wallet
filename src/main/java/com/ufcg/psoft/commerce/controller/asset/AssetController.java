@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,14 +33,21 @@ public class AssetController {
                 .body(assetService.create(assetPostRequestDTO));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping
+    public ResponseEntity<List<AssetResponseDTO>> getAllAssets() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(assetService.getAllAssets());
+    }
+
+    @GetMapping("/{idAsset}")
     public ResponseEntity<AssetResponseDTO> getAssetById(@PathVariable UUID idAsset) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(assetService.getAssetById(idAsset));
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/{idAsset}")
     public ResponseEntity<AssetResponseDTO> update(@PathVariable UUID idAsset,
                                                    @RequestBody @Valid AssetPatchRequestDTO assetPatchRequestDTO) {
         return ResponseEntity
@@ -47,7 +55,7 @@ public class AssetController {
                 .body(assetService.update(idAsset, assetPatchRequestDTO));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{idAsset}")
     public ResponseEntity<?> delete(@PathVariable UUID idAsset) {
         assetService.delete(idAsset);
         return ResponseEntity

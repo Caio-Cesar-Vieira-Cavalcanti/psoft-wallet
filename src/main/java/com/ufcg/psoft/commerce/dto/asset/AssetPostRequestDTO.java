@@ -2,7 +2,10 @@ package com.ufcg.psoft.commerce.dto.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
+
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,27 +19,29 @@ import lombok.NoArgsConstructor;
 public class AssetPostRequestDTO {
     @JsonProperty("name")
     @NotBlank(message = "Required asset name")
+    @NotNull
     private String name;
 
-    // revisar sobre o atributo do tipo do asset
-    // ideia: no controller, criar um endpoint para retornar o id de todos os tipos de assets criados no sistema
-    @JsonProperty("type")
-    @NotBlank(message = "Required asset type")
-    @PositiveOrZero(message = "Asset type id must be positive or zero!")
-    private Long type;
+    @JsonProperty("assetType")
+    @NotNull(message = "Required asset type")
+    private AssetTypeEnum assetType;
 
     @JsonProperty("description")
     @NotBlank(message = "Required asset description")
+    @NotNull
     private String description;
 
     @JsonProperty("isActive")
-    private boolean isActive;
+    @NotNull
+    private Boolean isActive;
 
     @JsonProperty("quotation")
     @PositiveOrZero(message = "Asset quotation must be positive or zero!")
-    private double quotation;
+    @NotNull
+    private Double quotation;
 
     @JsonProperty("quota_quantity")
     @PositiveOrZero(message = "Asset quotation quantity must be positive or zero!")
-    private int quotaQuantity;
+    @NotNull
+    private Double quotaQuantity;
 }

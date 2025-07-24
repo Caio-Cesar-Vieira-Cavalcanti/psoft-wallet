@@ -5,15 +5,21 @@ import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 
+import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
+import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 
+import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class AssetServiceImpl implements AssetService {
@@ -22,13 +28,26 @@ public class AssetServiceImpl implements AssetService {
     AssetRepository assetRepository;
 
     @Autowired
+    AssetTypeRepository assetTypeRepository;
+
+    @Autowired
     ModelMapper modelMapper;
 
     @Override
     public AssetResponseDTO create(AssetPostRequestDTO assetPostRequestDTO) {
         AssetModel assetModel = modelMapper.map(assetPostRequestDTO, AssetModel.class);
+        AssetType assetType = getAssetType(assetPostRequestDTO.getAssetType());
+        assetModel.setAssetType(assetType);
         assetRepository.save(assetModel);
         return modelMapper.map(assetModel, AssetResponseDTO.class);
+    }
+
+    @Override
+    public List<AssetResponseDTO> getAllAssets() {
+        List<AssetModel> assetModels = assetRepository.findAll();
+        return assetModels.stream()
+                .map(assetModel -> modelMapper.map(assetModel, AssetResponseDTO.class))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -49,6 +68,11 @@ public class AssetServiceImpl implements AssetService {
     public void delete(UUID idAsset) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
         assetRepository.delete(assetModel);
+    }
+
+    private AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
+        String assetType = assetTypeEnum.name();
+        return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
     }
 
 }

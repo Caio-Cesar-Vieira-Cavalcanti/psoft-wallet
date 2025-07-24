@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
+import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -55,6 +56,15 @@ public class ErrorHandlingControllerAdvice {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public CustomErrorType onAssetNotFoundException(AssetNotFoundException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(AssetTypeNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType onAssetTypeNotFoundException(AssetTypeNotFoundException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );

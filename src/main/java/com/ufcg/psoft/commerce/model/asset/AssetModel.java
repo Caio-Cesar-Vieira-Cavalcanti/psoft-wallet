@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Entity(name = "asset" )
+@Entity(name = "asset")
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,9 +25,10 @@ public class AssetModel {
     @Column(nullable = false)
     private String name;
 
-    @JsonProperty("type")
-    @OneToOne
-    private AssetType type;
+    @JsonProperty("assetType")
+    @ManyToOne
+    @JoinColumn(name = "asset_type_id", nullable = false)
+    private AssetType assetType;
 
     @JsonProperty("description")
     @Column(nullable = false)
@@ -43,6 +44,6 @@ public class AssetModel {
 
     @JsonProperty("quota_quantity")
     @Column(nullable = false)
-    private int quotaQuantity;
+    private double quotaQuantity;
 
 }
