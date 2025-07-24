@@ -33,14 +33,14 @@ public class AssetController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AssetResponseDTO> getAssetById(@PathVariable UUID idAsset) {
+    public ResponseEntity<AssetResponseDTO> getAssetById(@PathVariable("id") UUID idAsset) {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(assetService.getAssetById(idAsset));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<AssetResponseDTO> update(@PathVariable UUID idAsset,
+    public ResponseEntity<AssetResponseDTO> update(@PathVariable("id") UUID idAsset,
                                                    @RequestBody @Valid AssetPatchRequestDTO assetPatchRequestDTO) {
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -48,7 +48,7 @@ public class AssetController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable UUID idAsset) {
+    public ResponseEntity<?> delete(@PathVariable("id") UUID idAsset) {
         assetService.delete(idAsset);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
