@@ -27,21 +27,21 @@ public class AssetResponseDTO {
     @JsonProperty("description")
     private String description;
 
-    @JsonProperty("status")
-    private boolean status;
+    @JsonProperty("isActive")
+    private boolean isActive;
 
     @JsonProperty("quotation")
     private double quotation;
 
     @JsonProperty("quota_quantity")
-    private double quotaQuantity;
+    private int quotaQuantity;
 
     public AssetResponseDTO(AssetModel assetModel) {
         this.id = assetModel.getId();
         this.name = assetModel.getName();
         this.type = assetModel.getType();
         this.description = assetModel.getDescription();
-        this.status = assetModel.isStatus();
+        this.isActive = assetModel.isActive();
         this.quotation = assetModel.getQuotation();
         this.quotaQuantity = assetModel.getQuotaQuantity();
     }

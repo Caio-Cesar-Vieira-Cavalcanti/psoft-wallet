@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@Entity(name = "TB_ASSET" )
+@Entity(name = "asset" )
 @Data
 @Builder
 @NoArgsConstructor
@@ -33,13 +33,16 @@ public class AssetModel {
     @Column(nullable = false)
     private String description;
 
-    @JsonProperty("status")
-    private boolean status;
+    @JsonProperty("isActive")
+    @Column(nullable = false)
+    private boolean isActive;
 
     @JsonProperty("quotation")
+    @Column(nullable = false)
     private double quotation;
 
     @JsonProperty("quota_quantity")
-    private double quotaQuantity;
+    @Column(nullable = false)
+    private int quotaQuantity;
 
 }

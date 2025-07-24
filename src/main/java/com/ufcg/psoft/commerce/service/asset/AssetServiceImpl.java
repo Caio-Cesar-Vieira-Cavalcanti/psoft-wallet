@@ -1,7 +1,8 @@
 package com.ufcg.psoft.commerce.service.asset;
 
+import com.ufcg.psoft.commerce.config.PatchMapper;
+import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetPutRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -37,9 +38,9 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public AssetResponseDTO update(UUID idAsset, AssetPutRequestDTO assetPutRequestDTO) {
+    public AssetResponseDTO update(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
-        modelMapper.map(assetPutRequestDTO, assetModel);
+        PatchMapper.mapNonNull(assetPatchRequestDTO, assetModel);
         assetRepository.save(assetModel);
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }

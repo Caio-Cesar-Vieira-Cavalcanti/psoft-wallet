@@ -22,21 +22,21 @@ public class AssetPostRequestDTO {
     // ideia: no controller, criar um endpoint para retornar o id de todos os tipos de assets criados no sistema
     @JsonProperty("type")
     @NotBlank(message = "Required asset type")
-    @PositiveOrZero(message = "Asset type id is positive or zero!")
+    @PositiveOrZero(message = "Asset type id must be positive or zero!")
     private Long type;
 
     @JsonProperty("description")
     @NotBlank(message = "Required asset description")
     private String description;
 
-    @JsonProperty("status")
-    private boolean status;
+    @JsonProperty("isActive")
+    private boolean isActive;
 
     @JsonProperty("quotation")
-    @PositiveOrZero(message = "Asset quotation is positive or zero!")
+    @PositiveOrZero(message = "Asset quotation must be positive or zero!")
     private double quotation;
 
     @JsonProperty("quota_quantity")
-    @PositiveOrZero(message = "Asset quotation quantity is positive or zero!")
-    private double quotaQuantity;
+    @PositiveOrZero(message = "Asset quotation quantity must be positive or zero!")
+    private int quotaQuantity;
 }

@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.controller.asset;
 
+import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetPutRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 
 import com.ufcg.psoft.commerce.service.asset.AssetService;
@@ -39,12 +39,12 @@ public class AssetController {
                 .body(assetService.getAssetById(idAsset));
     }
 
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<AssetResponseDTO> update(@PathVariable UUID idAsset,
-                                    @RequestBody @Valid AssetPutRequestDTO assetPutRequestDTO) {
+                                                   @RequestBody @Valid AssetPatchRequestDTO assetPatchRequestDTO) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(assetService.update(idAsset, assetPutRequestDTO));
+                .body(assetService.update(idAsset, assetPatchRequestDTO));
     }
 
     @DeleteMapping("/{id}")
