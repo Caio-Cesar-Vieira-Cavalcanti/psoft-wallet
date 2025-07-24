@@ -3,6 +3,8 @@ package com.ufcg.psoft.commerce.service.asset;
 import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetStatusPatchDTO;
+import jakarta.validation.Valid;
 
 import java.util.UUID;
 
@@ -14,5 +16,7 @@ public interface AssetService {
     AssetResponseDTO update(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO);
 
     void delete(UUID idAsset);
+
+    AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetStatusPatchDTO assetPatchRequestDTO);
 
 }

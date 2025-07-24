@@ -5,10 +5,12 @@ import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 
+import com.ufcg.psoft.commerce.dto.asset.AssetStatusPatchDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 
+import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,15 @@ public class AssetServiceImpl implements AssetService {
     public void delete(UUID idAsset) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
         assetRepository.delete(assetModel);
+    }
+
+    @Override
+    public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetStatusPatchDTO assetPatchRequestDTO) {
+        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+
+        assetModel.setActive(assetPatchRequestDTO.getIsActive());
+        assetRepository.save(assetModel);
+        return new AssetResponseDTO(assetModel);
     }
 
 }

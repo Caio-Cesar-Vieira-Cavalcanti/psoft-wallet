@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.dto.asset;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +22,7 @@ public class AssetPostRequestDTO {
     // revisar sobre o atributo do tipo do asset
     // ideia: no controller, criar um endpoint para retornar o id de todos os tipos de assets criados no sistema
     @JsonProperty("type")
-    @NotBlank(message = "Required asset type")
+    @NotNull(message = "Required asset type")
     @PositiveOrZero(message = "Asset type id must be positive or zero!")
     private Long type;
 
