@@ -3,7 +3,8 @@ package com.ufcg.psoft.controller;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
+import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
@@ -15,6 +16,7 @@ import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.asset.AssetServiceImpl;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
@@ -27,8 +29,8 @@ public class AssetServiceUnitTests {
 
     private AssetRepository assetRepository;
     private AssetTypeRepository assetTypeRepository;
-    private AssetService assetService;
     private AdminService adminService;
+    private AssetService assetService;
     private ModelMapper modelMapper;
 
     private UUID assetId;
@@ -42,18 +44,17 @@ public class AssetServiceUnitTests {
     }
 
     @BeforeEach
-    void setup() {
+    void setUp() {
         assetRepository = mock(AssetRepository.class);
         assetTypeRepository = mock(AssetTypeRepository.class);
-        modelMapper = new ModelMapper();
         adminService = mock(AdminService.class);
+        modelMapper = new ModelMapper();
 
         assetService = new AssetServiceImpl();
-
         ReflectionTestUtils.setField(assetService, "assetRepository", assetRepository);
         ReflectionTestUtils.setField(assetService, "assetTypeRepository", assetTypeRepository);
-        ReflectionTestUtils.setField(assetService, "modelMapper", modelMapper);
         ReflectionTestUtils.setField(assetService, "adminService", adminService);
+        ReflectionTestUtils.setField(assetService, "modelMapper", modelMapper);
 
         assetId = UUID.randomUUID();
         asset = AssetModel.builder()
@@ -65,12 +66,16 @@ public class AssetServiceUnitTests {
                 .build();
 
         when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+        doNothing().when(adminService).validateAdmin(anyString(), anyString());
     }
 
     @Test
     void testUpdateQuotation_Success() {
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(105.0);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(105.0)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         when(assetRepository.save(any())).thenReturn(asset);
 
@@ -85,16 +90,22 @@ public class AssetServiceUnitTests {
         UUID unknownId = UUID.randomUUID();
         when(assetRepository.findById(unknownId)).thenReturn(Optional.empty());
 
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(110.0);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(110.0)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         assertThrows(AssetNotFoundException.class, () -> assetService.updateQuotation(unknownId, dto));
     }
 
     @Test
     void testUpdateQuotation_ThrowsInvalidQuotationVariationException() {
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(100.5);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(100.5)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         assertThrows(InvalidQuotationVariationException.class, () -> assetService.updateQuotation(assetId, dto));
     }
@@ -110,8 +121,11 @@ public class AssetServiceUnitTests {
 
         asset.setAssetType(invalidType);
 
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(120.0);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(120.0)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         assertThrows(InvalidAssetTypeException.class, () -> assetService.updateQuotation(assetId, dto));
     }
@@ -119,12 +133,13 @@ public class AssetServiceUnitTests {
     @Test
     void testUpdateQuotation_MinimumValidVariation_ShouldUpdate() {
         double current = 100.0;
-        double minVariation = 0.01;
+        double newQuotation = current * 1.01;
 
-        double newQuotation = current * (1 + minVariation);
-
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(newQuotation);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(newQuotation)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         when(assetRepository.save(any())).thenReturn(asset);
 
@@ -136,12 +151,13 @@ public class AssetServiceUnitTests {
     @Test
     void testUpdateQuotation_MinimumValidNegativeVariation_ShouldUpdate() {
         double current = 100.0;
-        double minVariation = 0.01;
+        double newQuotation = current * 0.99;
 
-        double newQuotation = current * (1 - minVariation);
-
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(newQuotation);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(newQuotation)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         when(assetRepository.save(any())).thenReturn(asset);
 
@@ -153,12 +169,13 @@ public class AssetServiceUnitTests {
     @Test
     void testUpdateQuotation_InvalidPositiveVariation_ShouldThrowException() {
         double current = 100.0;
-        double invalidVariation = 0.005;
+        double newQuotation = current * 1.005;
 
-        double newQuotation = current * (1 + invalidVariation);
-
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(newQuotation);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(newQuotation)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         assertThrows(InvalidQuotationVariationException.class, () -> assetService.updateQuotation(assetId, dto));
     }
@@ -166,13 +183,52 @@ public class AssetServiceUnitTests {
     @Test
     void testUpdateQuotation_InvalidNegativeVariation_ShouldThrowException() {
         double current = 100.0;
-        double invalidVariation = 0.005;
+        double newQuotation = current * 0.995;
 
-        double newQuotation = current * (1 - invalidVariation);
-
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
-        dto.setQuotation(newQuotation);
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(newQuotation)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("secret")
+                .build();
 
         assertThrows(InvalidQuotationVariationException.class, () -> assetService.updateQuotation(assetId, dto));
+    }
+
+    @Test
+    void testUpdateQuotation_UnauthorizedAdminAccess_ShouldThrowException() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(110.0)
+                .adminEmail("invalid@example.com")
+                .adminAccessCode("wrong-code")
+                .build();
+
+        doThrow(new UnauthorizedAdminAccessException())
+                .when(adminService)
+                .validateAdmin("invalid@example.com", "wrong-code");
+
+        assertThrows(UnauthorizedAdminAccessException.class, () ->
+                assetService.updateQuotation(assetId, dto)
+        );
+
+        verify(assetRepository, never()).save(any());
+    }
+
+    @Test
+    void testUpdateQuotation_UnauthorizedAdminAccess_EvenIfQuotationValid_ShouldThrowException() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(150.0)
+                .adminEmail("invalid@example.com")
+                .adminAccessCode("wrong-code")
+                .build();
+
+        doThrow(new UnauthorizedAdminAccessException())
+                .when(adminService)
+                .validateAdmin("invalid@example.com", "wrong-code");
+
+        assertThrows(UnauthorizedAdminAccessException.class, () ->
+                assetService.updateQuotation(assetId, dto)
+        );
+
+        verify(assetRepository, never()).save(any());
     }
 }

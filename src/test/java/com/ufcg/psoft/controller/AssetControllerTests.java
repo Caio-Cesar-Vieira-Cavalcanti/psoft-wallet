@@ -3,6 +3,7 @@ package com.ufcg.psoft.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.CommerceApplication;
 import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
@@ -86,7 +87,9 @@ public class AssetControllerTests {
     @Test
     @DisplayName("Successfully update quotation for Stock asset type")
     void testUpdateQuotation_Success() throws Exception {
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(105.0);
 
         mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
@@ -103,7 +106,9 @@ public class AssetControllerTests {
         AssetModel cryptoAsset = createDefaultAsset(cryptoType);
         cryptoAsset = assetRepository.save(cryptoAsset);
 
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(150.0);
 
         mockMvc.perform(patch(ASSET_BASE_URL + cryptoAsset.getId() + QUOTATION_ENDPOINT)
@@ -116,7 +121,9 @@ public class AssetControllerTests {
     @Test
     @DisplayName("Fails with variation below minimum (0.1%)")
     void testUpdateQuotation_FailsIfVariationTooSmall() throws Exception {
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(100.1);
 
         mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
@@ -133,7 +140,9 @@ public class AssetControllerTests {
         nonUpdatableAsset = assetRepository.save(nonUpdatableAsset);
         UUID nonUpdatableAssetId = nonUpdatableAsset.getId();
 
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(120.0);
 
         mockMvc.perform(patch(ASSET_BASE_URL + nonUpdatableAssetId + QUOTATION_ENDPOINT)
@@ -148,7 +157,9 @@ public class AssetControllerTests {
     void testUpdateQuotation_AssetNotFound() throws Exception {
         UUID nonExistentId = UUID.randomUUID();
 
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(110.0);
 
         mockMvc.perform(patch(ASSET_BASE_URL + nonExistentId + QUOTATION_ENDPOINT)
@@ -161,7 +172,9 @@ public class AssetControllerTests {
     @Test
     @DisplayName("Fails if quotation is null")
     void testUpdateQuotation_NullQuotation() throws Exception {
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(null);
 
         mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
@@ -173,7 +186,9 @@ public class AssetControllerTests {
     @Test
     @DisplayName("Successfully update quotation with valid negative variation")
     void testUpdateQuotation_ValidNegativeVariation() throws Exception {
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(98.0); // -2% variation from 100.0
 
         mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
@@ -197,7 +212,9 @@ public class AssetControllerTests {
     @Test
     @DisplayName("Patch updates only quotation, leaving other fields intact")
     void testPatchPartialUpdate() throws Exception {
-        AssetPatchRequestDTO dto = new AssetPatchRequestDTO();
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
         dto.setQuotation(120.0);
 
         mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
@@ -215,5 +232,35 @@ public class AssetControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Fails if admin credentials are invalid")
+    void testUpdateQuotation_AdminUnauthorized() throws Exception {
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setQuotation(110.0);
+        dto.setAdminEmail("invalid@example.com");
+        dto.setAdminAccessCode("wrong-code");
+
+        mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Unauthorized admin access"));
+    }
+
+    @Test
+    @DisplayName("Successfully updates quotation with authorized admin")
+    void testUpdateQuotation_AdminAuthorized() throws Exception {
+        AssetQuotationUpdateDTO dto = new AssetQuotationUpdateDTO();
+        dto.setQuotation(110.0);
+        dto.setAdminEmail("admin@example.com");
+        dto.setAdminAccessCode("123456");
+
+        mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quotation").value(110.0));
     }
 }

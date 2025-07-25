@@ -1,11 +1,8 @@
 package com.ufcg.psoft.commerce.service.asset;
 
 import com.ufcg.psoft.commerce.config.PatchMapper;
-import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.dto.asset.*;
 
-import com.ufcg.psoft.commerce.dto.asset.AssetStatusPatchDTO;
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
@@ -86,15 +83,17 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public AssetResponseDTO updateQuotation(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO) {
+    public AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset)
                 .orElseThrow(AssetNotFoundException::new);
+
+        adminService.validateAdmin(assetQuotationUpdateDTO.getAdminEmail(), assetQuotationUpdateDTO.getAdminAccessCode());
 
         String assetType = assetModel.getAssetType().getClass().getSimpleName().toUpperCase();
         if (!assetType.equals(AssetTypeEnum.STOCK.name()) && !assetType.equals(AssetTypeEnum.CRYPTO.name())) throw new InvalidAssetTypeException();
 
         double currentQuotation = assetModel.getQuotation();
-        double newQuotation = assetPatchRequestDTO.getQuotation();
+        double newQuotation = assetQuotationUpdateDTO.getQuotation();
 
         double variation = Math.abs((newQuotation - currentQuotation) / currentQuotation);
         if (variation < MIN_QUOTATION_VARIATION) throw new InvalidQuotationVariationException();
