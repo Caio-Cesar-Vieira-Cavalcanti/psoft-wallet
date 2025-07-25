@@ -8,14 +8,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Embeddable
+@NoArgsConstructor
 public class AccessCodeModel {
 
     @Column(length = 6, nullable = false)
     private String accessCode;
-
-    public AccessCodeModel() {
-        throw new IllegalArgumentException();
-    }
 
     public AccessCodeModel(String accessCode) {
         if (!accessCode.matches("\\d{6}")) {
