@@ -1,10 +1,7 @@
 package com.ufcg.psoft.commerce.controller.asset;
 
-import com.ufcg.psoft.commerce.dto.asset.AssetPatchRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.dto.asset.*;
 
-import com.ufcg.psoft.commerce.dto.asset.AssetStatusPatchDTO;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import jakarta.validation.Valid;
 
@@ -62,6 +59,14 @@ public class AssetController {
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .body("");
+    }
+
+    @PatchMapping("/{idAsset}/quotation")
+    public ResponseEntity<AssetResponseDTO> updateQuotation(@PathVariable UUID idAsset,
+                                                            @RequestBody @Valid AssetQuotationUpdateDTO assetQuotationUpdateDTO) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(assetService.updateQuotation(idAsset, assetQuotationUpdateDTO));
     }
 
     @PatchMapping("/{id}/active")

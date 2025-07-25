@@ -1,7 +1,10 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
+import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
+import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
+import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Map;
 
 @ControllerAdvice
 public class ErrorHandlingControllerAdvice {
@@ -52,6 +56,24 @@ public class ErrorHandlingControllerAdvice {
         return customErrorType;
     }
 
+    @ExceptionHandler(InvalidQuotationVariationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onInvalidQuotationVariationException(InvalidQuotationVariationException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(InvalidAssetTypeException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onInvalidAssetTypeException(InvalidAssetTypeException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
     @ExceptionHandler(AssetNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
@@ -65,6 +87,15 @@ public class ErrorHandlingControllerAdvice {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
     public CustomErrorType onAssetTypeNotFoundException(AssetTypeNotFoundException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(UnauthorizedAdminAccessException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public CustomErrorType handleUnauthorizedAdminAccessException(UnauthorizedAdminAccessException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
