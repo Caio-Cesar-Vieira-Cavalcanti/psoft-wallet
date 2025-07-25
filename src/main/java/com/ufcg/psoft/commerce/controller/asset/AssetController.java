@@ -64,6 +64,14 @@ public class AssetController {
                 .body("");
     }
 
+    @PatchMapping("/{idAsset}/quotation")
+    public ResponseEntity<AssetResponseDTO> updateQuotation(@PathVariable UUID idAsset,
+                                                            @RequestBody @Valid AssetPatchRequestDTO assetPatchRequestDTO) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(assetService.updateQuotation(idAsset, assetPatchRequestDTO));
+    }
+
     @PatchMapping("/{id}/active")
     public ResponseEntity<AssetResponseDTO> setIsActive(
             @PathVariable("id") UUID idAsset,

@@ -2,6 +2,8 @@ package com.ufcg.psoft.commerce.exception.handler;
 
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
+import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
+import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -50,6 +52,24 @@ public class ErrorHandlingControllerAdvice {
             customErrorType.getErrors().add(violation.getMessage());
         }
         return customErrorType;
+    }
+
+    @ExceptionHandler(InvalidQuotationVariationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onInvalidQuotationVariationException(InvalidQuotationVariationException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(InvalidAssetTypeException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onInvalidAssetTypeException(InvalidAssetTypeException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
     }
 
     @ExceptionHandler(AssetNotFoundException.class)

@@ -20,6 +20,8 @@ public interface AssetService {
 
     void delete(UUID idAsset);
 
+    AssetResponseDTO updateQuotation(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO);
+
     AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetStatusPatchDTO assetPatchRequestDTO);
 
 }

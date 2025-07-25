@@ -7,6 +7,8 @@ import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 
 import com.ufcg.psoft.commerce.dto.asset.AssetStatusPatchDTO;
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
+import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
+import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class AssetServiceImpl implements AssetService {
+
+    private static final double MIN_QUOTATION_VARIATION = 0.01;
 
     @Autowired
     AssetRepository assetRepository;
@@ -79,6 +83,26 @@ public class AssetServiceImpl implements AssetService {
     private AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
         String assetType = assetTypeEnum.name();
         return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
+    }
+
+    @Override
+    public AssetResponseDTO updateQuotation(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO) {
+        AssetModel assetModel = assetRepository.findById(idAsset)
+                .orElseThrow(AssetNotFoundException::new);
+
+        String assetType = assetModel.getAssetType().getClass().getSimpleName().toUpperCase();
+        if (!assetType.equals(AssetTypeEnum.STOCK.name()) && !assetType.equals(AssetTypeEnum.CRYPTO.name())) throw new InvalidAssetTypeException();
+
+        double currentQuotation = assetModel.getQuotation();
+        double newQuotation = assetPatchRequestDTO.getQuotation();
+
+        double variation = Math.abs((newQuotation - currentQuotation) / currentQuotation);
+        if (variation < MIN_QUOTATION_VARIATION) throw new InvalidQuotationVariationException();
+
+        assetModel.setQuotation(newQuotation);
+        assetRepository.save(assetModel);
+
+        return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 
     @Override

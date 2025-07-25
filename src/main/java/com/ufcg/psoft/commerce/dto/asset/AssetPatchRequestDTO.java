@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.dto.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +18,7 @@ public class AssetPatchRequestDTO {
     private Boolean isActive;
 
     @JsonProperty("quotation")
+    @NotNull(message = "Quotation cannot be null")
     @PositiveOrZero(message = "Quotation must be zero or a positive number")
     private Double quotation;
 
