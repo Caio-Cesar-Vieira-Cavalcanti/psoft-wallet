@@ -12,6 +12,7 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 @DiscriminatorValue("C")
 public class ClientModel extends UserModel {
 
@@ -23,7 +24,7 @@ public class ClientModel extends UserModel {
         this.wallet = wallet;
     }
 
-    @OneToOne
+    @Embedded
     private AddressModel address;
 
     @Column(nullable = false)
@@ -52,17 +53,4 @@ public class ClientModel extends UserModel {
 //            inverseJoinColumns = @JoinColumn(name = "asset_id")
 //    )
 //    private Map<UUID, Asset> waitingAssetAvailable;
-
-
-    public AddressModel getAddress() {
-        return address;
-    }
-
-    public PlanTypeEnum getPlanType() {
-        return planType;
-    }
-
-    public double getBudget() {
-        return budget;
-    }
 }

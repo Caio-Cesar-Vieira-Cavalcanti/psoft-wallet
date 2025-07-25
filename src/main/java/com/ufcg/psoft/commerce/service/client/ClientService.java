@@ -12,15 +12,15 @@ import java.util.UUID;
 
 public interface ClientService {
 
-    ResponseEntity<ClientResponseDTO> getClientById(UUID id);
+    ClientResponseDTO getClientById(UUID id);
 
-    ResponseEntity<List<ClientResponseDTO>> getClients();
+    List<ClientResponseDTO> getClients();
 
-    ResponseEntity<ClientResponseDTO> create(ClientPostRequestDTO body);
+    ClientResponseDTO create(ClientPostRequestDTO body);
 
-    ResponseEntity<ClientResponseDTO> remove(UUID id, ClientDeleteRequestDTO body);
+    ClientResponseDTO remove(UUID id, ClientDeleteRequestDTO body);
 
-    ResponseEntity<ClientResponseDTO> patchFullName(UUID id, ClientPatchFullNameRequestDTO body);
+    ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO body);
 
     ResponseEntity<WalletResponseDTO> getPurchaseHistory(UUID clientId);
 }

@@ -27,27 +27,32 @@ public class ClientController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable UUID id) {
-        return this.clientService.getClientById(id);
+        ClientResponseDTO client = clientService.getClientById(id);
+        return ResponseEntity.ok(client);
     }
 
     @GetMapping()
     public ResponseEntity<List<ClientResponseDTO>> getClients() {
-        return this.clientService.getClients();
+        List<ClientResponseDTO> clients = clientService.getClients();
+        return ResponseEntity.ok(clients);
     }
 
     @PostMapping()
     public ResponseEntity<ClientResponseDTO> create(@RequestBody @Valid ClientPostRequestDTO body) {
-        return this.clientService.create(body);
+        ClientResponseDTO createdClient = clientService.create(body);
+        return ResponseEntity.status(201).body(createdClient);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> remove(@PathVariable UUID id, @RequestBody @Valid ClientDeleteRequestDTO body) {
-        return this.clientService.remove(id, body);
+        ClientResponseDTO deletedClient = clientService.remove(id, body);
+        return ResponseEntity.ok(deletedClient);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> patchFullName(@PathVariable UUID id, @RequestBody @Valid ClientPatchFullNameRequestDTO body) {
-        return this.clientService.patchFullName(id, body);
+        ClientResponseDTO updatedClient = clientService.patchFullName(id, body);
+        return ResponseEntity.ok(updatedClient);
     }
 
     @GetMapping({"/id/purchases"})
