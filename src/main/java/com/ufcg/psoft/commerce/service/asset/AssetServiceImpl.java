@@ -14,6 +14,7 @@ import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
+import com.ufcg.psoft.commerce.service.admin.AdminService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,9 @@ public class AssetServiceImpl implements AssetService {
 
     @Autowired
     ModelMapper modelMapper;
+
+    @Autowired
+    AdminService adminService;
 
     @Override
     public AssetResponseDTO create(AssetPostRequestDTO assetPostRequestDTO) {
@@ -80,6 +84,8 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetStatusPatchDTO assetPatchRequestDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+
+        adminService.validateAdmin(assetPatchRequestDTO.getAdminEmail(), assetPatchRequestDTO.getAdminAccessCode());
 
         assetModel.setActive(assetPatchRequestDTO.getIsActive());
         assetRepository.save(assetModel);
