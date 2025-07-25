@@ -1,24 +1,17 @@
-package com.ufcg.psoft.commerce.model;
+package com.ufcg.psoft.commerce.model.user;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class AddressModel {
-
-    public AddressModel(UUID id, String street, String number, String neighborhood, String city, String state, String country, String zipCode) {
-        this.id = id;
-        this.street = street;
-        this.number = number;
-        this.neighborhood = neighborhood;
-        this.city = city;
-        this.state = state;
-        this.country = country;
-        this.zipCode = zipCode;
-    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

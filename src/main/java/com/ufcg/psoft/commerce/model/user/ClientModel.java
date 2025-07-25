@@ -1,11 +1,17 @@
-package com.ufcg.psoft.commerce.model;
+package com.ufcg.psoft.commerce.model.user;
 
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
+import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.UUID;
 
 @Entity
+@Getter
+@Setter
 @DiscriminatorValue("C")
 public class ClientModel extends UserModel {
 
@@ -14,7 +20,7 @@ public class ClientModel extends UserModel {
         this.address = address;
         this.planType = planType;
         this.budget = budget;
-//        this.wallet = wallet;
+        this.wallet = wallet;
     }
 
     @OneToOne
@@ -26,8 +32,8 @@ public class ClientModel extends UserModel {
     @Column(nullable = false)
     private double budget;
 
-//    @OneToOne
-//    private WalletModel wallet;
+    @OneToOne
+    private WalletModel wallet;
 
 //    @ManyToMany
 //    @MapKey(name = "id")

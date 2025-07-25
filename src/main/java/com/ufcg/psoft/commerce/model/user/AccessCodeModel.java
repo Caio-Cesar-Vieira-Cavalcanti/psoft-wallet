@@ -1,8 +1,10 @@
-package com.ufcg.psoft.commerce.model;
+package com.ufcg.psoft.commerce.model.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Embeddable
@@ -10,6 +12,10 @@ public class AccessCodeModel {
 
     @Column(length = 6, nullable = false)
     private String accessCode;
+
+    public AccessCodeModel() {
+        throw new IllegalArgumentException();
+    }
 
     public AccessCodeModel(String accessCode) {
         if (!accessCode.matches("\\d{6}")) {

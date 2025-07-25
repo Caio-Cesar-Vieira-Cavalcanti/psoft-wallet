@@ -1,9 +1,9 @@
 package com.ufcg.psoft.commerce.service.admin;
 
 import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
-import com.ufcg.psoft.commerce.model.AccessCodeModel;
-import com.ufcg.psoft.commerce.model.AdminModel;
-import com.ufcg.psoft.commerce.model.EmailModel;
+import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
+import com.ufcg.psoft.commerce.model.user.AdminModel;
+import com.ufcg.psoft.commerce.model.user.EmailModel;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -22,8 +22,6 @@ public class AdminService {
     }
 
     public void validateAdmin(String email, String accessCode) {
-        if (!admin.getEmail().matches(email) || !admin.getAccessCode().matches(accessCode)) {
-            throw new UnauthorizedAdminAccessException();
-        }
+        this.admin.validateUser(email, accessCode);
     }
 }

@@ -1,7 +1,13 @@
-package com.ufcg.psoft.commerce.service.cliente;
+package com.ufcg.psoft.commerce.service.client;
 
-import com.ufcg.psoft.commerce.dto.*;
-import com.ufcg.psoft.commerce.model.ClientModel;
+import com.ufcg.psoft.commerce.dto.PurchaseResponseDTO;
+import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
+import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.ClientRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ClientServiceImpl implements ClientService {
@@ -83,6 +90,45 @@ public class ClientServiceImpl implements ClientService {
         client.setFullName(body.getFullName());
         ClientModel updatedClient = clientRepository.save(client);
         ClientResponseDTO response = modelMapper.map(updatedClient, ClientResponseDTO.class);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(UUID clientId) {
+        Optional<ClientModel> optionalClient = clientRepository.findById(clientId);
+
+        if (optionalClient.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        ClientModel client = optionalClient.get();
+        WalletModel wallet = client.getWallet();
+
+        if (wallet == null || wallet.getPurchases() == null || wallet.getPurchases().isEmpty()) {
+            return ResponseEntity.ok(
+                    WalletResponseDTO.builder()
+                            .id(wallet != null ? wallet.getId() : null)
+                            .purchases(List.of())
+                            .build()
+            );
+        }
+
+        List<PurchaseResponseDTO> purchases = wallet.getPurchases().values().stream()
+                .sorted((p1, p2) -> p2.getDate().compareTo(p1.getDate()))
+                .map(p -> PurchaseResponseDTO.builder()
+                        .id(p.getId())
+                        .assetId(p.getAsset().getId())
+                        .quantity(p.getQuantity())
+                        .state(p.getState())
+                        .date(p.getDate())
+                        .build()
+                ).toList();
+
+        WalletResponseDTO response = WalletResponseDTO.builder()
+                .id(wallet.getId())
+                .purchases(purchases)
+                .build();
+
         return ResponseEntity.ok(response);
     }
 

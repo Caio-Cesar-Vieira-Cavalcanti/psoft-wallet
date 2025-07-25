@@ -1,13 +1,13 @@
-package com.ufcg.psoft.commerce.controller;
+package com.ufcg.psoft.commerce.controller.client;
 
-import com.ufcg.psoft.commerce.dto.ClientDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.ClientPatchFullNameRequestDTO;
-import com.ufcg.psoft.commerce.dto.ClientPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.ClientResponseDTO;
-import com.ufcg.psoft.commerce.service.cliente.ClientService;
+import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.service.client.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +48,11 @@ public class ClientController {
     @PatchMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> patchFullName(@PathVariable UUID id, @RequestBody @Valid ClientPatchFullNameRequestDTO body) {
         return this.clientService.patchFullName(id, body);
+    }
+
+    @GetMapping({"/id/purchases"})
+    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable UUID id) {
+        return this.clientService.getPurchaseHistory(id);
     }
 
 }

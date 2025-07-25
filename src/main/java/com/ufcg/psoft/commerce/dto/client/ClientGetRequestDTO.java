@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.dto;
+package com.ufcg.psoft.commerce.dto.client;
 
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import jakarta.validation.constraints.Email;

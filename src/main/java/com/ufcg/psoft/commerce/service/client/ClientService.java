@@ -1,10 +1,11 @@
-package com.ufcg.psoft.commerce.service.cliente;
+package com.ufcg.psoft.commerce.service.client;
 
-import com.ufcg.psoft.commerce.dto.*;
-import jakarta.validation.Valid;
+import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,4 +21,6 @@ public interface ClientService {
     ResponseEntity<ClientResponseDTO> remove(UUID id, ClientDeleteRequestDTO body);
 
     ResponseEntity<ClientResponseDTO> patchFullName(UUID id, ClientPatchFullNameRequestDTO body);
+
+    ResponseEntity<WalletResponseDTO> getPurchaseHistory(UUID clientId);
 }

@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.model;
+package com.ufcg.psoft.commerce.model.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -12,7 +12,9 @@ public class EmailModel {
     @Column(unique = true, nullable = false)
     private String email;
 
-    protected EmailModel() {}
+    protected EmailModel() {
+        throw new IllegalArgumentException();
+    }
 
     public EmailModel(String email) {
         if (!EmailValidator.getInstance().isValid(email)) {

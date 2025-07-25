@@ -1,7 +1,9 @@
-package com.ufcg.psoft.commerce.model;
+package com.ufcg.psoft.commerce.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 
 import java.util.UUID;
 
@@ -29,6 +31,12 @@ public abstract class UserModel {
         this.fullName = fullName;
         this.email = email;
         this.accessCode = accessCode;
+    }
+
+    public void validateUser(String email, String accessCode) {
+        if (!this.email.matches(email) || !this.accessCode.matches(accessCode)) {
+            throw new UnauthorizedAdminAccessException();
+        }
     }
 
     public UUID getId() {

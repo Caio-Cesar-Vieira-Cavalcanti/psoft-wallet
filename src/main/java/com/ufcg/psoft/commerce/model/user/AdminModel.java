@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.model;
+package com.ufcg.psoft.commerce.model.user;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;

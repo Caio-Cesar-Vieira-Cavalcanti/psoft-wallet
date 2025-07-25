@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.dto;
+package com.ufcg.psoft.commerce.dto.client;
 
 import jakarta.validation.constraints.NotBlank;
 
