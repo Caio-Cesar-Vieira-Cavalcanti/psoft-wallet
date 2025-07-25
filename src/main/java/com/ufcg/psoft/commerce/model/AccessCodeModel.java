@@ -18,6 +18,10 @@ public class AccessCodeModel {
         this.accessCode = accessCode;
     }
 
+    public boolean matches(String accessCode) {
+        return this.accessCode.equals(accessCode);
+    }
+
     public String getAccessCode() {
         return accessCode;
     }
