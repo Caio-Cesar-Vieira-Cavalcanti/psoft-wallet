@@ -42,6 +42,8 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public AssetResponseDTO create(AssetPostRequestDTO assetPostRequestDTO) {
+        this.adminService.validateAdmin(assetPostRequestDTO.getAdminEmail(), assetPostRequestDTO.getAdminAccessCode());
+
         AssetModel assetModel = modelMapper.map(assetPostRequestDTO, AssetModel.class);
         AssetType assetType = getAssetType(assetPostRequestDTO.getAssetType());
         assetModel.setAssetType(assetType);
@@ -72,8 +74,11 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public void delete(UUID idAsset) {
+    public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+
+        adminService.validateAdmin(assetDeleteRequestDTO.getAdminEmail(), assetDeleteRequestDTO.getAdminAccessCode());
+
         assetRepository.delete(assetModel);
     }
 

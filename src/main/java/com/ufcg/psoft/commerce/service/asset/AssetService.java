@@ -15,7 +15,7 @@ public interface AssetService {
 
     AssetResponseDTO update(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO);
 
-    void delete(UUID idAsset);
+    void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO);
 
     AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO);
 

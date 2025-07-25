@@ -31,7 +31,7 @@ public class AssetPostRequestDTO {
     @NotNull
     private String description;
 
-    @JsonProperty("isActive")
+    @JsonProperty("is_active")
     @NotNull
     private Boolean isActive;
 
@@ -44,4 +44,12 @@ public class AssetPostRequestDTO {
     @PositiveOrZero(message = "Asset quotation quantity must be positive or zero!")
     @NotNull
     private Double quotaQuantity;
+
+    @JsonProperty("admin_email")
+    @NotNull(message = "The 'admin_email' field cannot be null")
+    private String adminEmail;
+
+    @JsonProperty("admin_access_code")
+    @NotNull(message = "The 'admin_access_code_email' cannot be null")
+    private String adminAccessCode;
 }

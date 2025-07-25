@@ -54,8 +54,9 @@ public class AssetController {
     }
 
     @DeleteMapping("/{idAsset}")
-    public ResponseEntity<?> delete(@PathVariable UUID idAsset) {
-        assetService.delete(idAsset);
+    public ResponseEntity<?> delete(@PathVariable UUID idAsset,
+                                    @RequestBody @Valid AssetDeleteRequestDTO assetDeleteRequestDTO) {
+        assetService.delete(idAsset, assetDeleteRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .body("");
