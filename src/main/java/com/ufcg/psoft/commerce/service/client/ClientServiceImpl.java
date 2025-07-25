@@ -6,7 +6,10 @@ import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
+import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
+import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.ClientRepository;
 import org.modelmapper.ModelMapper;
@@ -16,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -30,67 +34,62 @@ public class ClientServiceImpl implements ClientService {
     private ModelMapper modelMapper;
 
     @Override
-    public ResponseEntity<ClientResponseDTO> getClientById(UUID id) {
-        Optional<ClientModel> client = clientRepository.findById(id);
-        if (client.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-        ClientResponseDTO dto = modelMapper.map(client.get(), ClientResponseDTO.class);
-        return ResponseEntity.ok(dto);
+    public ClientResponseDTO getClientById(UUID id) {
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
+        return modelMapper.map(client, ClientResponseDTO.class);
     }
 
     @Override
-    public ResponseEntity<List<ClientResponseDTO>> getClients() {
+    public List<ClientResponseDTO> getClients() {
         List<ClientModel> clients = clientRepository.findAll();
-        List<ClientResponseDTO> response = clients.stream()
+        return clients.stream()
                 .map(client -> modelMapper.map(client, ClientResponseDTO.class))
                 .toList();
-        return ResponseEntity.ok(response);
     }
 
     @Override
-    public ResponseEntity<ClientResponseDTO> create(ClientPostRequestDTO body) {
-        ClientModel clientModel = modelMapper.map(body, ClientModel.class);
+    public ClientResponseDTO create(ClientPostRequestDTO body) {
+        AddressModel addressModel = modelMapper.map(body.getAddress(), AddressModel.class);
+        ClientModel clientModel = new ClientModel(
+                UUID.randomUUID(),
+                body.getFullName(),
+                new EmailModel(body.getEmail()),
+                new AccessCodeModel(body.getAccessCode()),
+                addressModel,
+                body.getPlanType(),
+                body.getBudget(),
+                null
+        );
         ClientModel savedClient = clientRepository.save(clientModel);
-        ClientResponseDTO response = modelMapper.map(savedClient, ClientResponseDTO.class);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return modelMapper.map(savedClient, ClientResponseDTO.class);
     }
 
     @Override
-    public ResponseEntity<ClientResponseDTO> remove(UUID id, ClientDeleteRequestDTO body) {
-        Optional<ClientModel> optionalClient = clientRepository.findById(id);
-
-        if (optionalClient.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    public ClientResponseDTO remove(UUID id, ClientDeleteRequestDTO body) {
+        if (!this.isAccessCodeValid(id, body.getAccessCode())) {
+            throw new RuntimeException("Access Code Invalid");
         }
-
-        ClientModel client = optionalClient.get();
-        if (!client.getAccessCode().getAccessCode().equals(body.getAccessCode())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
         clientRepository.delete(client);
-        ClientResponseDTO response = modelMapper.map(client, ClientResponseDTO.class);
-        return ResponseEntity.ok(response);
+        return modelMapper.map(client, ClientResponseDTO.class);
     }
 
     @Override
-    public ResponseEntity<ClientResponseDTO> patchFullName(UUID id, ClientPatchFullNameRequestDTO body) {
-        Optional<ClientModel> optionalClient = clientRepository.findById(id);
-
-        if (optionalClient.isEmpty()) {
-            return ResponseEntity.notFound().build();
+    public ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO body) {
+        if (!this.isAccessCodeValid(id, body.getAccessCode())) {
+            throw new RuntimeException("Access Code Invalid");
         }
-
-        ClientModel client = optionalClient.get();
-        if (!client.getAccessCode().getAccessCode().equals(body.getAccessCode())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
         client.setFullName(body.getFullName());
-        ClientModel updatedClient = clientRepository.save(client);
-        ClientResponseDTO response = modelMapper.map(updatedClient, ClientResponseDTO.class);
-        return ResponseEntity.ok(response);
+        clientRepository.save(client);
+        return modelMapper.map(client, ClientResponseDTO.class);
+    }
+
+    private boolean isAccessCodeValid(UUID id, String accessCode) {
+        AccessCodeModel a = new AccessCodeModel(accessCode);
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
+        if (client.getAccessCode().equals(a)) return true;
+        return false;
     }
 
     @Override
