@@ -6,6 +6,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
+import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
@@ -21,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,7 +51,7 @@ public class ClientServiceUnitTests {
         modelMapper = new ModelMapper();
         clientService = new ClientServiceImpl();
         dtoMapperService = new DTOMapperService(modelMapper);
-        
+
         ReflectionTestUtils.setField(clientService, "clientRepository", clientRepository);
         ReflectionTestUtils.setField(clientService, "modelMapper", modelMapper);
         ReflectionTestUtils.setField(clientService, "dtoMapperService", dtoMapperService);
@@ -151,5 +153,48 @@ public class ClientServiceUnitTests {
         clientService.remove(clientId, dto));
 
         verify(clientRepository, never()).delete(any());
+    }
+
+    @Test
+    void testGetClientById_Success() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+
+        ClientResponseDTO result = clientService.getClientById(clientId);
+
+        assertNotNull(result);
+        assertEquals(client.getFullName(), result.getFullName());
+        assertEquals(client.getEmail().getEmail(), result.getEmail());
+    }
+
+    @Test
+    void testGetClientById_InvalidId() {
+        UUID invalidId = UUID.randomUUID();
+        when(clientRepository.findById(invalidId)).thenReturn(Optional.empty());
+
+        assertThrows(ClientIdNotFoundException.class, () -> clientService.getClientById(invalidId));
+    }
+
+    @Test
+    void testGetClients_Success() {
+        when(clientRepository.findAll()).thenReturn(List.of(client, client));
+
+        ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
+                .fullName("Rafael Barreto")
+                .email("Rafael@email.com")
+                .accessCode("654321")
+                .budget(10000.0)
+                .planType(PlanTypeEnum.PREMIUM)
+                .address(new AddressDTO("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"))
+                .build();
+
+        when(clientRepository.save(any(ClientModel.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        clientService.create(dto);
+
+        List<ClientResponseDTO> result = clientService.getClients();
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("João Azevedo", result.get(0).getFullName());
     }
 }
