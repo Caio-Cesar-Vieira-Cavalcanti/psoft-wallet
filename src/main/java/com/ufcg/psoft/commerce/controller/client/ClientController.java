@@ -1,13 +1,11 @@
 package com.ufcg.psoft.commerce.controller.client;
 
-import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.*;
+import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,38 +24,57 @@ public class ClientController {
     ClientService clientService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable UUID id) {
+    public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable("id") UUID id) {
         ClientResponseDTO client = clientService.getClientById(id);
-        return ResponseEntity.ok(client);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(client);
     }
 
     @GetMapping()
     public ResponseEntity<List<ClientResponseDTO>> getClients() {
         List<ClientResponseDTO> clients = clientService.getClients();
-        return ResponseEntity.ok(clients);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(clients);
     }
 
     @PostMapping()
     public ResponseEntity<ClientResponseDTO> create(@RequestBody @Valid ClientPostRequestDTO body) {
         ClientResponseDTO createdClient = clientService.create(body);
-        return ResponseEntity.status(201).body(createdClient);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(createdClient);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> remove(@PathVariable UUID id, @RequestBody @Valid ClientDeleteRequestDTO body) {
+    public ResponseEntity<?> remove(@PathVariable("id") UUID id,
+                                    @RequestBody @Valid ClientDeleteRequestDTO body) {
+
         ClientResponseDTO deletedClient = clientService.remove(id, body);
-        return ResponseEntity.ok(deletedClient);
+        return ResponseEntity
+                .status(HttpStatus.NO_CONTENT)
+                .body("");
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> patchFullName(@PathVariable UUID id, @RequestBody @Valid ClientPatchFullNameRequestDTO body) {
+    public ResponseEntity<ClientResponseDTO> patchFullName(@PathVariable("id") UUID id,
+                                                           @RequestBody @Valid ClientPatchFullNameRequestDTO body) {
+
         ClientResponseDTO updatedClient = clientService.patchFullName(id, body);
-        return ResponseEntity.ok(updatedClient);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(updatedClient);
     }
 
-    @GetMapping({"/id/purchases"})
-    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable UUID id) {
-        return this.clientService.getPurchaseHistory(id);
+    @GetMapping({"/{id}/purchases"})
+    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable("id") UUID id,
+                                                                @RequestBody @Valid ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
+
+        WalletResponseDTO purchases = clientService.getPurchaseHistory(id, clientPurchaseHistoryRequestDTO);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(purchases);
     }
 
 }

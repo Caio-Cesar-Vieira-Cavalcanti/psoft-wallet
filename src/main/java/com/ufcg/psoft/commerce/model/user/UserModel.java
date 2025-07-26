@@ -1,9 +1,7 @@
 package com.ufcg.psoft.commerce.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 import java.util.UUID;
@@ -35,10 +33,12 @@ public abstract class UserModel {
         this.accessCode = accessCode;
     }
 
-    public void validateUser(String email, String accessCode) {
-        if (!this.email.matches(email) || !this.accessCode.matches(accessCode)) {
-            throw new UnauthorizedAdminAccessException();
-        }
+    public void validateAccess(String accessCode) {
+        throw new UnsupportedOperationException("Access validation not supported for this user type");
+    }
+
+    public void validateAccess(String email, String accessCode) {
+        throw new UnsupportedOperationException("Access validation not supported for this user type");
     }
 
     public UUID getId() {

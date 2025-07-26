@@ -11,17 +11,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AssetStatusPatchDTO {
+public class AssetActivationPatchRequestDTO {
 
-    @JsonProperty("is_active")
+    @JsonProperty("isActive")
     @NotNull(message = "The 'is_active' field cannot be null")
     private Boolean isActive;
 
-    @JsonProperty("admin_email")
+    @JsonProperty("adminEmail")
     @NotNull(message = "The 'admin_email' field cannot be null")
     private String adminEmail;
 
-    @JsonProperty("admin_access_code")
+    @JsonProperty("adminAccessCode")
     @NotNull(message = "The 'admin_access_code_email' cannot be null")
     private String adminAccessCode;
 }

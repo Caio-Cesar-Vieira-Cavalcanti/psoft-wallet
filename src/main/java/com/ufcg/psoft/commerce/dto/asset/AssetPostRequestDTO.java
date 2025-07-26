@@ -2,7 +2,7 @@ package com.ufcg.psoft.commerce.dto.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,7 +31,7 @@ public class AssetPostRequestDTO {
     @NotNull
     private String description;
 
-    @JsonProperty("is_active")
+    @JsonProperty("isActive")
     @NotNull
     private Boolean isActive;
 
@@ -40,16 +40,16 @@ public class AssetPostRequestDTO {
     @NotNull
     private Double quotation;
 
-    @JsonProperty("quota_quantity")
+    @JsonProperty("quotaQuantity")
     @PositiveOrZero(message = "Asset quotation quantity must be positive or zero!")
     @NotNull
     private Double quotaQuantity;
 
-    @JsonProperty("admin_email")
+    @JsonProperty("adminEmail")
     @NotNull(message = "The 'admin_email' field cannot be null")
     private String adminEmail;
 
-    @JsonProperty("admin_access_code")
+    @JsonProperty("adminAccessCode")
     @NotNull(message = "The 'admin_access_code_email' cannot be null")
     private String adminAccessCode;
 }

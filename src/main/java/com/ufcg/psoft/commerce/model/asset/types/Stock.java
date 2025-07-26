@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.model.asset.types;
 
 import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import lombok.Builder;

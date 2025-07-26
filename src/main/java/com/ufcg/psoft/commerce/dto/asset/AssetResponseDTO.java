@@ -32,7 +32,7 @@ public class AssetResponseDTO {
     @JsonProperty("quotation")
     private double quotation;
 
-    @JsonProperty("quota_quantity")
+    @JsonProperty("quotaQuantity")
     private double quotaQuantity;
 
     public AssetResponseDTO(AssetModel assetModel) {

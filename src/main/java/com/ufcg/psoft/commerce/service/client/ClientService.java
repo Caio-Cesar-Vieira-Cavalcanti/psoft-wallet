@@ -1,11 +1,7 @@
 package com.ufcg.psoft.commerce.service.client;
 
-import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
-import org.springframework.http.ResponseEntity;
+import com.ufcg.psoft.commerce.dto.client.*;
+import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,11 +12,11 @@ public interface ClientService {
 
     List<ClientResponseDTO> getClients();
 
-    ClientResponseDTO create(ClientPostRequestDTO body);
+    ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO);
 
-    ClientResponseDTO remove(UUID id, ClientDeleteRequestDTO body);
+    ClientResponseDTO remove(UUID id, ClientDeleteRequestDTO clientDeleteRequestDTO);
 
-    ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO body);
+    ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO clientPatchFullNameRequestDTO);
 
-    ResponseEntity<WalletResponseDTO> getPurchaseHistory(UUID clientId);
+    WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
 }

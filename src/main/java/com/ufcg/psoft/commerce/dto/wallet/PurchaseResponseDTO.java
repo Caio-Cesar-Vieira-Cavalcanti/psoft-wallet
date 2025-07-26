@@ -1,7 +1,7 @@
-package com.ufcg.psoft.commerce.dto;
+package com.ufcg.psoft.commerce.dto.wallet;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.model.wallet.PurchaseState;
+import com.ufcg.psoft.commerce.enums.PurchaseState;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +21,7 @@ public class PurchaseResponseDTO {
     @NotNull(message = "The 'id' field cannot be null")
     private UUID id;
 
-    @JsonProperty("asset_id")
+    @JsonProperty("assetId")
     @NotNull(message = "The 'asset_id' field cannot be null")
     private UUID assetId;
 

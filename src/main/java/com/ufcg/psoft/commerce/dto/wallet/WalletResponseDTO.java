@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.dto;
+package com.ufcg.psoft.commerce.dto.wallet;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +16,7 @@ import java.util.UUID;
 @Builder
 public class WalletResponseDTO {
 
-    @JsonProperty("wallet_id")
+    @JsonProperty("walletId")
     @NotNull(message = "The 'id' field cannot be null")
     private UUID id;
 

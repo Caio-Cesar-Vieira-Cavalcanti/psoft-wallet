@@ -1,6 +1,5 @@
 package com.ufcg.psoft.commerce.service.admin;
 
-import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AdminModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
@@ -22,6 +21,6 @@ public class AdminService {
     }
 
     public void validateAdmin(String email, String accessCode) {
-        this.admin.validateUser(email, accessCode);
+        this.admin.validateAccess(email, accessCode);
     }
 }

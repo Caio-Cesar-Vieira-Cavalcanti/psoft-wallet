@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.model.user;
 
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
+import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -33,8 +34,15 @@ public class ClientModel extends UserModel {
     @Column(nullable = false)
     private double budget;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private WalletModel wallet;
+
+    @Override
+    public void validateAccess(String accessCode) {
+        if (!this.getAccessCode().matches(accessCode)) {
+            throw new UnauthorizedUserAccessException();
+        }
+    }
 
 //    @ManyToMany
 //    @MapKey(name = "id")

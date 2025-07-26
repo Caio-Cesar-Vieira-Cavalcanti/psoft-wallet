@@ -1,6 +1,5 @@
 package com.ufcg.psoft.commerce.service.asset;
 
-import com.ufcg.psoft.commerce.config.PatchMapper;
 import com.ufcg.psoft.commerce.dto.asset.*;
 
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
@@ -8,7 +7,7 @@ import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 
@@ -66,14 +65,6 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public AssetResponseDTO update(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
-        PatchMapper.mapNonNull(assetPatchRequestDTO, assetModel);
-        assetRepository.save(assetModel);
-        return modelMapper.map(assetModel, AssetResponseDTO.class);
-    }
-
-    @Override
     public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
 
@@ -110,7 +101,7 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetStatusPatchDTO assetPatchRequestDTO) {
+    public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
 
         adminService.validateAdmin(assetPatchRequestDTO.getAdminEmail(), assetPatchRequestDTO.getAdminAccessCode());
@@ -118,6 +109,12 @@ public class AssetServiceImpl implements AssetService {
         assetModel.setActive(assetPatchRequestDTO.getIsActive());
         assetRepository.save(assetModel);
         return new AssetResponseDTO(assetModel);
+    }
+
+    public List<AssetResponseDTO> getAvailableAssets() {
+        return assetRepository.findByIsActiveTrue().stream()
+                .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
+                .toList();
     }
 
 }

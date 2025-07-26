@@ -8,11 +8,11 @@ import lombok.Data;
 @Data
 @Builder
 public class AssetDeleteRequestDTO {
-    @JsonProperty("admin_email")
+    @JsonProperty("adminEmail")
     @NotNull(message = "The 'admin_email' field cannot be null")
     private String adminEmail;
 
-    @JsonProperty("admin_access_code")
+    @JsonProperty("adminAccessCode")
     @NotNull(message = "The 'admin_access_code_email' cannot be null")
     private String adminAccessCode;
 }
