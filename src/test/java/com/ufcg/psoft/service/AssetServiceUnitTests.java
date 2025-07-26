@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
@@ -22,8 +23,10 @@ import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class AssetServiceUnitTests {
 
@@ -230,5 +233,108 @@ public class AssetServiceUnitTests {
         );
 
         verify(assetRepository, never()).save(any());
+    }
+
+    @Test
+    void testGetAllAssets() {
+        AssetModel asset2 = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Second Asset")
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(mockStockType())
+                .build();
+
+        List<AssetModel> mockAssets = List.of(asset, asset2);
+
+        when(assetRepository.findAll()).thenReturn(mockAssets);
+
+        List<AssetResponseDTO> result = assetService.getAllAssets();
+
+        assertEquals(2, result.size());
+        assertEquals("Test Asset", result.get(0).getName());
+        assertEquals("Second Asset", result.get(1).getName());
+    }
+
+    @Test
+    void testGetAssetById_ReturnsCorrectAsset() {
+        AssetResponseDTO response = assetService.getAssetById(assetId);
+
+        assertNotNull(response);
+        assertEquals(asset.getId(), response.getId());
+        assertEquals(asset.getName(), response.getName());
+    }
+
+    @Test
+    void testGetActiveAssets_ReturnsOnlyActiveAssets() {
+        AssetModel activeAsset1 = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Active Asset 1")
+                .quotation(120.0)
+                .quotaQuantity(500.0)
+                .isActive(true)
+                .assetType(mockStockType())
+                .build();
+
+        AssetModel inactiveAsset = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Inactive Asset")
+                .quotation(130.0)
+                .quotaQuantity(700.0)
+                .isActive(false)
+                .assetType(mockStockType())
+                .build();
+
+        AssetModel activeAsset2 = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Active Asset 2")
+                .quotation(150.0)
+                .quotaQuantity(900.0)
+                .isActive(true)
+                .assetType(mockStockType())
+                .build();
+
+        List<AssetModel> allAssets = List.of(activeAsset1, inactiveAsset, activeAsset2);
+
+        when(assetRepository.findAll()).thenReturn(allAssets);
+
+        List<AssetResponseDTO> result = assetService.getActiveAssets();
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(a -> a.getName().equals("Active Asset 1")));
+        assertTrue(result.stream().anyMatch(a -> a.getName().equals("Active Asset 2")));
+    }
+
+    @Test
+    void testGetActiveAssetsByAssetType() {
+        AssetType mockAssetType = mock(AssetType.class);
+
+        AssetModel asset1 = new AssetModel();
+        asset1.setName("Active Asset");
+        asset1.setActive(true);
+        asset1.setAssetType(mockAssetType);
+
+        AssetModel asset2 = new AssetModel();
+        asset2.setName("Inactive Asset");
+        asset2.setActive(false);
+        asset2.setAssetType(mockAssetType);
+
+        AssetModel asset3 = new AssetModel();
+        asset3.setName("Other type of Asset");
+        asset3.setActive(true);
+        asset3.setAssetType(mock(AssetType.class));
+
+        List<AssetModel> allAssets = List.of(asset1, asset2, asset3);
+
+        when(assetRepository.findByAssetType(mockAssetType)).thenReturn(
+                allAssets.stream()
+                        .filter(asset -> asset.getAssetType() == mockAssetType)
+                        .collect(Collectors.toList())
+        );
+
+        List<AssetResponseDTO> result = assetService.getActiveAssetsByAssetType(mockAssetType);
+
+        assertEquals(1, result.size());
+        assertEquals("Active Asset", result.get(0).getName());
     }
 }

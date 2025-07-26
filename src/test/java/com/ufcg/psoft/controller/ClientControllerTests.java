@@ -1,10 +1,7 @@
 package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ufcg.psoft.commerce.dto.client.AddressDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
@@ -13,6 +10,7 @@ import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 
 
+import com.ufcg.psoft.commerce.service.client.ClientService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import com.ufcg.psoft.commerce.CommerceApplication;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.util.UUID;
 
@@ -43,6 +42,9 @@ public class ClientControllerTests {
     @Autowired
     private ClientRepository clientRepository;
 
+    @Autowired
+    private ClientService clientService;
+
     private static final String CLIENT_BASE_URL = "/clients";
 
     private UUID clientId;
@@ -50,6 +52,7 @@ public class ClientControllerTests {
     @BeforeEach
     void setup() {
         clientId = UUID.randomUUID();
+
         ClientModel client = new ClientModel(
                 clientId,
                 "João Azevedo",
@@ -172,4 +175,30 @@ public class ClientControllerTests {
         mockMvc.perform(get("/clients/" + invalidId))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void testGetActiveAssets_WhenClientIdIsInvalid() throws Exception {
+        UUID randomClientId = UUID.randomUUID();
+
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode("123456");
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/clients/{id}/assets", randomClientId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO))) // envia JSON válido no body
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testGetActiveAssets_WhenAccessCodeIsInvalid() throws Exception {
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode("654321");
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/clients/{id}/assets", clientId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO))) // envia JSON válido no body
+                .andExpect(status().isUnauthorized());
+    }
+
+    // Other tests related to getActiveAssets are in AssetServiceUnitTests.
 }
