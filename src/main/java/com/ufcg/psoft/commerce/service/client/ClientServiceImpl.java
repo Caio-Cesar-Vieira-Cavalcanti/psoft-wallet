@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.service.client;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
+import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
@@ -45,7 +46,9 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public ClientResponseDTO getClientById(UUID id) {
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Client not found with id " + id));
+        ClientModel client = clientRepository.findById(id)
+                .orElseThrow(() -> new ClientIdNotFoundException(id));
+
         return dtoMapperService.toClientResponseDTO(client);
     }
 
@@ -77,7 +80,8 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public void remove(UUID id, ClientDeleteRequestDTO clientDeleteRequestDTO) {
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Client not found with id " + id));
+        ClientModel client = clientRepository.findById(id)
+                .orElseThrow(() -> new ClientIdNotFoundException(id));
 
         client.validateAccess(clientDeleteRequestDTO.getAccessCode());
 
@@ -86,7 +90,8 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO clientPatchFullNameRequestDTO) {
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Client not found with id " + id));
+        ClientModel client = clientRepository.findById(id)
+                .orElseThrow(() -> new ClientIdNotFoundException(id));
 
         client.validateAccess(clientPatchFullNameRequestDTO.getAccessCode());
 
@@ -96,19 +101,26 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public List<AssetResponseDTO> redirectGetActiveAssets(PlanTypeEnum planType) {
+    public List<AssetResponseDTO> redirectGetActiveAssets(UUID id, ClientActiveAssetsRequestDTO clientActiveAssetsRequestDTO) {
+        ClientModel client = clientRepository.findById(id)
+                .orElseThrow(() -> new ClientIdNotFoundException(id));
+
+        client.validateAccess(clientActiveAssetsRequestDTO.getAccessCode());
+
+        PlanTypeEnum planType = this.getClientById(id).getPlanType();
+
         if (planType == PlanTypeEnum.PREMIUM) {
-            return this.assetService.getActiveAssets();
+            return assetService.getActiveAssets();
         }
 
         AssetType assetType = assetService.getAssetType(AssetTypeEnum.TREASURY_BOUNDS);
-        return this.assetService.getActiveAssetsByAssetType(assetType);
+        return assetService.getActiveAssetsByAssetType(assetType);
     }
 
     @Override
     public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
         ClientModel client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new EntityNotFoundException("Client not found with id " + clientId));
+                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
 
         client.validateAccess(clientPurchaseHistoryRequestDTO.getAccessCode());
 

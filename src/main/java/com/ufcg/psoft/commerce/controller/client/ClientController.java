@@ -80,9 +80,9 @@ public class ClientController {
     }
 
     @GetMapping("/{id}/assets")
-    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable UUID id) {
-        PlanTypeEnum planType = clientService.getClientById(id).getPlanType();
-        List<AssetResponseDTO> activeAssets = clientService.redirectGetActiveAssets(planType);
+    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable UUID id,
+                                                                  @RequestBody @Valid ClientActiveAssetsRequestDTO requestDTO) {
+        List<AssetResponseDTO> activeAssets = clientService.redirectGetActiveAssets(id, requestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(activeAssets);

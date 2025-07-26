@@ -8,6 +8,6 @@ public class ClientIdNotFoundException extends RuntimeException {
         super("Client ID not found!");
     }
     public ClientIdNotFoundException(UUID id) {
-        super("Customer with ID " + id + " not found!");
+        super("Client not found with ID " + id);
     }
 }

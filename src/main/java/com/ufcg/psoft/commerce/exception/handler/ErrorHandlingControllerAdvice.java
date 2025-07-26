@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
+import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
@@ -100,4 +101,12 @@ public class ErrorHandlingControllerAdvice {
         );
     }
 
+    @ExceptionHandler(ClientIdNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType onClientIdNotFoundException(ClientIdNotFoundException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
 }
