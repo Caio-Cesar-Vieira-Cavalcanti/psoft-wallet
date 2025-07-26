@@ -45,7 +45,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public ClientResponseDTO getClientById(UUID id) {
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Client not found with id " + id));
         return dtoMapperService.toClientResponseDTO(client);
     }
 

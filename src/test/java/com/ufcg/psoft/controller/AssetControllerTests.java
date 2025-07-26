@@ -221,7 +221,7 @@ public class AssetControllerTests {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quotation").value(120.0))
-                .andExpect(jsonPath("$.quota_quantity").value(1000.0));
+                .andExpect(jsonPath("$.quotaQuantity").value(1000.0));
     }
 
     @Test
@@ -245,7 +245,8 @@ public class AssetControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Unauthorized admin access"));
+                .andExpect(jsonPath("$.message").value("Unauthorized admin access: email or access code is incorrect"
+                ));
     }
 
     @Test
