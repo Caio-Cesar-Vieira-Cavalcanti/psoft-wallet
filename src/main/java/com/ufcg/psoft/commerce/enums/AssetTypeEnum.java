@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.model.asset;
+package com.ufcg.psoft.commerce.enums;
 
 public enum AssetTypeEnum {
     TREASURY_BOUNDS,

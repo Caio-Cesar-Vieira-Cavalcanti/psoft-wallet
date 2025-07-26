@@ -1,32 +1,31 @@
 package com.ufcg.psoft.commerce.service.client;
 
-import com.ufcg.psoft.commerce.dto.PurchaseResponseDTO;
-import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.*;
+import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
+import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
+import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
-import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.exception.client.InvalidAcessCodeException;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
-import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
-import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
-import com.ufcg.psoft.commerce.repository.ClientRepository;
+import com.ufcg.psoft.commerce.repository.client.ClientRepository;
+import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
+import jakarta.persistence.EntityNotFoundException;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.*;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -41,62 +40,59 @@ public class ClientServiceImpl implements ClientService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private DTOMapperService dtoMapperService;
+
     @Override
     public ClientResponseDTO getClientById(UUID id) {
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
-        return modelMapper.map(client, ClientResponseDTO.class);
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
+        return dtoMapperService.toClientResponseDTO(client);
     }
 
     @Override
     public List<ClientResponseDTO> getClients() {
         List<ClientModel> clients = clientRepository.findAll();
         return clients.stream()
-                .map(client -> modelMapper.map(client, ClientResponseDTO.class))
+                .map(dtoMapperService::toClientResponseDTO)
                 .toList();
     }
 
     @Override
-    public ClientResponseDTO create(ClientPostRequestDTO body) {
-        AddressModel addressModel = modelMapper.map(body.getAddress(), AddressModel.class);
+    public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
+        AddressModel addressModel = modelMapper.map(clientPostRequestDTO.getAddress(), AddressModel.class);
+        WalletModel walletModel = WalletModel.builder().build();
         ClientModel clientModel = new ClientModel(
                 UUID.randomUUID(),
-                body.getFullName(),
-                new EmailModel(body.getEmail()),
-                new AccessCodeModel(body.getAccessCode()),
+                clientPostRequestDTO.getFullName(),
+                new EmailModel(clientPostRequestDTO.getEmail()),
+                new AccessCodeModel(clientPostRequestDTO.getAccessCode()),
                 addressModel,
-                body.getPlanType(),
-                body.getBudget(),
-                null
+                clientPostRequestDTO.getPlanType(),
+                clientPostRequestDTO.getBudget(),
+                walletModel
         );
         ClientModel savedClient = clientRepository.save(clientModel);
-        return modelMapper.map(savedClient, ClientResponseDTO.class);
+        return dtoMapperService.toClientResponseDTO(savedClient);
     }
 
     @Override
-    public ClientResponseDTO remove(UUID id, ClientDeleteRequestDTO body) {
-        if (!this.isAccessCodeValid(id, body.getAccessCode())) {
-            throw new InvalidAcessCodeException();
-        }
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
+    public void remove(UUID id, ClientDeleteRequestDTO clientDeleteRequestDTO) {
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Client not found with id " + id));
+
+        client.validateAccess(clientDeleteRequestDTO.getAccessCode());
+
         clientRepository.delete(client);
-        return modelMapper.map(client, ClientResponseDTO.class);
     }
 
     @Override
-    public ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO body) {
-        if (!this.isAccessCodeValid(id, body.getAccessCode())) {
-            throw new InvalidAcessCodeException();
-        }
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
-        client.setFullName(body.getFullName());
-        clientRepository.save(client);
-        return modelMapper.map(client, ClientResponseDTO.class);
-    }
+    public ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO clientPatchFullNameRequestDTO) {
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Client not found with id " + id));
 
-    private boolean isAccessCodeValid(UUID id, String accessCode) {
-        AccessCodeModel a = new AccessCodeModel(accessCode);
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
-        return client.getAccessCode().equals(a);
+        client.validateAccess(clientPatchFullNameRequestDTO.getAccessCode());
+
+        client.setFullName(clientPatchFullNameRequestDTO.getFullName());
+        clientRepository.save(client);
+        return dtoMapperService.toClientResponseDTO(client);
     }
 
     @Override
@@ -110,41 +106,13 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(UUID clientId) {
-        Optional<ClientModel> optionalClient = clientRepository.findById(clientId);
+    public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
+        ClientModel client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new EntityNotFoundException("Client not found with id " + clientId));
 
-        if (optionalClient.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
+        client.validateAccess(clientPurchaseHistoryRequestDTO.getAccessCode());
 
-        ClientModel client = optionalClient.get();
-        WalletModel wallet = client.getWallet();
-
-        if (wallet == null || wallet.getPurchases() == null || wallet.getPurchases().isEmpty()) {
-            return ResponseEntity.ok(
-                    WalletResponseDTO.builder()
-                            .id(wallet != null ? wallet.getId() : null)
-                            .purchases(List.of())
-                            .build()
-            );
-        }
-
-        List<PurchaseResponseDTO> purchases = wallet.getPurchases().values().stream()
-                .sorted((p1, p2) -> p2.getDate().compareTo(p1.getDate()))
-                .map(p -> PurchaseResponseDTO.builder()
-                        .id(p.getId())
-                        .assetId(p.getAsset().getId())
-                        .quantity(p.getQuantity())
-                        .state(p.getState())
-                        .date(p.getDate())
-                        .build()
-                ).toList();
-
-        WalletResponseDTO response = WalletResponseDTO.builder()
-                .id(wallet.getId())
-                .purchases(purchases)
-                .build();
-
-        return ResponseEntity.ok(response);
+        return dtoMapperService.toWalletResponseDTO(client.getWallet());
     }
+
 }

@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.model.wallet;
+package com.ufcg.psoft.commerce.enums;
 
 public enum PurchaseState {
     REQUESTED,

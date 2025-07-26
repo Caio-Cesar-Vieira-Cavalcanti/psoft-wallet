@@ -10,5 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface AssetRepository extends JpaRepository<AssetModel, UUID> {
+    List<AssetModel> findByIsActiveTrue();
     List<AssetModel> findByAssetType(AssetType assetType);
 }

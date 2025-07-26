@@ -1,6 +1,6 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
-import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
+import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Map;
 
 @ControllerAdvice
 public class ErrorHandlingControllerAdvice {
@@ -35,7 +34,7 @@ public class ErrorHandlingControllerAdvice {
     @ResponseBody
     public CustomErrorType onMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         CustomErrorType customErrorType = defaultCustomErrorTypeConstruct(
-                "Erros de validacao encontrados"
+                "Validation errors found"
         );
         for (FieldError fieldError : e.getBindingResult().getFieldErrors()) {
             customErrorType.getErrors().add(fieldError.getDefaultMessage());
@@ -48,7 +47,7 @@ public class ErrorHandlingControllerAdvice {
     @ResponseBody
     public CustomErrorType onConstraintViolation(ConstraintViolationException e) {
         CustomErrorType customErrorType = defaultCustomErrorTypeConstruct(
-                "Erros de validacao encontrados"
+                "Validation errors found"
         );
         for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
             customErrorType.getErrors().add(violation.getMessage());
@@ -92,10 +91,10 @@ public class ErrorHandlingControllerAdvice {
         );
     }
 
-    @ExceptionHandler(UnauthorizedAdminAccessException.class)
+    @ExceptionHandler(UnauthorizedUserAccessException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public CustomErrorType handleUnauthorizedAdminAccessException(UnauthorizedAdminAccessException e) {
+    public CustomErrorType handleUnauthorizedAdminAccessException(UnauthorizedUserAccessException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );

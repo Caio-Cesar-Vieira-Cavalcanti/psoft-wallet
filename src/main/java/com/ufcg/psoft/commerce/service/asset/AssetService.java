@@ -1,8 +1,8 @@
 package com.ufcg.psoft.commerce.service.asset;
 
 import com.ufcg.psoft.commerce.dto.asset.*;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -21,12 +21,11 @@ public interface AssetService {
 
     AssetResponseDTO getAssetById(UUID idAsset);
 
-    AssetResponseDTO update(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO);
-
     void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO);
 
     AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO);
 
-    AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetStatusPatchDTO assetPatchRequestDTO);
+    AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO);
 
+    List<AssetResponseDTO> getAvailableAssets();
 }

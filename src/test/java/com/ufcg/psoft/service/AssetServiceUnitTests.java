@@ -4,7 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
-import com.ufcg.psoft.commerce.exception.admin.UnauthorizedAdminAccessException;
+import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
@@ -202,11 +202,11 @@ public class AssetServiceUnitTests {
                 .adminAccessCode("wrong-code")
                 .build();
 
-        doThrow(new UnauthorizedAdminAccessException())
+        doThrow(new UnauthorizedUserAccessException())
                 .when(adminService)
                 .validateAdmin("invalid@example.com", "wrong-code");
 
-        assertThrows(UnauthorizedAdminAccessException.class, () ->
+        assertThrows(UnauthorizedUserAccessException.class, () ->
                 assetService.updateQuotation(assetId, dto)
         );
 
@@ -221,11 +221,11 @@ public class AssetServiceUnitTests {
                 .adminAccessCode("wrong-code")
                 .build();
 
-        doThrow(new UnauthorizedAdminAccessException())
+        doThrow(new UnauthorizedUserAccessException())
                 .when(adminService)
                 .validateAdmin("invalid@example.com", "wrong-code");
 
-        assertThrows(UnauthorizedAdminAccessException.class, () ->
+        assertThrows(UnauthorizedUserAccessException.class, () ->
                 assetService.updateQuotation(assetId, dto)
         );
 
