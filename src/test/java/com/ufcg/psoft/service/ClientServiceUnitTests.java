@@ -1,7 +1,5 @@
 package com.ufcg.psoft.service;
 
-import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetTypeResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.AddressDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
@@ -14,10 +12,6 @@ import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
-import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
-import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
-import com.ufcg.psoft.commerce.service.asset.AssetService;
-import com.ufcg.psoft.commerce.service.asset.AssetServiceImpl;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import com.ufcg.psoft.commerce.service.client.ClientServiceImpl;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
@@ -41,12 +35,9 @@ import static org.mockito.Mockito.when;
 public class ClientServiceUnitTests {
 
     private ClientRepository clientRepository;
-    private AssetRepository assetRepository;
-    private AssetTypeRepository assetTypeRepository;
-    private AssetService assetService;
     private ClientService clientService;
     private ModelMapper modelMapper;
-    private DTOMapperService dtoMapperService; 
+    private DTOMapperService dtoMapperService;
 
     private UUID clientId;
     private ClientModel client;
@@ -54,20 +45,14 @@ public class ClientServiceUnitTests {
     @BeforeEach
     void setUp() {
         clientRepository = mock(ClientRepository.class);
-        assetRepository = mock(AssetRepository.class);
-        assetTypeRepository = mock(AssetTypeRepository.class);
-        dtoMapperService = mock(DTOMapperService.class);  
+        dtoMapperService = mock(DTOMapperService.class);
 
-        assetService = new AssetServiceImpl();
         modelMapper = new ModelMapper();
         clientService = new ClientServiceImpl();
 
         ReflectionTestUtils.setField(clientService, "clientRepository", clientRepository);
-        ReflectionTestUtils.setField(clientService, "assetService", assetService);
         ReflectionTestUtils.setField(clientService, "modelMapper", modelMapper);
         ReflectionTestUtils.setField(clientService, "dtoMapperService", dtoMapperService);
-        ReflectionTestUtils.setField(assetService, "assetRepository", assetRepository);
-        ReflectionTestUtils.setField(assetService, "assetTypeRepository", assetTypeRepository);
 
         clientId = UUID.randomUUID();
         client = new ClientModel(
