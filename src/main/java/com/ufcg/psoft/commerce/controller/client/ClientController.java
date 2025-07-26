@@ -59,7 +59,7 @@ public class ClientController {
         return ResponseEntity.ok(updatedClient);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/assets")
     public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable UUID id) {
         PlanTypeEnum planType = clientService.getClientById(id).getPlanType();
         List<AssetResponseDTO> activeAssets = clientService.redirectGetActiveAssets(planType);
