@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.service.asset;
 import com.ufcg.psoft.commerce.config.PatchMapper;
 import com.ufcg.psoft.commerce.dto.asset.*;
 
+import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
@@ -66,6 +67,31 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
+    public List<AssetResponseDTO> getActiveAssets() {
+        List<AssetModel> assetModels = assetRepository.findAll()
+                .stream()
+                .filter(AssetModel::isActive)
+                .toList();
+
+        return assetModels.stream()
+                .map(assetModel -> modelMapper.map(assetModel, AssetResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<AssetResponseDTO> getActiveAssetsByAssetType(AssetType assetType) {
+
+        List<AssetModel> assets = assetRepository.findByAssetType(assetType)
+                .stream()
+                .filter(AssetModel::isActive)
+                .toList();
+
+        return assets.stream()
+                .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public AssetResponseDTO update(UUID idAsset, AssetPatchRequestDTO assetPatchRequestDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
         PatchMapper.mapNonNull(assetPatchRequestDTO, assetModel);
@@ -82,7 +108,7 @@ public class AssetServiceImpl implements AssetService {
         assetRepository.delete(assetModel);
     }
 
-    private AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
+    public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
         String assetType = assetTypeEnum.name();
         return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
     }

@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.controller.asset;
 
 import com.ufcg.psoft.commerce.dto.asset.*;
 
+import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import jakarta.validation.Valid;
 
@@ -37,7 +38,21 @@ public class AssetController {
                 .status(HttpStatus.OK)
                 .body(assetService.getAllAssets());
     }
+    /* Se existisse fachada isso aqui seria utilizado...
+    @GetMapping
+    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets() {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(assetService.getActiveAssets());
+    }
 
+    @GetMapping
+    public ResponseEntity<List<AssetResponseDTO>> getActiveAssetsByAssetType(AssetType assetType) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(assetService.getActiveAssetsByAssetType(assetType));
+    }
+    */
     @GetMapping("/{idAsset}")
     public ResponseEntity<AssetResponseDTO> getAssetById(@PathVariable UUID idAsset) {
         return ResponseEntity

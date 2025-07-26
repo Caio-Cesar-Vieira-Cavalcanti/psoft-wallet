@@ -19,7 +19,6 @@ public class AssetTypeServiceImpl implements AssetTypeService {
     @Autowired
     ModelMapper modelMapper;
 
-
     @Override
     public List<AssetTypeResponseDTO> getAllAssetTypes() {
         List<AssetType> assetTypes = assetTypeRepository.findAll();

@@ -1,13 +1,17 @@
 package com.ufcg.psoft.commerce.controller.client;
 
 import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
+import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -55,9 +59,17 @@ public class ClientController {
         return ResponseEntity.ok(updatedClient);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable UUID id) {
+        PlanTypeEnum planType = clientService.getClientById(id).getPlanType();
+        List<AssetResponseDTO> activeAssets = clientService.redirectGetActiveAssets(planType);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(activeAssets);
+    }
+
     @GetMapping({"/id/purchases"})
     public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable UUID id) {
         return this.clientService.getPurchaseHistory(id);
     }
-
 }

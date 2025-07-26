@@ -2,19 +2,25 @@ package com.ufcg.psoft.commerce.service.client;
 
 import com.ufcg.psoft.commerce.dto.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
+import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.exception.client.InvalidAcessCodeException;
+import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.ClientRepository;
+import com.ufcg.psoft.commerce.service.asset.AssetService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -22,7 +28,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class ClientServiceImpl implements ClientService {
@@ -31,11 +36,14 @@ public class ClientServiceImpl implements ClientService {
     ClientRepository clientRepository;
 
     @Autowired
+    AssetService assetService;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Override
     public ClientResponseDTO getClientById(UUID id) {
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
         return modelMapper.map(client, ClientResponseDTO.class);
     }
 
@@ -67,9 +75,9 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public ClientResponseDTO remove(UUID id, ClientDeleteRequestDTO body) {
         if (!this.isAccessCodeValid(id, body.getAccessCode())) {
-            throw new RuntimeException("Access Code Invalid");
+            throw new InvalidAcessCodeException();
         }
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
         clientRepository.delete(client);
         return modelMapper.map(client, ClientResponseDTO.class);
     }
@@ -77,9 +85,9 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO body) {
         if (!this.isAccessCodeValid(id, body.getAccessCode())) {
-            throw new RuntimeException("Access Code Invalid");
+            throw new InvalidAcessCodeException();
         }
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
         client.setFullName(body.getFullName());
         clientRepository.save(client);
         return modelMapper.map(client, ClientResponseDTO.class);
@@ -87,9 +95,18 @@ public class ClientServiceImpl implements ClientService {
 
     private boolean isAccessCodeValid(UUID id, String accessCode) {
         AccessCodeModel a = new AccessCodeModel(accessCode);
-        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new NoSuchElementException("Cliente com ID " + id + " não encontrado"));
-        if (client.getAccessCode().equals(a)) return true;
-        return false;
+        ClientModel client = clientRepository.findById(id).orElseThrow(() -> new ClientIdNotFoundException(id));
+        return client.getAccessCode().equals(a);
+    }
+
+    @Override
+    public List<AssetResponseDTO> redirectGetActiveAssets(PlanTypeEnum planType) {
+        if (planType == PlanTypeEnum.PREMIUM) {
+            return this.assetService.getActiveAssets();
+        }
+
+        AssetType assetType = assetService.getAssetType(AssetTypeEnum.TREASURY_BOUNDS);
+        return this.assetService.getActiveAssetsByAssetType(assetType);
     }
 
     @Override
@@ -130,5 +147,4 @@ public class ClientServiceImpl implements ClientService {
 
         return ResponseEntity.ok(response);
     }
-
 }

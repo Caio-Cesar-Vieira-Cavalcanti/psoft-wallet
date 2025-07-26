@@ -28,7 +28,7 @@ public abstract class UserModel {
     @Embedded
     private AccessCodeModel accessCode;
 
-    public UserModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode) {
+    protected UserModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode) {
         this.id = id;
         this.fullName = fullName;
         this.email = email;

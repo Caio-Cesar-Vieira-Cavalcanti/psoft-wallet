@@ -1,6 +1,8 @@
 package com.ufcg.psoft.commerce.service.asset;
 
 import com.ufcg.psoft.commerce.dto.asset.*;
+import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.asset.AssetTypeEnum;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -10,6 +12,12 @@ public interface AssetService {
     AssetResponseDTO create(AssetPostRequestDTO assetPostRequestDTO);
 
     List<AssetResponseDTO> getAllAssets();
+
+    List<AssetResponseDTO> getActiveAssets();
+
+    List<AssetResponseDTO> getActiveAssetsByAssetType(AssetType assetType);
+
+    AssetType getAssetType(AssetTypeEnum assetTypeEnum);
 
     AssetResponseDTO getAssetById(UUID idAsset);
 

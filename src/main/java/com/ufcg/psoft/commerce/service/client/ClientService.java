@@ -1,10 +1,12 @@
 package com.ufcg.psoft.commerce.service.client;
 
 import com.ufcg.psoft.commerce.dto.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -23,4 +25,6 @@ public interface ClientService {
     ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO body);
 
     ResponseEntity<WalletResponseDTO> getPurchaseHistory(UUID clientId);
+
+    List<AssetResponseDTO> redirectGetActiveAssets(PlanTypeEnum planType);
 }
