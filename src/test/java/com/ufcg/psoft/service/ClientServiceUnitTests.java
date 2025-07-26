@@ -45,11 +45,11 @@ public class ClientServiceUnitTests {
     @BeforeEach
     void setUp() {
         clientRepository = mock(ClientRepository.class);
-        dtoMapperService = mock(DTOMapperService.class);
 
         modelMapper = new ModelMapper();
         clientService = new ClientServiceImpl();
-
+        dtoMapperService = new DTOMapperService(modelMapper);
+        
         ReflectionTestUtils.setField(clientService, "clientRepository", clientRepository);
         ReflectionTestUtils.setField(clientService, "modelMapper", modelMapper);
         ReflectionTestUtils.setField(clientService, "dtoMapperService", dtoMapperService);
@@ -65,19 +65,6 @@ public class ClientServiceUnitTests {
             10000.0,
             null
         );
-
-        when(dtoMapperService.toClientResponseDTO(any(ClientModel.class)))
-        .thenAnswer(invocation -> {
-        ClientModel argClient = invocation.getArgument(0);
-        ClientResponseDTO dto = new ClientResponseDTO();
-        dto.setId(argClient.getId());
-        dto.setFullName(argClient.getFullName());
-        dto.setEmail(argClient.getEmail().getEmail());
-        dto.setPlanType(argClient.getPlanType());
-        dto.setBudget(argClient.getBudget());
-        dto.setAddress(new AddressDTO("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"));
-        return dto;
-    });
     }
 
     @Test
@@ -97,7 +84,7 @@ public class ClientServiceUnitTests {
 
         assertThat(result)
                 .usingRecursiveComparison()
-                .ignoringFields("accessCode", "id", "email") // Id is generated, accessCode is not returned on DTO, email has a different structure
+                .ignoringFields("accessCode", "id", "email", "wallet") // Id is generated, accessCode is not returned on DTO, email has a different structure, wallet is null
                 .isEqualTo(client);
     }
 
