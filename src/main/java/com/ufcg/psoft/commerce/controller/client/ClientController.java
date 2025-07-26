@@ -68,7 +68,7 @@ public class ClientController {
                 .body(activeAssets);
     }
 
-    @GetMapping({"/id/purchases"})
+    @GetMapping({"/{id}/purchases"})
     public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable UUID id) {
         return this.clientService.getPurchaseHistory(id);
     }
