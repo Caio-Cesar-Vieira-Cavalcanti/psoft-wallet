@@ -391,6 +391,30 @@ public class ClientControllerTests {
                 .andExpect(jsonPath("$.errors").isEmpty());
     }
 
+    @Test
+    void testGetActiveAssets_WhenClientIdIsNull() throws Exception {
+        UUID randomClientId = null;
+
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode("123456");
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + randomClientId + ASSETS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testGetActiveAssets_WhenAccessCodeIsNull() throws Exception {
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode(null);
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + clientId + ASSETS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
     private PurchaseModel createPurchase(UUID id, AssetModel asset, double quantity, LocalDate date, WalletModel wallet) {
         return PurchaseModel.builder()
                 .id(id)

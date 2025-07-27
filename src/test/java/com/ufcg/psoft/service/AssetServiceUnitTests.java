@@ -6,10 +6,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.ufcg.psoft.commerce.dto.asset.*;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
+import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
-import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
-import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
-import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.model.asset.types.Stock;
@@ -23,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -71,6 +70,304 @@ public class AssetServiceUnitTests {
 
         when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
         doNothing().when(adminService).validateAdmin(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when creating asset with null admin email")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenCreatingAssetWithNullAdminEmail() {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Asset")
+                .quotation(100.0)
+                .quotaQuantity(100.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .adminEmail(null) // Null email
+                .adminAccessCode("123456")
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be null"))
+                .when(adminService).validateAdmin(isNull(), anyString());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.create(dto)
+        );
+
+        assertEquals("The 'adminEmail' cannot be null", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when creating asset with blank admin email")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenCreatingAssetWithBlankAdminEmail() {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Asset")
+                .quotation(100.0)
+                .quotaQuantity(100.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .adminEmail("   ") // Blank email
+                .adminAccessCode("123456")
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be blank"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.create(dto)
+        );
+
+        assertEquals("The 'adminEmail' cannot be blank", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when creating asset with null admin access code")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenCreatingAssetWithNullAdminAccessCode() {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Asset")
+                .quotation(100.0)
+                .quotaQuantity(100.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .adminEmail("admin@example.com")
+                .adminAccessCode(null) // Null access code
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be null"))
+                .when(adminService).validateAdmin(anyString(), isNull());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.create(dto)
+        );
+
+        assertEquals("The 'adminAccessCode' cannot be null", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when creating asset with blank admin access code")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenCreatingAssetWithBlankAdminAccessCode() {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Asset")
+                .quotation(100.0)
+                .quotaQuantity(100.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("   ") // Blank access code
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be blank"))
+                .when(adminService).validateAdmin(anyString(), eq("   "));
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.create(dto)
+        );
+
+        assertEquals("The 'adminAccessCode' cannot be blank", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw AssetTypeNotFoundException when creating asset with an asset type not found in repository")
+    void testShouldThrowAssetTypeNotFoundExceptionWhenCreatingAssetWithUnknownAssetType() {
+        AssetTypeEnum assetTypeToTest = AssetTypeEnum.CRYPTO;
+
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Asset")
+                .quotation(100.0)
+                .quotaQuantity(100.0)
+                .assetType(assetTypeToTest)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        when(assetTypeRepository.findByName(assetTypeToTest.name())).thenReturn(Optional.empty());
+
+        AssetTypeNotFoundException exception = assertThrows(AssetTypeNotFoundException.class, () ->
+                assetService.create(dto)
+        );
+
+        assertEquals("Asset type:" + assetTypeToTest.name() + " not found!", exception.getMessage());
+        verify(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when deleting asset with null admin email")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenDeletingAssetWithNullAdminEmail() {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail(null) // Null email
+                .adminAccessCode("123456")
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset)); // Asset exists
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be null"))
+                .when(adminService).validateAdmin(isNull(), anyString());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.delete(assetId, dto)
+        );
+
+        assertEquals("The 'adminEmail' cannot be null", exception.getMessage());
+        verify(assetRepository, never()).delete(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when deleting asset with blank admin email")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenDeletingAssetWithBlankAdminEmail() {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("   ") // Blank email
+                .adminAccessCode("123456")
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be blank"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.delete(assetId, dto)
+        );
+
+        assertEquals("The 'adminEmail' cannot be blank", exception.getMessage());
+        verify(assetRepository, never()).delete(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when deleting asset with null admin access code")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenDeletingAssetWithNullAdminAccessCode() {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode(null) // Null access code
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be null"))
+                .when(adminService).validateAdmin(anyString(), isNull());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.delete(assetId, dto)
+        );
+
+        assertEquals("The 'adminAccessCode' cannot be null", exception.getMessage());
+        verify(assetRepository, never()).delete(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when deleting asset with blank admin access code")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenDeletingAssetWithBlankAdminAccessCode() {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("   ") // Blank access code
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be blank"))
+                .when(adminService).validateAdmin(anyString(), eq("   "));
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.delete(assetId, dto)
+        );
+
+        assertEquals("The 'adminAccessCode' cannot be blank", exception.getMessage());
+        verify(assetRepository, never()).delete(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw AssetReferencedInPurchaseException when deleting an asset referenced by a purchase")
+    void testShouldThrowAssetReferencedInPurchaseExceptionWhenDeletingReferencedAsset() {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        doThrow(DataIntegrityViolationException.class).when(assetRepository).delete(asset);
+
+        assertThrows(AssetReferencedInPurchaseException.class, () ->
+                assetService.delete(assetId, dto)
+        );
+
+        verify(assetRepository, times(1)).delete(asset);
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when updating quotation with null admin email")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenUpdatingQuotationWithNullAdminEmail() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(110.0)
+                .adminEmail(null) // Null email
+                .adminAccessCode("secret")
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be null"))
+                .when(adminService).validateAdmin(isNull(), anyString());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.updateQuotation(assetId, dto)
+        );
+
+        assertEquals("The 'adminEmail' cannot be null", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when updating quotation with blank admin email")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenUpdatingQuotationWithBlankAdminEmail() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(110.0)
+                .adminEmail("   ") // Blank email
+                .adminAccessCode("secret")
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be blank"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.updateQuotation(assetId, dto)
+        );
+
+        assertEquals("The 'adminEmail' cannot be blank", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when updating quotation with null admin access code")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenUpdatingQuotationWithNullAdminAccessCode() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(110.0)
+                .adminEmail("admin@example.com")
+                .adminAccessCode(null) // Null access code
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be null"))
+                .when(adminService).validateAdmin(anyString(), isNull());
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.updateQuotation(assetId, dto)
+        );
+
+        assertEquals("The 'adminAccessCode' cannot be null", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
+    }
+
+    @Test
+    @DisplayName("Should throw UnauthorizedUserAccessException when updating quotation with blank admin access code")
+    void testShouldThrowUnauthorizedUserAccessExceptionWhenUpdatingQuotationWithBlankAdminAccessCode() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(110.0)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("   ") // Blank access code
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be blank"))
+                .when(adminService).validateAdmin(anyString(), eq("   "));
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () ->
+                assetService.updateQuotation(assetId, dto)
+        );
+
+        assertEquals("The 'adminAccessCode' cannot be blank", exception.getMessage());
+        verify(assetRepository, never()).save(any(AssetModel.class));
     }
 
     @Test

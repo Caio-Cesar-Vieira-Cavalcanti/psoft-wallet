@@ -3,7 +3,10 @@ package com.ufcg.psoft.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.CommerceApplication;
 import com.ufcg.psoft.commerce.dto.asset.AssetActivationPatchRequestDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
@@ -22,8 +25,8 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasItem;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(classes = CommerceApplication.class)
@@ -49,6 +52,7 @@ public class AssetControllerTests {
     private AssetType cryptoType;
 
     private static final String ASSET_BASE_URL = "/assets/";
+    private static final String ASSET_CRUD_URL = "/assets";
     private static final String QUOTATION_ENDPOINT = "/quotation";
     private static final String ACTIVATION_ENDPOINT = "/activation";
     private static final String AVAILABLE_ENDPOINT = "/available";
@@ -88,6 +92,369 @@ public class AssetControllerTests {
                 .quotation(100.0)
                 .quotaQuantity(1000.0)
                 .build();
+    }
+
+    @Test
+    @DisplayName("Should create a new asset successfully")
+    void testShouldCreateNewAssetSuccessfully() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("New Test Asset")
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .description("A brand new asset for testing purposes.")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.name").value("New Test Asset"))
+                .andExpect(jsonPath("$.quotation").value(200.0))
+                .andExpect(jsonPath("$.quotaQuantity").value(500.0))
+                .andExpect(jsonPath("$.assetType.name").value("STOCK"))
+                .andExpect(jsonPath("$.description").value("A brand new asset for testing purposes."))
+                .andExpect(jsonPath("$.isActive").value(true));
+    }
+
+    @Test
+    @DisplayName("Should return all assets")
+    void testShouldReturnAllAssets() throws Exception {
+        AssetModel anotherAsset = createDefaultAsset(cryptoType);
+        anotherAsset.setName("Another Asset");
+
+        assetRepository.save(anotherAsset);
+
+        mockMvc.perform(get(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name").value("Default Asset Test"))
+                .andExpect(jsonPath("$[1].name").value("Another Asset"));
+    }
+
+    @Test
+    @DisplayName("Should return asset by ID")
+    void testShouldReturnAssetById() throws Exception {
+        mockMvc.perform(get(ASSET_BASE_URL + "/" + assetId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(assetId.toString()))
+                .andExpect(jsonPath("$.name").value("Default Asset Test"));
+    }
+
+    @Test
+    @DisplayName("Should return 404 if asset not found by ID")
+    void testShouldReturnNotFoundIfAssetByIdDoesNotExist() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        mockMvc.perform(get(ASSET_BASE_URL + "/" + nonExistentId)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Asset not found!"));
+    }
+
+    @Test
+    @DisplayName("Should delete an asset successfully")
+    void testShouldDeleteAssetSuccessfully() throws Exception {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(delete(ASSET_BASE_URL + "/" + assetId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    @DisplayName("Should return 404 if asset to delete not found")
+    void testShouldReturnNotFoundIfAssetToDeleteDoesNotExist() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(delete(ASSET_BASE_URL + "/" + nonExistentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Asset not found with ID " + nonExistentId));
+    }
+
+    @Test
+    @DisplayName("Should return 401 if admin credentials are invalid for delete")
+    void testShouldReturnUnauthorizedIfAdminInvalidForDelete() throws Exception {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("invalid@example.com")
+                .adminAccessCode("wrong-code")
+                .build();
+
+        mockMvc.perform(delete(ASSET_BASE_URL + "/" + assetId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Unauthorized admin access: email or access code is incorrect"));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when asset name is null")
+    void testShouldReturnBadRequestWhenAssetNameIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name(null) // Violates @NotNull
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Some valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("Required asset name")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when asset name is blank")
+    void testShouldReturnBadRequestWhenAssetNameIsBlankForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("") // Violates @NotBlank
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Some valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("Required asset name")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when asset type is null")
+    void testShouldReturnBadRequestWhenAssetTypeIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(null) // Violates @NotNull
+                .description("Some valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("Required asset type")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when description is null")
+    void testShouldReturnBadRequestWhenDescriptionIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description(null) // Violates @NotNull
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("Required asset description")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when description is blank")
+    void testShouldReturnBadRequestWhenDescriptionIsBlankForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("") // Violates @NotBlank
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("Required asset description")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when isActive is null")
+    void testShouldReturnBadRequestWhenIsActiveIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(200.0)
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Valid description.")
+                .isActive(null) // Violates @NotNull
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("must not be null")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when quotation is null")
+    void testShouldReturnBadRequestWhenQuotationIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(null) // Violates @NotNull
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("must not be null")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when quotation is negative")
+    void testShouldReturnBadRequestWhenQuotationIsNegativeForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(-10.0) // Violates @PositiveOrZero
+                .quotaQuantity(500.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("Asset quotation must be positive or zero!")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when quota quantity is null")
+    void testShouldReturnBadRequestWhenQuotaQuantityIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(100.0)
+                .quotaQuantity(null) // Violates @NotNull
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("must not be null")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when quota quantity is negative")
+    void testShouldReturnBadRequestWhenQuotaQuantityIsNegativeForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(100.0)
+                .quotaQuantity(-5.0) // Violates @PositiveOrZero
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("Asset quotation quantity must be positive or zero!")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when admin email is null")
+    void testShouldReturnBadRequestWhenAdminEmailIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(100.0)
+                .quotaQuantity(100.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Valid description.")
+                .isActive(true)
+                .adminEmail(null) // Violates @NotNull
+                .adminAccessCode("123456")
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("The 'admin_email' field cannot be null")));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when admin access code is null")
+    void testShouldReturnBadRequestWhenAdminAccessCodeIsNullForPost() throws Exception {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Valid Asset Name")
+                .quotation(100.0)
+                .quotaQuantity(100.0)
+                .assetType(AssetTypeEnum.STOCK)
+                .description("Valid description.")
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode(null) // Violates @NotNull
+                .build();
+
+        mockMvc.perform(post(ASSET_CRUD_URL)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("The 'admin_access_code_email' cannot be null")));
     }
 
     @Test
@@ -172,7 +539,7 @@ public class AssetControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Asset not found with ID " + nonExistentId.toString()));
+                .andExpect(jsonPath("$.message").value("Asset not found with ID " + nonExistentId));
     }
 
     @Test
