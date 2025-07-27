@@ -2,6 +2,7 @@ package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.CommerceApplication;
+import com.ufcg.psoft.commerce.dto.asset.AssetActivationPatchRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
@@ -17,8 +18,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -46,6 +52,8 @@ public class AssetControllerTests {
 
     private static final String ASSET_BASE_URL = "/assets/";
     private static final String QUOTATION_ENDPOINT = "/quotation";
+    private static final String ACTIVATION_ENDPOINT = "/activation";
+    private static final String AVAILABLE_ENDPOINT = "/available";
     private static final String STOCK_ASSET_TYPE_NAME = "STOCK";
     private static final String TREASURY_BOUNDS_ASSET_TYPE_NAME = "TREASURY_BOUNDS";
 
@@ -76,6 +84,7 @@ public class AssetControllerTests {
         }
         return AssetModel.builder()
                 .name("Default Asset Test")
+                .isActive(false)
                 .assetType(type)
                 .description("Default asset for tests")
                 .quotation(100.0)
@@ -165,7 +174,7 @@ public class AssetControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Asset not found!"));
+                .andExpect(jsonPath("$.message").value("Asset not found with ID " + nonExistentId.toString()));
     }
 
     @Test
@@ -262,5 +271,217 @@ public class AssetControllerTests {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.quotation").value(110.0));
+    }
+
+    @Test
+    @DisplayName("Should activate an asset successfully")
+    void testActivateAssetSuccessfully() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(this.assetId.toString()))
+                .andExpect(jsonPath("$.isActive").value(true));
+    }
+
+    @Test
+    @DisplayName("Should deactivate an asset successfully")
+    void testDeactivateAssetSuccessfully() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .isActive(false)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(this.assetId.toString()))
+                .andExpect(jsonPath("$.isActive").value(false));
+    }
+
+    @Test
+    @DisplayName("Should return 404 Not Found when deactivating asset with non-existent ID")
+    void testDeactivateAssetWithNonExistentId() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .isActive(false)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + nonExistentId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.message").value("Asset not found with ID " + nonExistentId));
+    }
+
+    @Test
+    @DisplayName("Should fail when isActive is null")
+    void testActivateAsset_MissingIsActive() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .isActive(null)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("The 'isActive' cannot be null")));
+    }
+
+    @Test
+    @DisplayName("Should fail when adminEmail is invalid")
+    void testActivateAsset_InvalidAdminEmail() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("fake_admin@example.com")
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Unauthorized admin access: email or access code is incorrect"));
+    }
+
+    @Test
+    @DisplayName("Should fail when adminEmail is null")
+    void testActivateAsset_NullAdminEmail() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail(null)
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("The 'adminEmail' cannot be null")));
+    }
+
+    @Test
+    @DisplayName("Should fail when adminEmail is blank")
+    void testActivateAsset_BlankAdminEmail() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("")
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("The 'adminEmail' cannot be blank")));
+    }
+
+    @Test
+    @DisplayName("Should fail when the accessCode is invalid")
+    void testActivateAsset_InvalidAdminAccessCode() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("1234567")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Unauthorized admin access: email or access code is incorrect"));
+    }
+
+    @Test
+    @DisplayName("Should fail when the accessCode is null")
+    void testActivateAsset_NullAdminAccessCode() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode(null)
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("The 'adminAccessCode' cannot be null")));
+    }
+
+    @Test
+    @DisplayName("Should fail when the accessCode is blank")
+    void testActivateAsset_BlankAdminAccessCode() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors").value(hasItem("The 'adminAccessCode' cannot be blank")));
+    }
+
+    @Test
+    @DisplayName("Should fail when both adminEmail and accessCode are invalid")
+    void testActivateAsset_InvalidAdminEmailAndAccessCode() throws Exception {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("fake_admin@example.com")
+                .adminAccessCode("1234567")
+                .isActive(true)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Unauthorized admin access: email or access code is incorrect"));
+    }
+
+    @Test
+    @DisplayName("Should return only active assets")
+    void testGetAvailableAssets_ReturnsOnlyActiveAssets() throws Exception {
+        AssetModel activeAsset = AssetModel.builder()
+                .name("Tesla Stock")
+                .assetType(stockType)
+                .description("Ações da Tesla")
+                .quotation(850.0)
+                .quotaQuantity(1000.0)
+                .isActive(true)
+                .build();
+
+        AssetModel inactiveAsset = AssetModel.builder()
+                .name("Old Crypto")
+                .assetType(cryptoType)
+                .description("Deactivated")
+                .quotation(10.0)
+                .quotaQuantity(500.0)
+                .isActive(false)
+                .build();
+
+        assetRepository.saveAll(List.of(activeAsset, inactiveAsset));
+
+        mockMvc.perform(get(this.ASSET_BASE_URL + this.AVAILABLE_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Tesla Stock"))
+                .andExpect(jsonPath("$[0].isActive").value(true));
     }
 }

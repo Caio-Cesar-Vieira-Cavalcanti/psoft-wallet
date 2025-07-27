@@ -1,11 +1,8 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
+import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
-import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
-import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
-import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
-import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -109,4 +106,14 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage()
         );
     }
+
+    @ExceptionHandler(AssetReferencedInPurchaseException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public CustomErrorType onAssetReferencedInPurchaseException(AssetReferencedInPurchaseException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
 }

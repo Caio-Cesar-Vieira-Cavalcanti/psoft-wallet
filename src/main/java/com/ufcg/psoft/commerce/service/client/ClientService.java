@@ -7,7 +7,6 @@ import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
-import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 
 import java.util.List;
 import java.util.UUID;

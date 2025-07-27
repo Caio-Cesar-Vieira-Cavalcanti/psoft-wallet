@@ -11,6 +11,8 @@ import java.util.UUID;
 public interface AssetService {
     AssetResponseDTO create(AssetPostRequestDTO assetPostRequestDTO);
 
+    void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO);
+
     List<AssetResponseDTO> getAllAssets();
 
     List<AssetResponseDTO> getAvailableAssets();
@@ -20,8 +22,6 @@ public interface AssetService {
     AssetType getAssetType(AssetTypeEnum assetTypeEnum);
 
     AssetResponseDTO getAssetById(UUID idAsset);
-
-    void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO);
 
     AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO);
 

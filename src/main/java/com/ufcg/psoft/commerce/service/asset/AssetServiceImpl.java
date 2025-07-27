@@ -2,20 +2,18 @@ package com.ufcg.psoft.commerce.service.asset;
 
 import com.ufcg.psoft.commerce.dto.asset.*;
 
-import com.ufcg.psoft.commerce.exception.asset.AssetTypeNotFoundException;
-import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
-import com.ufcg.psoft.commerce.exception.asset.InvalidQuotationVariationException;
+import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
-import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -51,11 +49,16 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+        AssetModel assetModel = assetRepository.findById(idAsset)
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
 
         adminService.validateAdmin(assetDeleteRequestDTO.getAdminEmail(), assetDeleteRequestDTO.getAdminAccessCode());
 
-        assetRepository.delete(assetModel);
+        try {
+            assetRepository.delete(assetModel);
+        } catch (DataIntegrityViolationException ex) {
+            throw new AssetReferencedInPurchaseException();
+        }
     }
 
     @Override
@@ -67,16 +70,16 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
+    public AssetResponseDTO getAssetById(UUID idAsset) {
+        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+        return modelMapper.map(assetModel, AssetResponseDTO.class);
+    }
+
+    @Override
     public List<AssetResponseDTO> getAvailableAssets() {
         return assetRepository.findByIsActiveTrue().stream()
                 .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
                 .toList();
-    }
-
-    @Override
-    public AssetResponseDTO getAssetById(UUID idAsset) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
-        return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 
     @Override
@@ -87,7 +90,6 @@ public class AssetServiceImpl implements AssetService {
                 .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
                 .toList();
     }
-
     // Utility Method
     public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
         String assetType = assetTypeEnum.name();
@@ -97,7 +99,7 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(AssetNotFoundException::new);
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
 
         adminService.validateAdmin(assetQuotationUpdateDTO.getAdminEmail(), assetQuotationUpdateDTO.getAdminAccessCode());
 
@@ -118,7 +120,8 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+        AssetModel assetModel = assetRepository.findById(idAsset)
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
 
         adminService.validateAdmin(assetPatchRequestDTO.getAdminEmail(), assetPatchRequestDTO.getAdminAccessCode());
 

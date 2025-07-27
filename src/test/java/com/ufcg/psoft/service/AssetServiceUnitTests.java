@@ -1,12 +1,10 @@
 package com.ufcg.psoft.service;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
-import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.dto.asset.*;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
@@ -22,6 +20,7 @@ import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.asset.AssetServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -308,7 +307,6 @@ public class AssetServiceUnitTests {
                 .build();
 
         when(assetRepository.findById(assetId)).thenReturn(Optional.of(persistedAsset));
-        //doNothing().when(assetRepository).delete(persistedAsset);
 
         assertDoesNotThrow(() -> assetService.delete(assetId, deleteDto));
         verify(assetRepository).delete(persistedAsset);
@@ -364,7 +362,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
-    void testGetAssetById_Success() {
+    void testGetAssetById_Sucess() {
         AssetResponseDTO response = assetService.getAssetById(assetId);
 
         assertNotNull(response);
@@ -379,48 +377,6 @@ public class AssetServiceUnitTests {
 
         assertThrows(AssetNotFoundException.class, () ->
                 assetService.getAssetById(invalidId));
-    }
-
-    @Test
-    void testGetAvailableAssets() {
-        AssetModel activeAsset1 = AssetModel.builder()
-                .id(UUID.randomUUID())
-                .name("Active Asset 1")
-                .quotation(120.0)
-                .quotaQuantity(500.0)
-                .isActive(true)
-                .assetType(mockStockType())
-                .build();
-
-        AssetModel inactiveAsset = AssetModel.builder()
-                .id(UUID.randomUUID())
-                .name("Inactive Asset")
-                .quotation(130.0)
-                .quotaQuantity(700.0)
-                .isActive(false)
-                .assetType(mockStockType())
-                .build();
-
-        AssetModel activeAsset2 = AssetModel.builder()
-                .id(UUID.randomUUID())
-                .name("Active Asset 2")
-                .quotation(150.0)
-                .quotaQuantity(900.0)
-                .isActive(true)
-                .assetType(mockStockType())
-                .build();
-
-        List<AssetModel> allAssets = List.of(activeAsset1, inactiveAsset, activeAsset2);
-
-        when(assetRepository.findByIsActiveTrue()).thenReturn(allAssets.stream()
-                .filter(AssetModel::isActive)
-                .toList());
-
-        List<AssetResponseDTO> result = assetService.getAvailableAssets();
-
-        assertEquals(2, result.size());
-        assertTrue(result.stream().anyMatch(a -> a.getName().equals("Active Asset 1")));
-        assertTrue(result.stream().anyMatch(a -> a.getName().equals("Active Asset 2")));
     }
 
     @Test
@@ -455,4 +411,241 @@ public class AssetServiceUnitTests {
         assertEquals(1, result.size());
         assertEquals("Active Asset", result.get(0).getName());
     }
+
+    @Test
+    @DisplayName("Should return only active available assets")
+    void testGetAvailableAssets_ReturnsOnlyActiveAssets() {
+        AssetModel activeAsset1 = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Active Asset 1")
+                .isActive(true)
+                .build();
+        AssetModel activeAsset2 = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Active Asset 2")
+                .isActive(true)
+                .build();
+        AssetModel inactiveAsset = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Inactive Asset")
+                .isActive(false)
+                .build();
+
+        when(assetRepository.findByIsActiveTrue())
+                .thenReturn(List.of(activeAsset1, activeAsset2));
+
+        List<AssetResponseDTO> availableAssets = assetService.getAvailableAssets();
+
+        assertNotNull(availableAssets);
+        assertEquals(2, availableAssets.size());
+
+        List<UUID> returnedIds = availableAssets.stream()
+                .map(AssetResponseDTO::getId)
+                .toList();
+
+        assertTrue(returnedIds.contains(activeAsset1.getId()));
+        assertTrue(returnedIds.contains(activeAsset2.getId()));
+        assertFalse(returnedIds.contains(inactiveAsset.getId()));
+
+        verify(assetRepository).findByIsActiveTrue();
+    }
+
+    @Test
+    @DisplayName("Must activate a valid asset with valid admin")
+    void testShouldActivateAssetWithValidAdmin() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        doNothing().when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+        when(assetRepository.save(any(AssetModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AssetResponseDTO response = assetService.setIsActive(assetId, dto);
+
+        assertThat(response.isActive()).isTrue();
+        verify(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+        verify(assetRepository).save(asset);
+    }
+
+    @Test
+    @DisplayName("Must deactivate a valid asset with valid admin")
+    void testShouldDeactivateAssetWithValidAdmin() {
+        asset.setActive(true); // ativo inicialmente
+
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .isActive(false)
+                .build();
+
+        doNothing().when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+        when(assetRepository.save(any(AssetModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AssetResponseDTO response = assetService.setIsActive(assetId, dto);
+
+        assertThat(response.isActive()).isFalse();
+        verify(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+        verify(assetRepository).save(asset);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when activating with incorrect email")
+    void testShouldThrowExceptionWithInvalidEmail() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("wrong@example.com")
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("Unauthorized admin access: email or access code is incorrect"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(
+                UnauthorizedUserAccessException.class,
+                () -> assetService.setIsActive(assetId, dto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized admin access: email or access code is incorrect");
+    }
+
+    @Test
+    @DisplayName("Should throw exception with invalid access code and check message")
+    void testShouldThrowExceptionWithInvalidAccessCode() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("wrong_code")
+                .isActive(true)
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("Unauthorized admin access: email or access code is incorrect"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(
+                UnauthorizedUserAccessException.class,
+                () -> assetService.setIsActive(assetId, dto)
+        );
+
+        assertEquals("Unauthorized admin access: email or access code is incorrect", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when activating with incorrect email and access code")
+    void testShouldThrowExceptionWithInvalidEmailAndAccessCode() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("wrong@example.com")
+                .adminAccessCode("wrong_code")
+                .isActive(true)
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("Unauthorized admin access: email or access code is incorrect"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(
+                UnauthorizedUserAccessException.class,
+                () -> assetService.setIsActive(assetId, dto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized admin access: email or access code is incorrect");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when activating with null email")
+    void testShouldThrowExceptionWithNullEmail() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail(null)
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be null"))
+                .when(adminService).validateAdmin(isNull(), anyString());
+
+        UnauthorizedUserAccessException exception = assertThrows(
+                UnauthorizedUserAccessException.class,
+                () -> assetService.setIsActive(assetId, dto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("The 'adminEmail' cannot be null");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when activating with blank email")
+    void testShouldThrowExceptionWithBlankEmail() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("   ")
+                .adminAccessCode("123456")
+                .isActive(true)
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminEmail' cannot be blank"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(
+                UnauthorizedUserAccessException.class,
+                () -> assetService.setIsActive(assetId, dto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("The 'adminEmail' cannot be blank");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when activating with null access code")
+    void testShouldThrowExceptionWithNullAccessCode() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode(null)
+                .isActive(true)
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be null"))
+                .when(adminService).validateAdmin(anyString(), isNull());
+
+        UnauthorizedUserAccessException exception = assertThrows(
+                UnauthorizedUserAccessException.class,
+                () -> assetService.setIsActive(assetId, dto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("The 'adminAccessCode' cannot be null");
+    }
+
+    @Test
+    @DisplayName("Should throw exception when activating with blank access code")
+    void testShouldThrowExceptionWithBlankAccessCode() {
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("   ")
+                .isActive(true)
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("The 'adminAccessCode' cannot be blank"))
+                .when(adminService).validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        UnauthorizedUserAccessException exception = assertThrows(
+                UnauthorizedUserAccessException.class,
+                () -> assetService.setIsActive(assetId, dto)
+        );
+
+        assertThat(exception.getMessage()).isEqualTo("The 'adminAccessCode' cannot be blank");
+    }
+
+    @Test
+    @DisplayName("Should throw AssetNotFoundException if asset does not exist")
+    void testShouldThrowWhenAssetNotFound() {
+        UUID unknownId = UUID.randomUUID();
+        when(assetRepository.findById(unknownId)).thenReturn(Optional.empty());
+
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .isActive(true)
+                .build();
+
+        assertThrows(AssetNotFoundException.class, () -> assetService.setIsActive(unknownId, dto));
+
+        verify(adminService, never()).validateAdmin(anyString(), anyString());
+        verify(assetRepository, never()).save(any());
+    }
+
 }
