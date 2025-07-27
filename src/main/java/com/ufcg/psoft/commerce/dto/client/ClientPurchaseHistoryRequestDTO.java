@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.dto.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class ClientPurchaseHistoryRequestDTO {
 
     @JsonProperty("accessCode")
-    @NotNull(message = "The 'access_code' field cannot be null")
+    @NotNull(message = "The 'accessCode' field cannot be null")
+    @NotBlank(message = "The 'accessCode' field cannot be blank")
     private String accessCode;
 }

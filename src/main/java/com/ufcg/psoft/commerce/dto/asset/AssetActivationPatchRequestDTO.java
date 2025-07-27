@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.dto.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,14 +15,16 @@ import lombok.NoArgsConstructor;
 public class AssetActivationPatchRequestDTO {
 
     @JsonProperty("isActive")
-    @NotNull(message = "The 'is_active' field cannot be null")
+    @NotNull(message = "The 'isActive' cannot be null")
     private Boolean isActive;
 
     @JsonProperty("adminEmail")
-    @NotNull(message = "The 'admin_email' field cannot be null")
+    @NotNull(message = "The 'adminEmail' cannot be null")
+    @NotBlank(message = "The 'adminEmail' cannot be blank")
     private String adminEmail;
 
     @JsonProperty("adminAccessCode")
-    @NotNull(message = "The 'admin_access_code_email' cannot be null")
+    @NotNull(message = "The 'adminAccessCode' cannot be null")
+    @NotBlank(message = "The 'adminAccessCode' cannot be blank")
     private String adminAccessCode;
 }

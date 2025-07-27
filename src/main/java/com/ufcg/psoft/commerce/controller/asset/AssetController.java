@@ -77,7 +77,7 @@ public class AssetController {
                 .body(assetService.updateQuotation(idAsset, assetQuotationUpdateDTO));
     }
 
-    @PatchMapping("/{idAsset}/active")
+    @PatchMapping("/{idAsset}/activation")
     public ResponseEntity<AssetResponseDTO> setIsActive(@PathVariable("idAsset") UUID idAsset,
                                                         @RequestBody @Valid AssetActivationPatchRequestDTO statusDTO) {
         AssetResponseDTO responseDTO = assetService.setIsActive(idAsset, statusDTO);

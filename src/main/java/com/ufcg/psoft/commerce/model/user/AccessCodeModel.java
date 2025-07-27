@@ -2,11 +2,13 @@ package com.ufcg.psoft.commerce.model.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @Embeddable
+@Builder
 @NoArgsConstructor
 public class AccessCodeModel {
 
