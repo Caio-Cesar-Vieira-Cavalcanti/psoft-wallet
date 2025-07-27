@@ -18,15 +18,12 @@ import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
-import jakarta.persistence.EntityNotFoundException;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -110,7 +107,7 @@ public class ClientServiceImpl implements ClientService {
         PlanTypeEnum planType = this.getClientById(id).getPlanType();
 
         if (planType == PlanTypeEnum.PREMIUM) {
-            return assetService.getActiveAssets();
+            return assetService.getAvailableAssets();
         }
 
         AssetType assetType = assetService.getAssetType(AssetTypeEnum.TREASURY_BOUNDS);

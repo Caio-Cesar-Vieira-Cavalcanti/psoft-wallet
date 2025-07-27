@@ -3,8 +3,11 @@ package com.ufcg.psoft.service;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
+import com.ufcg.psoft.commerce.dto.asset.AssetPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetQuotationUpdateDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.asset.InvalidAssetTypeException;
@@ -26,7 +29,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class AssetServiceUnitTests {
 
@@ -236,6 +238,111 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    void testCreateAsset_Success() {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Bitcoin")
+                .quotation(50000000.0)
+                .quotaQuantity(100000.0)
+                .assetType(AssetTypeEnum.CRYPTO)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        AssetType mockType = mockStockType();
+        when(assetTypeRepository.findByName("CRYPTO")).thenReturn(Optional.of(mockType));
+        when(assetRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AssetResponseDTO response = assetService.create(dto);
+
+        verify(assetRepository).save(any(AssetModel.class));
+        assertEquals("Bitcoin", response.getName());
+        assertEquals(50000000.0, response.getQuotation());
+    }
+
+    @Test
+    void testCreateAsset_UnauthorizedAdmin() {
+        AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
+                .name("Bitcoin")
+                .quotation(50000000.0)
+                .quotaQuantity(100000.0)
+                .assetType(AssetTypeEnum.CRYPTO)
+                .adminEmail("notadmin@example.com")
+                .adminAccessCode("654321")
+                .build();
+
+        doThrow(new UnauthorizedUserAccessException("Unauthorized")).when(adminService)
+                .validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        assertThrows(UnauthorizedUserAccessException.class, () -> assetService.create(dto));
+    }
+
+    @Test
+    void testDeleteAsset_Success() {
+        AssetPostRequestDTO postDto = AssetPostRequestDTO.builder()
+                .name("Bitcoin")
+                .quotation(50000000.0)
+                .quotaQuantity(100000.0)
+                .assetType(AssetTypeEnum.CRYPTO)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        AssetType mockType = mockStockType();
+        when(assetTypeRepository.findByName("CRYPTO")).thenReturn(Optional.of(mockType));
+        when(assetRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        AssetResponseDTO created = assetService.create(postDto);
+
+        verify(assetRepository).save(any(AssetModel.class));
+        AssetModel persistedAsset = new AssetModel();
+        persistedAsset.setId(assetId);
+        persistedAsset.setName(created.getName());
+        persistedAsset.setQuotation(created.getQuotation());
+        persistedAsset.setQuotaQuantity(postDto.getQuotaQuantity());
+        persistedAsset.setAssetType(mockType);
+        persistedAsset.setActive(true);
+
+        AssetDeleteRequestDTO deleteDto = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(persistedAsset));
+        //doNothing().when(assetRepository).delete(persistedAsset);
+
+        assertDoesNotThrow(() -> assetService.delete(assetId, deleteDto));
+        verify(assetRepository).delete(persistedAsset);
+    }
+
+    @Test
+    void testDeleteAsset_UnauthorizedAdmin() {
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("notadmin@example.com")
+                .adminAccessCode("654321")
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+        doThrow(new UnauthorizedUserAccessException("Unauthorized")).when(adminService)
+                .validateAdmin(dto.getAdminEmail(), dto.getAdminAccessCode());
+
+        assertThrows(UnauthorizedUserAccessException.class, () -> assetService.delete(assetId, dto));
+    }
+
+    @Test
+    void testDeleteAsset_InvalidId() {
+        UUID invalidId = UUID.randomUUID();
+
+        when(assetRepository.findById(invalidId)).thenReturn(Optional.empty());
+
+        AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        assertThrows(AssetNotFoundException.class, () -> assetService.delete(invalidId, dto));
+    }
+
+    @Test
     void testGetAllAssets() {
         AssetModel asset2 = AssetModel.builder()
                 .id(UUID.randomUUID())
@@ -257,7 +364,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
-    void testGetAssetById_ReturnsCorrectAsset() {
+    void testGetAssetById_Success() {
         AssetResponseDTO response = assetService.getAssetById(assetId);
 
         assertNotNull(response);
@@ -266,7 +373,16 @@ public class AssetServiceUnitTests {
     }
 
     @Test
-    void testGetActiveAssets_ReturnsOnlyActiveAssets() {
+    void testGetAssetById_WithInvalidId() {
+        UUID invalidId = UUID.randomUUID();
+        when(assetRepository.findById(invalidId)).thenReturn(Optional.empty());
+
+        assertThrows(AssetNotFoundException.class, () ->
+                assetService.getAssetById(invalidId));
+    }
+
+    @Test
+    void testGetAvailableAssets() {
         AssetModel activeAsset1 = AssetModel.builder()
                 .id(UUID.randomUUID())
                 .name("Active Asset 1")
@@ -296,9 +412,11 @@ public class AssetServiceUnitTests {
 
         List<AssetModel> allAssets = List.of(activeAsset1, inactiveAsset, activeAsset2);
 
-        when(assetRepository.findAll()).thenReturn(allAssets);
+        when(assetRepository.findByIsActiveTrue()).thenReturn(allAssets.stream()
+                .filter(AssetModel::isActive)
+                .toList());
 
-        List<AssetResponseDTO> result = assetService.getActiveAssets();
+        List<AssetResponseDTO> result = assetService.getAvailableAssets();
 
         assertEquals(2, result.size());
         assertTrue(result.stream().anyMatch(a -> a.getName().equals("Active Asset 1")));
@@ -328,8 +446,8 @@ public class AssetServiceUnitTests {
 
         when(assetRepository.findByAssetType(mockAssetType)).thenReturn(
                 allAssets.stream()
-                        .filter(asset -> asset.getAssetType() == mockAssetType)
-                        .collect(Collectors.toList())
+                        .filter(mockAsset -> mockAsset.getAssetType() == mockAssetType)
+                        .toList()
         );
 
         List<AssetResponseDTO> result = assetService.getActiveAssetsByAssetType(mockAssetType);

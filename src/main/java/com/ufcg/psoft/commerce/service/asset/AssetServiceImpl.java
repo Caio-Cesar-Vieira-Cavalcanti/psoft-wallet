@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class AssetServiceImpl implements AssetService {
@@ -51,11 +50,27 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
+    public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
+        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+
+        adminService.validateAdmin(assetDeleteRequestDTO.getAdminEmail(), assetDeleteRequestDTO.getAdminAccessCode());
+
+        assetRepository.delete(assetModel);
+    }
+
+    @Override
     public List<AssetResponseDTO> getAllAssets() {
-        List<AssetModel> assetModels = assetRepository.findAll();
-        return assetModels.stream()
+        return assetRepository.findAll()
+                .stream()
                 .map(assetModel -> modelMapper.map(assetModel, AssetResponseDTO.class))
-                .collect(Collectors.toList());
+                .toList();
+    }
+
+    @Override
+    public List<AssetResponseDTO> getAvailableAssets() {
+        return assetRepository.findByIsActiveTrue().stream()
+                .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
+                .toList();
     }
 
     @Override
@@ -65,39 +80,15 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public List<AssetResponseDTO> getActiveAssets() {
-        List<AssetModel> assetModels = assetRepository.findAll()
-                .stream()
-                .filter(AssetModel::isActive)
-                .toList();
-
-        return assetModels.stream()
-                .map(assetModel -> modelMapper.map(assetModel, AssetResponseDTO.class))
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public List<AssetResponseDTO> getActiveAssetsByAssetType(AssetType assetType) {
-
-        List<AssetModel> assets = assetRepository.findByAssetType(assetType)
+        return assetRepository.findByAssetType(assetType)
                 .stream()
                 .filter(AssetModel::isActive)
-                .toList();
-
-        return assets.stream()
                 .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    @Override
-    public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
-
-        adminService.validateAdmin(assetDeleteRequestDTO.getAdminEmail(), assetDeleteRequestDTO.getAdminAccessCode());
-
-        assetRepository.delete(assetModel);
-    }
-
+    // Utility Method
     public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
         String assetType = assetTypeEnum.name();
         return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
@@ -135,11 +126,4 @@ public class AssetServiceImpl implements AssetService {
         assetRepository.save(assetModel);
         return new AssetResponseDTO(assetModel);
     }
-
-    public List<AssetResponseDTO> getAvailableAssets() {
-        return assetRepository.findByIsActiveTrue().stream()
-                .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
-                .toList();
-    }
-
 }

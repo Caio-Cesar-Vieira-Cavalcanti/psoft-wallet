@@ -13,7 +13,7 @@ public interface AssetService {
 
     List<AssetResponseDTO> getAllAssets();
 
-    List<AssetResponseDTO> getActiveAssets();
+    List<AssetResponseDTO> getAvailableAssets();
 
     List<AssetResponseDTO> getActiveAssetsByAssetType(AssetType assetType);
 
@@ -26,6 +26,4 @@ public interface AssetService {
     AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO);
 
     AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO);
-
-    List<AssetResponseDTO> getAvailableAssets();
 }
