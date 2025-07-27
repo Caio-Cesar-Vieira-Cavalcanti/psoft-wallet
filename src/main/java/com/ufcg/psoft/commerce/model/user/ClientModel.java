@@ -45,22 +45,4 @@ public class ClientModel extends UserModel {
             throw new UnauthorizedUserAccessException("Unauthorized client access: access code is incorrect");
         }
     }
-
-//    @ManyToMany
-//    @MapKey(name = "id")
-//    @JoinTable(
-//            name = "client_waiting_assets",
-//            joinColumns = @JoinColumn(name = "client_id"),
-//            inverseJoinColumns = @JoinColumn(name = "asset_id")
-//    )
-//    private Map<UUID, Asset> interestedAssets;
-//
-//    @ManyToMany
-//    @MapKey(name = "id")
-//    @JoinTable(
-//            name = "client_waiting_assets",
-//            joinColumns = @JoinColumn(name = "client_id"),
-//            inverseJoinColumns = @JoinColumn(name = "asset_id")
-//    )
-//    private Map<UUID, Asset> waitingAssetAvailable;
 }
