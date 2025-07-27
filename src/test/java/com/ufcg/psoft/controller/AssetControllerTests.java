@@ -19,9 +19,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -172,7 +174,7 @@ public class AssetControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Asset not found!"));
+                .andExpect(jsonPath("$.message").value("Asset not found with ID " + nonExistentId.toString()));
     }
 
     @Test
@@ -303,6 +305,25 @@ public class AssetControllerTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(this.assetId.toString()))
                 .andExpect(jsonPath("$.isActive").value(false));
+    }
+
+    @Test
+    @DisplayName("Should return 404 Not Found when deactivating asset with non-existent ID")
+    void testDeactivateAssetWithNonExistentId() throws Exception {
+        UUID nonExistentId = UUID.randomUUID();
+
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .isActive(false)
+                .build();
+
+        mockMvc.perform(patch(this.ASSET_BASE_URL + nonExistentId + this.ACTIVATION_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.message").value("Asset not found with ID " + nonExistentId));
     }
 
     @Test

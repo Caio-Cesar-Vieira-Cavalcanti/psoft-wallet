@@ -89,7 +89,8 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+        AssetModel assetModel = assetRepository.findById(idAsset)
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
 
         adminService.validateAdmin(assetDeleteRequestDTO.getAdminEmail(), assetDeleteRequestDTO.getAdminAccessCode());
 
@@ -108,7 +109,7 @@ public class AssetServiceImpl implements AssetService {
     @Override
     public AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(AssetNotFoundException::new);
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
 
         adminService.validateAdmin(assetQuotationUpdateDTO.getAdminEmail(), assetQuotationUpdateDTO.getAdminAccessCode());
 
@@ -129,7 +130,8 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+        AssetModel assetModel = assetRepository.findById(idAsset)
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
 
         adminService.validateAdmin(assetPatchRequestDTO.getAdminEmail(), assetPatchRequestDTO.getAdminAccessCode());
 
@@ -138,6 +140,7 @@ public class AssetServiceImpl implements AssetService {
         return new AssetResponseDTO(assetModel);
     }
 
+    @Override
     public List<AssetResponseDTO> getAvailableAssets() {
         return assetRepository.findByIsActiveTrue().stream()
                 .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))

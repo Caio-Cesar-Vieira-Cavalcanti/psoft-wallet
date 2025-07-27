@@ -1,10 +1,6 @@
 package com.ufcg.psoft.service;
 
-import com.ufcg.psoft.commerce.dto.client.AddressDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
@@ -29,10 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class ClientServiceUnitTests {
 
