@@ -32,7 +32,7 @@ public class DTOMapperService {
         WalletResponseDTO dto = modelMapper.map(walletModel, WalletResponseDTO.class);
 
         if (walletModel.getPurchases() != null) {
-            List<PurchaseResponseDTO> purchases = walletModel.getPurchases().values().stream()
+            List<PurchaseResponseDTO> purchases = walletModel.getPurchases().stream()
                     .map(p -> modelMapper.map(p, PurchaseResponseDTO.class))
                     .sorted(Comparator.comparing(PurchaseResponseDTO::getDate).reversed())
                     .toList();

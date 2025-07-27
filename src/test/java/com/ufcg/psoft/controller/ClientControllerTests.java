@@ -12,6 +12,7 @@ import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
+import com.ufcg.psoft.commerce.model.wallet.Transaction;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
@@ -30,9 +31,7 @@ import com.ufcg.psoft.commerce.CommerceApplication;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -308,17 +307,21 @@ public class ClientControllerTests {
     void testGetPurchaseHistorySuccessfully_WithPurchases() throws Exception {
         AssetModel asset = createAndSaveAsset(stockType);
 
+        // Crie o Set vazio
+        Set<Transaction> purchases = new HashSet<>();
+
+        // Crie wallet com o Set inicializado
+        WalletModel wallet = WalletModel.builder().purchases(purchases).build();
+
         UUID purchaseId1 = UUID.randomUUID();
         UUID purchaseId2 = UUID.randomUUID();
 
-        PurchaseModel purchase1 = createPurchase(purchaseId1, asset, 5.0, LocalDate.now().minusDays(1));
-        PurchaseModel purchase2 = createPurchase(purchaseId2, asset, 3.0, LocalDate.now().minusDays(2));
+        PurchaseModel purchase1 = createPurchase(purchaseId1, asset, 5.0, LocalDate.now().minusDays(1), wallet);
+        PurchaseModel purchase2 = createPurchase(purchaseId2, asset, 3.0, LocalDate.now().minusDays(2), wallet);
 
-        Map<UUID, PurchaseModel> purchases = new HashMap<>();
-        purchases.put(purchase1.getId(), purchase1);
-        purchases.put(purchase2.getId(), purchase2);
-
-        WalletModel wallet = createWalletWithPurchases(purchases);
+        // Adicione as compras no Set
+        purchases.add(purchase1);
+        purchases.add(purchase2);
 
         ClientModel clientWithPurchases = createClient(
                 UUID.randomUUID(),
@@ -330,6 +333,7 @@ public class ClientControllerTests {
                 10000.0,
                 wallet
         );
+
         ClientModel savedClient = clientRepository.save(clientWithPurchases);
         clientId = savedClient.getId();
 
@@ -352,14 +356,15 @@ public class ClientControllerTests {
     void testDeleteAsset_WhenReferencedInPurchases_ReturnsConflict() throws Exception {
         AssetModel asset = createAndSaveAsset(stockType);
 
-        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1));
-        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2));
+        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
 
-        Map<UUID, PurchaseModel> purchases = new HashMap<>();
-        purchases.put(purchase1.getId(), purchase1);
-        purchases.put(purchase2.getId(), purchase2);
+        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
+        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), wallet);
 
-        WalletModel wallet = createWalletWithPurchases(purchases);
+        Set<Transaction> purchases = new HashSet<>();
+        purchases.add(purchase1);
+        purchases.add(purchase2);
+        wallet.setPurchases(purchases);
 
         ClientModel clientWithPurchases = createClient(
                 UUID.randomUUID(),
@@ -386,17 +391,18 @@ public class ClientControllerTests {
                 .andExpect(jsonPath("$.errors").isEmpty());
     }
 
-    private PurchaseModel createPurchase(UUID id, AssetModel asset, double quantity, LocalDate date) {
+    private PurchaseModel createPurchase(UUID id, AssetModel asset, double quantity, LocalDate date, WalletModel wallet) {
         return PurchaseModel.builder()
                 .id(id)
                 .asset(asset)
                 .quantity(quantity)
                 .state(PurchaseState.IN_WALLET)
                 .date(date)
+                .wallet(wallet)
                 .build();
     }
 
-    private WalletModel createWalletWithPurchases(Map<UUID, PurchaseModel> purchases) {
+    private WalletModel createWalletWithPurchases(Set<Transaction> purchases) {
         return WalletModel.builder()
                 .purchases(purchases)
                 .build();
