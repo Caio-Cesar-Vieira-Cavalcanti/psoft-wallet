@@ -19,11 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasItem;
-import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -282,7 +280,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -299,7 +297,7 @@ public class AssetControllerTests {
                 .isActive(false)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -318,7 +316,7 @@ public class AssetControllerTests {
                 .isActive(false)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + nonExistentId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + nonExistentId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
@@ -335,7 +333,7 @@ public class AssetControllerTests {
                 .isActive(null)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -351,7 +349,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isUnauthorized())
@@ -367,7 +365,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -383,7 +381,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -399,7 +397,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isUnauthorized())
@@ -415,7 +413,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -431,7 +429,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -447,7 +445,7 @@ public class AssetControllerTests {
                 .isActive(true)
                 .build();
 
-        mockMvc.perform(patch(this.ASSET_BASE_URL + this.assetId + this.ACTIVATION_ENDPOINT)
+        mockMvc.perform(patch(ASSET_BASE_URL + this.assetId + ACTIVATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isUnauthorized())
@@ -477,7 +475,7 @@ public class AssetControllerTests {
 
         assetRepository.saveAll(List.of(activeAsset, inactiveAsset));
 
-        mockMvc.perform(get(this.ASSET_BASE_URL + this.AVAILABLE_ENDPOINT)
+        mockMvc.perform(get(ASSET_BASE_URL + AVAILABLE_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
