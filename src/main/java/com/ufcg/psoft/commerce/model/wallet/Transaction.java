@@ -32,6 +32,6 @@ public abstract class Transaction {
     @Column(nullable = false)
     private Double quantity;
 
-    @Column(nullable = false)
+    @Column(name = "date", nullable = false)
     private LocalDate date;
 }
