@@ -19,5 +19,5 @@ public class WalletModel {
     private UUID id;
 
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Transaction> purchases;
+    private Set<TransactionModel> purchases;
 }

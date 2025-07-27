@@ -3,7 +3,7 @@ package com.ufcg.psoft.commerce.service.client;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
-import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;

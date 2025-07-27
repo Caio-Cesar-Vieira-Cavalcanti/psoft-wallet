@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
 import com.ufcg.psoft.commerce.exception.asset.*;
-import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;

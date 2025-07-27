@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.exception.client;
+package com.ufcg.psoft.commerce.exception.user;
 
 import java.util.UUID;
 

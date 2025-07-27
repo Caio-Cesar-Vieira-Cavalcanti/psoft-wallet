@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.dto.wallet;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.enums.PurchaseState;
+import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,7 +31,7 @@ public class PurchaseResponseDTO {
 
     @JsonProperty("state")
     @NotNull(message = "The 'state' field cannot be null")
-    private PurchaseState state;
+    private PurchaseStateEnum state;
 
     @JsonProperty("date")
     @NotNull(message = "The 'date' field cannot be null")

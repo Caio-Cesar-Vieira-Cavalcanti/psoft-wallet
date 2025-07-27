@@ -2,7 +2,7 @@ package com.ufcg.psoft.service;
 
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
-import com.ufcg.psoft.commerce.exception.client.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;

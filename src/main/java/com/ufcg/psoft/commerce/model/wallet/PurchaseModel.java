@@ -1,6 +1,6 @@
 package com.ufcg.psoft.commerce.model.wallet;
 
-import com.ufcg.psoft.commerce.enums.PurchaseState;
+import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -11,9 +11,9 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class PurchaseModel extends Transaction {
+public class PurchaseModel extends TransactionModel {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PurchaseState state;
+    private PurchaseStateEnum state;
 }

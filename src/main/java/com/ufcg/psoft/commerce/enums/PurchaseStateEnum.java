@@ -1,6 +1,6 @@
 package com.ufcg.psoft.commerce.enums;
 
-public enum PurchaseState {
+public enum PurchaseStateEnum {
     REQUESTED,
     AVAILABLE,
     PURCHASED,

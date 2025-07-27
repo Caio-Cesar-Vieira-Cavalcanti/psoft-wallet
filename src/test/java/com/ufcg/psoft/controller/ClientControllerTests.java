@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
-import com.ufcg.psoft.commerce.enums.PurchaseState;
+import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
@@ -12,7 +12,7 @@ import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
-import com.ufcg.psoft.commerce.model.wallet.Transaction;
+import com.ufcg.psoft.commerce.model.wallet.TransactionModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
@@ -308,7 +308,7 @@ public class ClientControllerTests {
         AssetModel asset = createAndSaveAsset(stockType);
 
         // Crie o Set vazio
-        Set<Transaction> purchases = new HashSet<>();
+        Set<TransactionModel> purchases = new HashSet<>();
 
         // Crie wallet com o Set inicializado
         WalletModel wallet = WalletModel.builder().purchases(purchases).build();
@@ -361,7 +361,7 @@ public class ClientControllerTests {
         PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
         PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), wallet);
 
-        Set<Transaction> purchases = new HashSet<>();
+        Set<TransactionModel> purchases = new HashSet<>();
         purchases.add(purchase1);
         purchases.add(purchase2);
         wallet.setPurchases(purchases);
@@ -420,13 +420,13 @@ public class ClientControllerTests {
                 .id(id)
                 .asset(asset)
                 .quantity(quantity)
-                .state(PurchaseState.IN_WALLET)
+                .state(PurchaseStateEnum.IN_WALLET)
                 .date(date)
                 .wallet(wallet)
                 .build();
     }
 
-    private WalletModel createWalletWithPurchases(Set<Transaction> purchases) {
+    private WalletModel createWalletWithPurchases(Set<TransactionModel> purchases) {
         return WalletModel.builder()
                 .purchases(purchases)
                 .build();

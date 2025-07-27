@@ -15,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public abstract class Transaction {
+public abstract class TransactionModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -30,7 +30,7 @@ public abstract class Transaction {
     private WalletModel wallet;
 
     @Column(nullable = false)
-    private Double quantity;
+    private double quantity;
 
     @Column(name = "date", nullable = false)
     private LocalDate date;
