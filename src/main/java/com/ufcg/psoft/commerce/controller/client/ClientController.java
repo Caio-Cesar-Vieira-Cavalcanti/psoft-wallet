@@ -89,7 +89,7 @@ public class ClientController {
 
     @PatchMapping("/{id}/interest/price-variation")
     public ResponseEntity<?> markInterestInPriceVariationOfAsset(@PathVariable UUID id,
-                                                          @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
+                                                                 @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
 
         ClientResponseDTO interest = clientService.markInterestInPriceVariationOfAsset(id, requestDTO);
         return ResponseEntity
@@ -99,7 +99,7 @@ public class ClientController {
 
     @PatchMapping("/{id}/interest/availability")
     public ResponseEntity<?> markInterestInAvailabilityOfAsset(@PathVariable UUID id,
-                                                             @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
+                                                               @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
 
         ClientResponseDTO interest = clientService.markInterestInAvailabilityOfAsset(id, requestDTO);
         return ResponseEntity

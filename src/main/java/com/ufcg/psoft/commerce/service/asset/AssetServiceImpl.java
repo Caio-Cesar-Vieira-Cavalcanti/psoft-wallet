@@ -118,6 +118,12 @@ public class AssetServiceImpl implements AssetService {
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 
+//    private void notify(AssetModel asset) {
+//        if (asset.isActive()) {
+//            pu
+//        }
+//    }
+
     @Override
     public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO) {
         AssetModel assetModel = assetRepository.findById(idAsset)
@@ -127,6 +133,7 @@ public class AssetServiceImpl implements AssetService {
 
         assetModel.setActive(assetPatchRequestDTO.getIsActive());
         assetRepository.save(assetModel);
+
         return new AssetResponseDTO(assetModel);
     }
 }

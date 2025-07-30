@@ -115,6 +115,19 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    public List<UUID> findClientIdsByInterestedAvailabilityAssetId(UUID assetId) {
+        return clientRepository.findClientIdsByInterestedAvailabilityAssetId(assetId);
+    }
+
+    public void notifyClients(UUID assetId) {
+        List<UUID> clients = this.findClientIdsByInterestedAvailabilityAssetId(assetId);
+
+        for (UUID clientId : clients) {
+            System.out.println("asset with id " + assetId + " has been activated\nNotified client: " + clientId);
+        }
+    }
+
+    @Override
     public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
         ClientModel client = clientRepository.findById(clientId)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));

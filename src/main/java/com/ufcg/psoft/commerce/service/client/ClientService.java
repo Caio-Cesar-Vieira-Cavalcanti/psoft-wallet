@@ -8,6 +8,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import jakarta.validation.Valid;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +28,8 @@ public interface ClientService {
     WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
 
     List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO requestDTO);
+
+    List<UUID> findClientIdsByInterestedAvailabilityAssetId(@Param("assetId") UUID assetId);
 
     ClientResponseDTO markInterestInPriceVariationOfAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
 
