@@ -46,11 +46,20 @@ public class ClientModel extends UserModel {
     @ManyToMany
     @MapKey(name = "id")
     @JoinTable(
-            name = "client_interest_assets",
+            name = "client_interest_price_variation_assets",
             joinColumns = @JoinColumn(name = "client_id"),
             inverseJoinColumns = @JoinColumn(name = "asset_id")
     )
-    private Map<UUID, AssetModel> interestedAvailableAssets;
+    private Map<UUID, AssetModel> interestedPriceVariationAssets;
+
+    @ManyToMany
+    @MapKey(name = "id")
+    @JoinTable(
+            name = "client_interest_availability_assets",
+            joinColumns = @JoinColumn(name = "client_id"),
+            inverseJoinColumns = @JoinColumn(name = "asset_id")
+    )
+    private Map<UUID, AssetModel> interestedAvailabilityAssets;
 
     @Override
     public void validateAccess(String accessCode) {

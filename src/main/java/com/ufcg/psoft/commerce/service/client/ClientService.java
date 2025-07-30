@@ -28,7 +28,7 @@ public interface ClientService {
 
     List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO requestDTO);
 
-    ClientResponseDTO markInterestInAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
+    ClientResponseDTO markInterestInPriceVariationOfAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
 
-    ClientResponseDTO markInterestInNotAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
+    ClientResponseDTO markInterestInAvailabilityOfAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
 }

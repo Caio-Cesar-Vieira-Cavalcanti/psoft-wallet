@@ -125,12 +125,12 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public ClientResponseDTO markInterestInAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO) {
+    public ClientResponseDTO markInterestInPriceVariationOfAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO) {
         return null;
     }
 
     @Override
-    public ClientResponseDTO markInterestInNotAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO) {
+    public ClientResponseDTO markInterestInAvailabilityOfAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO) {
         return null;
     }
 }
