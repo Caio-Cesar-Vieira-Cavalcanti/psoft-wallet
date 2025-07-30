@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.model.user;
 
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
+import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -9,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -25,6 +28,7 @@ public class ClientModel extends UserModel {
         this.planType = planType;
         this.budget = budget;
         this.wallet = wallet;
+        this.interestedAvailableAssets = new HashMap<>();
     }
 
     @Embedded
@@ -38,6 +42,15 @@ public class ClientModel extends UserModel {
 
     @OneToOne(cascade = CascadeType.ALL)
     private WalletModel wallet;
+
+    @ManyToMany
+    @MapKey(name = "id")
+    @JoinTable(
+            name = "client_interest_assets",
+            joinColumns = @JoinColumn(name = "client_id"),
+            inverseJoinColumns = @JoinColumn(name = "asset_id")
+    )
+    private Map<UUID, AssetModel> interestedAvailableAssets;
 
     @Override
     public void validateAccess(String accessCode) {

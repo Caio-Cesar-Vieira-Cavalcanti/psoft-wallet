@@ -87,4 +87,23 @@ public class ClientController {
                 .body(activeAssets);
     }
 
+    @PatchMapping("/{id}/assets")
+    public ResponseEntity<?> markInterestInAvailableAsset(@PathVariable UUID id,
+                                                          @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
+
+        ClientResponseDTO interest = clientService.markInterestInAvailableAsset(id, requestDTO);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(interest);
+    }
+
+    @PatchMapping("/{id}/assets")
+    public ResponseEntity<?> markInterestInNotAvailableAsset(@PathVariable UUID id,
+                                                                              @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
+
+        ClientResponseDTO interest = clientService.markInterestInNotAvailableAsset(id, requestDTO);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(interest);
+    }
 }

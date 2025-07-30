@@ -7,6 +7,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -26,4 +27,8 @@ public interface ClientService {
     WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
 
     List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO requestDTO);
+
+    ClientResponseDTO markInterestInAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
+
+    ClientResponseDTO markInterestInNotAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
 }
