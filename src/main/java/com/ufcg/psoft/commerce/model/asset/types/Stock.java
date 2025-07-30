@@ -7,7 +7,6 @@ import jakarta.persistence.Entity;
 import lombok.Builder;
 
 @Entity
-@Builder
 @DiscriminatorValue("STOCK")
 public class Stock extends AssetType {
 
