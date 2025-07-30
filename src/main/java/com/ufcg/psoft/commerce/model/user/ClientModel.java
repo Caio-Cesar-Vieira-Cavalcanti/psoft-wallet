@@ -28,7 +28,8 @@ public class ClientModel extends UserModel {
         this.planType = planType;
         this.budget = budget;
         this.wallet = wallet;
-        this.interestedAvailableAssets = new HashMap<>();
+        this.interestedPriceVariationAssets = new HashMap<>();
+        this.interestedAvailabilityAssets = new HashMap<>();
     }
 
     @Embedded
