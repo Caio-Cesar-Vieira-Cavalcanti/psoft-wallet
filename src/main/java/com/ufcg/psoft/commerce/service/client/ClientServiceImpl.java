@@ -30,7 +30,7 @@ import java.util.UUID;
 public class ClientServiceImpl implements ClientService {
 
     @Autowired
-    ClientRepository clientRepository;
+    public ClientRepository clientRepository;
 
     @Autowired
     AssetService assetService;
@@ -122,6 +122,16 @@ public class ClientServiceImpl implements ClientService {
         client.validateAccess(clientPurchaseHistoryRequestDTO.getAccessCode());
 
         return dtoMapperService.toWalletResponseDTO(client.getWallet());
+    }
+
+    @Override
+    public AssetResponseDTO getAssetDetails(UUID clientId, UUID assetId, ClientAssetAccessRequestDTO clientAssetAccessRequestDTO) {
+        ClientModel client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
+
+        client.validateAccess(clientAssetAccessRequestDTO.getAccessCode());
+
+        return assetService.getAssetById(assetId);
     }
 
 }

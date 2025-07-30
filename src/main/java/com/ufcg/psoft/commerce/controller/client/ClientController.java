@@ -22,7 +22,7 @@ import java.util.UUID;
 public class ClientController {
 
     @Autowired
-    ClientService clientService;
+    public ClientService clientService;
 
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable("id") UUID id) {
@@ -85,6 +85,16 @@ public class ClientController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(activeAssets);
+    }
+
+    @GetMapping("/{clientId}/assets/{assetId}")
+    public ResponseEntity<AssetResponseDTO> getAssetDetailsForClient(@PathVariable UUID clientId,
+                                                                     @PathVariable UUID assetId,
+                                                                     @RequestBody @Valid ClientAssetAccessRequestDTO dto) {
+        AssetResponseDTO asset = clientService.getAssetDetails(clientId, assetId, dto);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(asset);
     }
 
 }
