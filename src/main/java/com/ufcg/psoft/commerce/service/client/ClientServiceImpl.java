@@ -124,4 +124,13 @@ public class ClientServiceImpl implements ClientService {
         return dtoMapperService.toWalletResponseDTO(client.getWallet());
     }
 
+    @Override
+    public ClientResponseDTO markInterestInAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO) {
+        return null;
+    }
+
+    @Override
+    public ClientResponseDTO markInterestInNotAvailableAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO) {
+        return null;
+    }
 }

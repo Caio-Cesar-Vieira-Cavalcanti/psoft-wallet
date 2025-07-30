@@ -99,7 +99,7 @@ public class ClientController {
 
     @PatchMapping("/{id}/assets")
     public ResponseEntity<?> markInterestInNotAvailableAsset(@PathVariable UUID id,
-                                                                              @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
+                                                             @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
 
         ClientResponseDTO interest = clientService.markInterestInNotAvailableAsset(id, requestDTO);
         return ResponseEntity
