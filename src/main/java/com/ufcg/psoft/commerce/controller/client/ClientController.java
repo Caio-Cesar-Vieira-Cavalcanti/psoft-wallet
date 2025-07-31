@@ -22,7 +22,7 @@ import java.util.UUID;
 public class ClientController {
 
     @Autowired
-    public ClientService clientService;
+    ClientService clientService;
 
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable("id") UUID id) {

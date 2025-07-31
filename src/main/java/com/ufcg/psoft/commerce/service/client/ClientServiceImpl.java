@@ -30,7 +30,7 @@ import java.util.UUID;
 public class ClientServiceImpl implements ClientService {
 
     @Autowired
-    public ClientRepository clientRepository;
+    ClientRepository clientRepository;
 
     @Autowired
     AssetService assetService;
