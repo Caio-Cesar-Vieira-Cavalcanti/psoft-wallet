@@ -1,23 +1,29 @@
 package com.ufcg.psoft.service;
 
+import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
+import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.asset.types.Crypto;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
+import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import com.ufcg.psoft.commerce.service.client.ClientServiceImpl;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.security.CryptoPrimitive;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +42,10 @@ public class ClientServiceUnitTests {
 
     private UUID clientId;
     private ClientModel client;
+
+    private AssetService assetService;
+    private UUID assetId;
+    private AssetResponseDTO assetResponseDTO;
 
     @BeforeEach
     void setUp() {
@@ -60,6 +70,18 @@ public class ClientServiceUnitTests {
             10000.0,
             null
         );
+
+        assetService = mock(AssetService.class);
+        ReflectionTestUtils.setField(clientService, "assetService", assetService);
+
+        assetId = UUID.randomUUID();
+        assetResponseDTO = AssetResponseDTO.builder()
+                .id(assetId)
+                .name("Bitcoin")
+                .description("Best crypto ever")
+                .quotation(100000.0)
+                .quotaQuantity(20.0)
+                .build();
     }
 
     @Test
@@ -189,5 +211,60 @@ public class ClientServiceUnitTests {
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals("João Azevedo", result.get(0).getFullName());
+    }
+
+    @Test
+    @DisplayName("Should return asset details with valid accessCode")
+    void testGetAssetDetails_WithValidAccessCode() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+        when(assetService.getAssetById(assetId)).thenReturn(assetResponseDTO);
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        AssetResponseDTO result = clientService.getAssetDetails(clientId, assetId, dto);
+
+        assertNotNull(result);
+        assertEquals("Bitcoin", result.getName());
+        assertEquals("Best crypto ever", result.getDescription());
+        assertEquals(100000.0, result.getQuotation());
+        assertEquals(20.0, result.getQuotaQuantity());
+        verify(clientRepository).findById(clientId);
+        verify(assetService).getAssetById(assetId);
+    }
+
+    @Test
+    @DisplayName("Should return asset details with valid accessCode")
+    void testGetAssetDetails_WithInvalidAccessCode() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("000000")
+                .build();
+
+        assertThrows(UnauthorizedUserAccessException.class, () -> {
+            clientService.getAssetDetails(clientId, assetId, dto);
+        });
+
+        verify(clientRepository).findById(clientId);
+        verify(assetService, never()).getAssetById(any());
+    }
+
+    @Test
+    @DisplayName("Should not return asset details with invalid accessCode")
+    void testGetAssetDetails_ClientNotFound() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.empty());
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        assertThrows(ClientIdNotFoundException.class, () -> {
+            clientService.getAssetDetails(clientId, assetId, dto);
+        });
+
+        verify(clientRepository).findById(clientId);
+        verify(assetService, never()).getAssetById(any());
     }
 }

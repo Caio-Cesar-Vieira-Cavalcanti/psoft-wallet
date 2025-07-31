@@ -31,20 +31,6 @@ public class AssetController {
                 .body(assetService.create(assetPostRequestDTO));
     }
 
-    @GetMapping
-    public ResponseEntity<List<AssetResponseDTO>> getAllAssets() {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(assetService.getAllAssets());
-    }
-
-    @GetMapping("/{idAsset}")
-    public ResponseEntity<AssetResponseDTO> getAssetById(@PathVariable("idAsset") UUID idAsset) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(assetService.getAssetById(idAsset));
-    }
-
     @DeleteMapping("/{idAsset}")
     public ResponseEntity<?> delete(@PathVariable("idAsset") UUID idAsset,
                                     @RequestBody @Valid AssetDeleteRequestDTO assetDeleteRequestDTO) {

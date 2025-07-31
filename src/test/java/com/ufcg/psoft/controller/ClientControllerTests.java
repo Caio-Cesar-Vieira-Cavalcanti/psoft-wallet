@@ -437,5 +437,116 @@ public class ClientControllerTests {
         return new ClientModel(id, fullName, email, accessCode, address, planType, budget, wallet);
     }
 
+    @Test
+    @DisplayName("Should return asset details for client successfully")
+    void testGetAssetDetailsForClient_Success() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Lucas Pereira",
+                new EmailModel("lucas@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "456", "Bairro", "Cidade", "Estado", "Brasil", "11111-111"),
+                PlanTypeEnum.NORMAL,
+                5000.0,
+                wallet
+        );
+
+        client = clientRepository.save(client);
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + client.getId() + ASSETS_ENDPOINT + "/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(asset.getId().toString()))
+                .andExpect(jsonPath("$.name").value(asset.getName()))
+                .andExpect(jsonPath("$.description").value(asset.getDescription()))
+                .andExpect(jsonPath("$.quotation").value(asset.getQuotation()))
+                .andExpect(jsonPath("$.quotaQuantity").value(asset.getQuotaQuantity()));
+    }
+
+    @Test
+    @DisplayName("Should return 401 when access code is invalid")
+    void testGetAssetDetailsForClient_InvalidAccessCode() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Lucas Pereira",
+                new EmailModel("lucas@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "456", "Bairro", "Cidade", "Estado", "Brasil", "11111-111"),
+                PlanTypeEnum.NORMAL,
+                5000.0,
+                wallet
+        );
+
+        client = clientRepository.save(client);
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("wrong-code")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + client.getId() + ASSETS_ENDPOINT + "/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should return 404 when clientId is invalid")
+    void testGetAssetDetailsForClient_ClientNotFound() throws Exception {
+        UUID invalidClientId = UUID.randomUUID();
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + invalidClientId + ASSETS_ENDPOINT + "/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should return 404 when assetId is invalid")
+    void testGetAssetDetailsForClient_AssetNotFound() throws Exception {
+        UUID invalidAssetId = UUID.randomUUID();
+
+        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Lucas Pereira",
+                new EmailModel("lucas@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "456", "Bairro", "Cidade", "Estado", "Brasil", "11111-111"),
+                PlanTypeEnum.NORMAL,
+                5000.0,
+                wallet
+        );
+
+        client = clientRepository.save(client);
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + client.getId() + ASSETS_ENDPOINT + "/" + invalidAssetId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                        .andExpect(status().isNotFound());
+    }
+
     // Other tests related to getActiveAssets are in AssetServiceUnitTests.
 }
