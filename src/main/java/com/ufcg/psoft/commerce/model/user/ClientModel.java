@@ -2,7 +2,7 @@ package com.ufcg.psoft.commerce.model.user;
 
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
-import com.ufcg.psoft.commerce.model.asset.AssetModel;
+import com.ufcg.psoft.commerce.model.observer.ISubscriber;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -10,8 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -19,7 +17,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @DiscriminatorValue("C")
-public class ClientModel extends UserModel {
+public class ClientModel extends UserModel implements ISubscriber {
 
     @Builder
     public ClientModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode, AddressModel address, PlanTypeEnum planType, double budget, WalletModel wallet) {
@@ -28,8 +26,6 @@ public class ClientModel extends UserModel {
         this.planType = planType;
         this.budget = budget;
         this.wallet = wallet;
-        this.interestedPriceVariationAssets = new HashMap<>();
-        this.interestedAvailabilityAssets = new HashMap<>();
     }
 
     @Embedded
@@ -44,28 +40,15 @@ public class ClientModel extends UserModel {
     @OneToOne(cascade = CascadeType.ALL)
     private WalletModel wallet;
 
-    @ManyToMany
-    @MapKey(name = "id")
-    @JoinTable(
-            name = "client_interest_price_variation_assets",
-            joinColumns = @JoinColumn(name = "client_id"),
-            inverseJoinColumns = @JoinColumn(name = "asset_id")
-    )
-    private Map<UUID, AssetModel> interestedPriceVariationAssets;
-
-    @ManyToMany
-    @MapKey(name = "id")
-    @JoinTable(
-            name = "client_interest_availability_assets",
-            joinColumns = @JoinColumn(name = "client_id"),
-            inverseJoinColumns = @JoinColumn(name = "asset_id")
-    )
-    private Map<UUID, AssetModel> interestedAvailabilityAssets;
-
     @Override
     public void validateAccess(String accessCode) {
         if (!this.getAccessCode().matches(accessCode)) {
             throw new UnauthorizedUserAccessException("Unauthorized client access: access code is incorrect");
         }
+    }
+
+    @Override
+    public void notify(String context) {
+        System.out.println(context + " (Notified client: " + this.getFullName() + ")");
     }
 }

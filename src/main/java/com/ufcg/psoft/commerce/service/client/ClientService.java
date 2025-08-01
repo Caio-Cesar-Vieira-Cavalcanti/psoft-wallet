@@ -28,10 +28,4 @@ public interface ClientService {
     WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
 
     List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO requestDTO);
-
-    List<UUID> findClientIdsByInterestedAvailabilityAssetId(@Param("assetId") UUID assetId);
-
-    ClientResponseDTO markInterestInPriceVariationOfAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
-
-    ClientResponseDTO markInterestInAvailabilityOfAsset(UUID id, ClientMarkInterestInAssetRequestDTO requestDTO);
 }

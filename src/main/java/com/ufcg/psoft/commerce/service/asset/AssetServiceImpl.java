@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.service.asset;
 
 import com.ufcg.psoft.commerce.dto.asset.*;
 
+import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
@@ -10,6 +11,7 @@ import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
+import com.ufcg.psoft.commerce.service.observer.EventManager;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +31,9 @@ public class AssetServiceImpl implements AssetService {
 
     @Autowired
     AssetTypeRepository assetTypeRepository;
+
+    @Autowired
+    EventManager assetEventManager;
 
     @Autowired
     ModelMapper modelMapper;
@@ -90,6 +95,7 @@ public class AssetServiceImpl implements AssetService {
                 .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
                 .toList();
     }
+
     // Utility Method
     public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
         String assetType = assetTypeEnum.name();
@@ -118,11 +124,12 @@ public class AssetServiceImpl implements AssetService {
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 
-//    private void notify(AssetModel asset) {
-//        if (asset.isActive()) {
-//            pu
-//        }
-//    }
+
+    private void notifyAvailabilitySubscribersOnActivation(boolean wasInactive, AssetModel asset) {
+        if (wasInactive && asset.isActive()) {
+            assetEventManager.notifySubscribersByType(asset.getId(), SubscriptionTypeEnum.AVAILABILITY);
+        }
+    }
 
     @Override
     public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO) {
@@ -131,8 +138,12 @@ public class AssetServiceImpl implements AssetService {
 
         adminService.validateAdmin(assetPatchRequestDTO.getAdminEmail(), assetPatchRequestDTO.getAdminAccessCode());
 
+        boolean wasInactive = !assetModel.isActive();
+
         assetModel.setActive(assetPatchRequestDTO.getIsActive());
         assetRepository.save(assetModel);
+
+        this.notifyAvailabilitySubscribersOnActivation(wasInactive, assetModel);
 
         return new AssetResponseDTO(assetModel);
     }

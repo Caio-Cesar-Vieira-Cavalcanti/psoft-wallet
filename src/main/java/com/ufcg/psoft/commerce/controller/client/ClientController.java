@@ -1,8 +1,11 @@
 package com.ufcg.psoft.commerce.controller.client;
 
+import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
+import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
+import com.ufcg.psoft.commerce.service.observer.EventManagerImpl;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,9 @@ public class ClientController {
 
     @Autowired
     ClientService clientService;
+
+    @Autowired
+    EventManagerImpl eventManager;
 
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable("id") UUID id) {
@@ -79,7 +85,7 @@ public class ClientController {
     }
 
     @GetMapping("/{id}/assets")
-    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable UUID id,
+    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable("id") UUID id,
                                                                   @RequestBody @Valid ClientActiveAssetsRequestDTO requestDTO) {
         List<AssetResponseDTO> activeAssets = clientService.redirectGetActiveAssets(id, requestDTO);
         return ResponseEntity
@@ -88,22 +94,22 @@ public class ClientController {
     }
 
     @PatchMapping("/{id}/interest/price-variation")
-    public ResponseEntity<?> markInterestInPriceVariationOfAsset(@PathVariable UUID id,
+    public ResponseEntity<?> markInterestInPriceVariationOfAsset(@PathVariable("id") UUID id,
                                                                  @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
 
-        ClientResponseDTO interest = clientService.markInterestInPriceVariationOfAsset(id, requestDTO);
+        //ClientResponseDTO interest = clientService.markInterestInPriceVariationOfAsset(id, requestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(interest);
+                .body("");
     }
 
     @PatchMapping("/{id}/interest/availability")
-    public ResponseEntity<?> markInterestInAvailabilityOfAsset(@PathVariable UUID id,
-                                                               @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
+    public ResponseEntity<?> markInterestInAvailabilityOfAsset(@PathVariable("id") UUID id,
+                                                               @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
 
-        ClientResponseDTO interest = clientService.markInterestInAvailabilityOfAsset(id, requestDTO);
+        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO.getAssetId(), id, SubscriptionTypeEnum.AVAILABILITY);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(interest);
+                .body(subscriptionResponseDTO);
     }
 }
