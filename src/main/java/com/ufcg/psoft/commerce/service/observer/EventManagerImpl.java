@@ -6,6 +6,7 @@ import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsInactive;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCrypto;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
@@ -131,8 +132,13 @@ public class EventManagerImpl implements EventManager {
         if (assetModel.isActive()) throw new AssetIsAlreadyActive();
     }
 
+    private void validateAssetIsActive(AssetModel assetModel) {
+        if (!assetModel.isActive()) throw new AssetIsInactive();
+    }
+
     private void validateAssetIsStockOrCrypto(AssetModel assetModel) {
-        if (!assetModel.getAssetType().equals(AssetTypeEnum.STOCK) && !assetModel.getAssetType().equals(AssetTypeEnum.CRYPTO)) {
+        System.out.println(assetModel.getAssetType().getName());
+        if (!assetModel.getAssetType().getName().equals(AssetTypeEnum.STOCK.name()) && !assetModel.getAssetType().getName().equals(AssetTypeEnum.CRYPTO.name())) {
             throw new AssetIsNotStockNeitherCrypto();
         }
     }
@@ -157,7 +163,10 @@ public class EventManagerImpl implements EventManager {
                 orElseThrow(AssetNotFoundException::new);
 
         if (subscriptionType == SubscriptionTypeEnum.AVAILABILITY) this.validateAssetIsInactive(assetModel);
-        else this.validateAssetIsStockOrCrypto(assetModel);
+        else {
+            this.validateAssetIsActive(assetModel);
+            this.validateAssetIsStockOrCrypto(assetModel);
+        }
     }
 
     private ISubscriber getValidSubscriber(UUID clientId) {
