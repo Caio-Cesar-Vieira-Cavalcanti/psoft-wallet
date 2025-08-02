@@ -77,19 +77,14 @@ public class EventManagerImpl implements EventManager {
 
         subscriptions.forEach(subscription -> {
             UUID clientId = subscription.getClientId();
+
+            if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
+                if (!priceVariationIsValidToNotify(subscription)) return;
+            }
+
             ISubscriber subscriber = getValidSubscriber(clientId);
-
-            if (subscriptionType == SubscriptionTypeEnum.AVAILABILITY) {
-                subscriber.notify(contextMessage);
-                unsubscribeFromAssetEvent(assetId, clientId, subscriptionType);
-            }
-
-            else {
-                if (priceVariationIsValidToNotify(subscription)) {
-                    subscriber.notify(contextMessage);
-                    this.subscriptionRepository.deleteById(subscription.getId());
-                }
-            }
+            subscriber.notify(contextMessage);
+            this.subscriptionRepository.deleteById(subscription.getId());
         });
     }
 
@@ -101,24 +96,6 @@ public class EventManagerImpl implements EventManager {
         double currentPrice = assetModel.getQuotation();
         return oldPrice * 1.1 < currentPrice || oldPrice * 0.9 > currentPrice;
     }
-
-    public void unsubscribeFromAssetEvent(UUID assetId, UUID clientId, SubscriptionTypeEnum subscriptionType) {
-        validateAssetExists(assetId);
-        validateClientExists(clientId);
-
-        List<SubscriptionModel> subscriptions = subscriptionRepository
-                .findByAssetIdAndSubscriptionType(assetId, subscriptionType)
-                .stream()
-                .filter(sub -> sub.getClientId().equals(clientId))
-                .collect(Collectors.toList());
-
-        if (subscriptions.isEmpty()) {
-            return;
-        }
-
-        subscriptionRepository.deleteAll(subscriptions);
-    }
-
 
     private String formatSubscriptionType(SubscriptionTypeEnum type) {
         return switch (type) {
