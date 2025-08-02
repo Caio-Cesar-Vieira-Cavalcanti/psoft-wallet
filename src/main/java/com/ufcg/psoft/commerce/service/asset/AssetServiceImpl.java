@@ -121,9 +121,10 @@ public class AssetServiceImpl implements AssetService {
         assetModel.setQuotation(newQuotation);
         assetRepository.save(assetModel);
 
+        assetEventManager.notifySubscribersByType(idAsset, SubscriptionTypeEnum.PRICE_VARIATION);
+
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
-
 
     private void notifyAvailabilitySubscribersOnActivation(boolean wasInactive, AssetModel asset) {
         if (wasInactive && asset.isActive()) {

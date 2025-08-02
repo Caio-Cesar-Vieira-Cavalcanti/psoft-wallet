@@ -52,6 +52,7 @@ public class EventManagerImpl implements EventManager {
             SubscriptionModel subscription = new SubscriptionModel();
             subscription.setAssetId(idAsset);
             subscription.setClientId(idSubscriber);
+            subscription.setQuotationAtMoment(this.getQuotationAtMoment(idAsset));
             subscription.setSubscriptionType(subscriptionType);
 
             subscriptionRepository.save(subscription);
@@ -66,7 +67,7 @@ public class EventManagerImpl implements EventManager {
     }
 
     public void notifySubscribersByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {
-        List<UUID> subscriberIds = getSubscribersByType(assetId, subscriptionType);
+        List<SubscriptionModel> subscriptions = getSubscriptionsByType(assetId, subscriptionType);
 
         String contextMessage = String.format(
                 "You are receiving a '%s' type notification regarding the asset with ID: %s",
@@ -74,14 +75,31 @@ public class EventManagerImpl implements EventManager {
                 assetId
         );
 
-        subscriberIds.forEach(clientId -> {
+        subscriptions.forEach(subscription -> {
+            UUID clientId = subscription.getClientId();
             ISubscriber subscriber = getValidSubscriber(clientId);
-            subscriber.notify(contextMessage);
 
             if (subscriptionType == SubscriptionTypeEnum.AVAILABILITY) {
+                subscriber.notify(contextMessage);
                 unsubscribeFromAssetEvent(assetId, clientId, subscriptionType);
             }
+
+            else {
+                if (priceVariationIsValidToNotify(subscription)) {
+                    subscriber.notify(contextMessage);
+                    this.subscriptionRepository.deleteById(subscription.getId());
+                }
+            }
         });
+    }
+
+    private boolean priceVariationIsValidToNotify(SubscriptionModel subscriptionModel) {
+        AssetModel assetModel = this.assetRepository.findById(subscriptionModel.getAssetId())
+                .orElseThrow(AssetNotFoundException::new);
+
+        double oldPrice = subscriptionModel.getQuotationAtMoment();
+        double currentPrice = assetModel.getQuotation();
+        return oldPrice * 1.1 < currentPrice || oldPrice * 0.9 > currentPrice;
     }
 
     public void unsubscribeFromAssetEvent(UUID assetId, UUID clientId, SubscriptionTypeEnum subscriptionType) {
@@ -109,11 +127,8 @@ public class EventManagerImpl implements EventManager {
         };
     }
 
-    private List<UUID> getSubscribersByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {
-        return subscriptionRepository.findByAssetIdAndSubscriptionType(assetId, subscriptionType)
-                .stream()
-                .map(SubscriptionModel::getClientId)
-                .collect(Collectors.toList());
+    private List<SubscriptionModel> getSubscriptionsByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {
+        return subscriptionRepository.findByAssetIdAndSubscriptionType(assetId, subscriptionType);
     }
 
     private void validateAssetExists(UUID assetId) {
@@ -167,6 +182,13 @@ public class EventManagerImpl implements EventManager {
             this.validateAssetIsActive(assetModel);
             this.validateAssetIsStockOrCrypto(assetModel);
         }
+    }
+
+    private double getQuotationAtMoment(UUID assetId) {
+        AssetModel assetModel = this.assetRepository.findById(assetId).
+                orElseThrow(AssetNotFoundException::new);
+
+        return assetModel.getQuotation();
     }
 
     private ISubscriber getValidSubscriber(UUID clientId) {
