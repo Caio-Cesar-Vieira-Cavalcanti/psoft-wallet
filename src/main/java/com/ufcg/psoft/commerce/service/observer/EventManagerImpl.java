@@ -2,10 +2,14 @@ package com.ufcg.psoft.commerce.service.observer;
 
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
+import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCrypto;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
 import com.ufcg.psoft.commerce.model.observer.ISubscriber;
@@ -35,14 +39,8 @@ public class EventManagerImpl implements EventManager {
     public SubscriptionResponseDTO subscribeToAssetEvent(ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, UUID idSubscriber, SubscriptionTypeEnum subscriptionType) {
         UUID idAsset = clientMarkInterestInAssetRequestDTO.getAssetId();
 
-        validateAssetExists(idAsset);
-        validateClientExists(idSubscriber);
-
-        ClientModel clientModel = this.clientRepository.findById(idSubscriber)
-                .orElseThrow(() -> new ClientIdNotFoundException(idSubscriber));
-        clientModel.validateAccess(clientMarkInterestInAssetRequestDTO.getAccessCode());
-
-        this.validateAssetIsInactive(idAsset);
+        this.validateClient(idSubscriber, clientMarkInterestInAssetRequestDTO, subscriptionType);
+        this.validateAsset(idAsset, subscriptionType);
 
         boolean alreadySubscribed = subscriptionRepository
                 .findByAssetIdAndSubscriptionType(idAsset, subscriptionType)
@@ -129,10 +127,37 @@ public class EventManagerImpl implements EventManager {
         }
     }
 
-    private void validateAssetIsInactive(UUID assetId) {
+    private void validateAssetIsInactive(AssetModel assetModel) {
+        if (assetModel.isActive()) throw new AssetIsAlreadyActive();
+    }
+
+    private void validateAssetIsStockOrCrypto(AssetModel assetModel) {
+        if (!assetModel.getAssetType().equals(AssetTypeEnum.STOCK) && !assetModel.getAssetType().equals(AssetTypeEnum.CRYPTO)) {
+            throw new AssetIsNotStockNeitherCrypto();
+        }
+    }
+
+    private void validateClient(UUID subscriberId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum subscriptionType) {
+        this.validateClientExists(subscriberId);
+
+        ClientModel clientModel = this.clientRepository.findById(subscriberId)
+                .orElseThrow(() -> new ClientIdNotFoundException(subscriberId));
+
+        clientModel.validateAccess(clientMarkInterestInAssetRequestDTO.getAccessCode());
+
+        if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
+            if (clientModel.getPlanType() != PlanTypeEnum.PREMIUM) throw new ClientIsNotPremium();
+        }
+    }
+
+    private void validateAsset(UUID assetId, SubscriptionTypeEnum subscriptionType) {
+        this.validateAssetExists(assetId);
+
         AssetModel assetModel = this.assetRepository.findById(assetId).
                 orElseThrow(AssetNotFoundException::new);
-        if (assetModel.isActive()) throw new AssetIsAlreadyActive();
+
+        if (subscriptionType == SubscriptionTypeEnum.AVAILABILITY) this.validateAssetIsInactive(assetModel);
+        else this.validateAssetIsStockOrCrypto(assetModel);
     }
 
     private ISubscriber getValidSubscriber(UUID clientId) {
