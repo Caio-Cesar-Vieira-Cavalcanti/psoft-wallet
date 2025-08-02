@@ -94,20 +94,19 @@ public class ClientController {
     }
 
     @PatchMapping("/{id}/interest/price-variation")
-    public ResponseEntity<?> markInterestInPriceVariationOfAsset(@PathVariable("id") UUID id,
-                                                                 @RequestBody @Valid ClientMarkInterestInAssetRequestDTO requestDTO) {
-
-        //ClientResponseDTO interest = clientService.markInterestInPriceVariationOfAsset(id, requestDTO);
+    public ResponseEntity<?> markInterestInPriceVariationOfAsset(@PathVariable("id") UUID clientId,
+                                                                 @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body("");
+                .body(subscriptionResponseDTO);
     }
 
     @PatchMapping("/{id}/interest/availability")
     public ResponseEntity<?> markInterestInAvailabilityOfAsset(@PathVariable("id") UUID id,
                                                                @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
 
-        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO.getAssetId(), id, SubscriptionTypeEnum.AVAILABILITY);
+        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO, id, SubscriptionTypeEnum.AVAILABILITY);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(subscriptionResponseDTO);
