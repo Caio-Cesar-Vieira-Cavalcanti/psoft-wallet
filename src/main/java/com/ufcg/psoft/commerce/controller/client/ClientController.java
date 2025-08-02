@@ -112,4 +112,15 @@ public class ClientController {
                 .status(HttpStatus.OK)
                 .body(subscriptionResponseDTO);
     }
+    
+    @GetMapping("/{clientId}/assets/{assetId}")
+    public ResponseEntity<AssetResponseDTO> getAssetDetailsForClient(@PathVariable UUID clientId,
+                                                                     @PathVariable UUID assetId,
+                                                                     @RequestBody @Valid ClientAssetAccessRequestDTO dto) {
+        AssetResponseDTO asset = clientService.getAssetDetails(clientId, assetId, dto);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(asset);
+    }
+
 }
