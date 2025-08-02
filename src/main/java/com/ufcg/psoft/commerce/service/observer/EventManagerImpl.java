@@ -1,11 +1,15 @@
 package com.ufcg.psoft.commerce.service.observer;
 
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
 import com.ufcg.psoft.commerce.model.observer.ISubscriber;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.repository.observer.SubscriptionRepository;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
@@ -28,9 +32,17 @@ public class EventManagerImpl implements EventManager {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
 
-    public SubscriptionResponseDTO subscribeToAssetEvent(UUID idAsset, UUID idSubscriber, SubscriptionTypeEnum subscriptionType) {
+    public SubscriptionResponseDTO subscribeToAssetEvent(ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, UUID idSubscriber, SubscriptionTypeEnum subscriptionType) {
+        UUID idAsset = clientMarkInterestInAssetRequestDTO.getAssetId();
+
         validateAssetExists(idAsset);
         validateClientExists(idSubscriber);
+
+        ClientModel clientModel = this.clientRepository.findById(idSubscriber)
+                .orElseThrow(() -> new ClientIdNotFoundException(idSubscriber));
+        clientModel.validateAccess(clientMarkInterestInAssetRequestDTO.getAccessCode());
+
+        this.validateAssetIsInactive(idAsset);
 
         boolean alreadySubscribed = subscriptionRepository
                 .findByAssetIdAndSubscriptionType(idAsset, subscriptionType)
@@ -117,9 +129,16 @@ public class EventManagerImpl implements EventManager {
         }
     }
 
+    private void validateAssetIsInactive(UUID assetId) {
+        AssetModel assetModel = this.assetRepository.findById(assetId).
+                orElseThrow(AssetNotFoundException::new);
+        if (assetModel.isActive()) throw new AssetIsAlreadyActive();
+    }
+
     private ISubscriber getValidSubscriber(UUID clientId) {
         return clientRepository.findById(clientId)
                 .map(client -> (ISubscriber) client)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
     }
+
 }

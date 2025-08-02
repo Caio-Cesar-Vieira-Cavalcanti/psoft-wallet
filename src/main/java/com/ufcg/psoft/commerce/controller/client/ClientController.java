@@ -107,7 +107,7 @@ public class ClientController {
     public ResponseEntity<?> markInterestInAvailabilityOfAsset(@PathVariable("id") UUID id,
                                                                @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
 
-        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO.getAssetId(), id, SubscriptionTypeEnum.AVAILABILITY);
+        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO, id, SubscriptionTypeEnum.AVAILABILITY);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(subscriptionResponseDTO);
