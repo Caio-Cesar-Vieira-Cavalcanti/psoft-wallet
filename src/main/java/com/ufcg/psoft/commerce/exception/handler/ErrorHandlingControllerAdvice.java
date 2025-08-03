@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.exception.handler;
 
 import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -62,6 +63,33 @@ public class ErrorHandlingControllerAdvice {
         );
     }
 
+    @ExceptionHandler(AssetIsAlreadyActive.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onAssetIsAlreadyActive(AssetIsAlreadyActive e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(AssetIsInactive.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onAssetIsInactive(AssetIsInactive e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(AssetIsNotStockNeitherCrypto.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onAssetIsNotStockNeitherCrypto(AssetIsNotStockNeitherCrypto e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
     @ExceptionHandler(InvalidAssetTypeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
@@ -93,6 +121,15 @@ public class ErrorHandlingControllerAdvice {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
     public CustomErrorType handleUnauthorizedAdminAccessException(UnauthorizedUserAccessException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(ClientIsNotPremium.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ResponseBody
+    public CustomErrorType handleClientIsNotPremium(ClientIsNotPremium e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );

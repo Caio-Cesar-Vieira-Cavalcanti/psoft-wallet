@@ -17,10 +17,13 @@ import com.ufcg.psoft.commerce.service.admin.AdminService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.asset.AssetServiceImpl;
 
+import com.ufcg.psoft.commerce.service.observer.EventManager;
+import com.ufcg.psoft.commerce.service.observer.EventManagerImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -35,6 +38,7 @@ public class AssetServiceUnitTests {
     private AdminService adminService;
     private AssetService assetService;
     private ModelMapper modelMapper;
+    private EventManager assetEventManager;
 
     private UUID assetId;
     private AssetModel asset;
@@ -51,13 +55,16 @@ public class AssetServiceUnitTests {
         assetRepository = mock(AssetRepository.class);
         assetTypeRepository = mock(AssetTypeRepository.class);
         adminService = mock(AdminService.class);
-        modelMapper = new ModelMapper();
+        assetEventManager = mock(EventManager.class);
 
         assetService = new AssetServiceImpl();
+        modelMapper = new ModelMapper();
+
         ReflectionTestUtils.setField(assetService, "assetRepository", assetRepository);
         ReflectionTestUtils.setField(assetService, "assetTypeRepository", assetTypeRepository);
         ReflectionTestUtils.setField(assetService, "adminService", adminService);
         ReflectionTestUtils.setField(assetService, "modelMapper", modelMapper);
+        ReflectionTestUtils.setField(assetService, "assetEventManager", assetEventManager);
 
         assetId = UUID.randomUUID();
         asset = AssetModel.builder()
@@ -769,7 +776,7 @@ public class AssetServiceUnitTests {
     @Test
     @DisplayName("Must deactivate a valid asset with valid admin")
     void testShouldDeactivateAssetWithValidAdmin() {
-        asset.setActive(true); // ativo inicialmente
+        asset.setActive(true);
 
         AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
                 .adminEmail("admin@example.com")
