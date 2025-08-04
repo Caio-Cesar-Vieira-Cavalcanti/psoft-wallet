@@ -6,7 +6,6 @@ import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.model.asset.*;
-import com.ufcg.psoft.commerce.model.asset.types.Stock;
 import com.ufcg.psoft.commerce.model.asset.types.TreasuryBounds;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.wallet.*;
@@ -722,7 +721,6 @@ public class ClientControllerTests {
                 .andExpect(status().isBadRequest());
     }
 
-    //FALSO POSITIVO, TÁ PASSANDO MAS PELOS MOTIVOS ERRADOS
     @Test
     @DisplayName("Should return 400 because the asset isn't stock or crypto")
     void testMarkInterestInPriceVariation_NeitherStockOrCrypto() throws Exception {
@@ -782,12 +780,25 @@ public class ClientControllerTests {
 
         assetRepository.save(asset);
 
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Lucas Pereira",
+                new EmailModel("lucas@email.com"),
+                new AccessCodeModel("654321"),
+                new AddressModel("Street", "456", "Bairro", "Cidade", "Estado", "Brasil", "11111-111"),
+                PlanTypeEnum.NORMAL,
+                5000.0,
+                new WalletModel()
+        );
+
+        UUID otherClientId = clientRepository.save(client).getId();
+
         ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
                 .accessCode("654321")
                 .assetId(asset.getId())
                 .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + otherClientId + INTEREST + PRICE_VARIATION)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isUnauthorized());

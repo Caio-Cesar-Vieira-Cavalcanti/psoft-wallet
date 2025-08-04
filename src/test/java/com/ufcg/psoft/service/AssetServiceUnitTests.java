@@ -18,12 +18,11 @@ import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.asset.AssetServiceImpl;
 
 import com.ufcg.psoft.commerce.service.observer.EventManager;
-import com.ufcg.psoft.commerce.service.observer.EventManagerImpl;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -77,6 +76,11 @@ public class AssetServiceUnitTests {
 
         when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
         doNothing().when(adminService).validateAdmin(anyString(), anyString());
+    }
+
+    @AfterEach
+    void tearDown() {
+        assetRepository.deleteAll();
     }
 
     @Test
@@ -378,6 +382,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should update the quotation successfully")
     void testUpdateQuotation_Success() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(105.0)
@@ -394,6 +399,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the given asset id doesn't exist")
     void testUpdateQuotation_ThrowsAssetNotFoundException() {
         UUID unknownId = UUID.randomUUID();
         when(assetRepository.findById(unknownId)).thenReturn(Optional.empty());
@@ -408,6 +414,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the quotation variation is invalid")
     void testUpdateQuotation_ThrowsInvalidQuotationVariationException() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(100.5)
@@ -419,6 +426,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the asset type is invalid")
     void testUpdateQuotation_InvalidAssetType_ShouldThrowException() {
         AssetType invalidType = new AssetType("INVALID_TYPE") {
             @Override
@@ -439,6 +447,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should increase the quotation successfully")
     void testUpdateQuotation_MinimumValidVariation_ShouldUpdate() {
         double current = 100.0;
         double newQuotation = current * 1.01;
@@ -457,6 +466,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should decrease the quotation successfully")
     void testUpdateQuotation_MinimumValidNegativeVariation_ShouldUpdate() {
         double current = 100.0;
         double newQuotation = current * 0.99;
@@ -475,6 +485,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the positive variation is invalid")
     void testUpdateQuotation_InvalidPositiveVariation_ShouldThrowException() {
         double current = 100.0;
         double newQuotation = current * 1.005;
@@ -489,6 +500,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the negative variation is invalid")
     void testUpdateQuotation_InvalidNegativeVariation_ShouldThrowException() {
         double current = 100.0;
         double newQuotation = current * 0.995;
@@ -503,6 +515,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin")
     void testUpdateQuotation_UnauthorizedAdminAccess_ShouldThrowException() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(110.0)
@@ -522,6 +535,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin even if the quotation is valid")
     void testUpdateQuotation_UnauthorizedAdminAccess_EvenIfQuotationValid_ShouldThrowException() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(150.0)
@@ -541,6 +555,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should create a asset successfully")
     void testCreateAsset_Success() {
         AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
                 .name("Bitcoin")
@@ -563,6 +578,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin")
     void testCreateAsset_UnauthorizedAdmin() {
         AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
                 .name("Bitcoin")
@@ -580,6 +596,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should delete a asset successfully")
     void testDeleteAsset_Success() {
         AssetPostRequestDTO postDto = AssetPostRequestDTO.builder()
                 .name("Bitcoin")
@@ -617,6 +634,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin")
     void testDeleteAsset_UnauthorizedAdmin() {
         AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
                 .adminEmail("notadmin@example.com")
@@ -631,6 +649,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the id is invalid")
     void testDeleteAsset_InvalidId() {
         UUID invalidId = UUID.randomUUID();
 
@@ -645,6 +664,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get all assets sucessfully")
     void testGetAllAssets() {
         AssetModel asset2 = AssetModel.builder()
                 .id(UUID.randomUUID())
@@ -666,6 +686,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get the asset using his id successfully")
     void testGetAssetById_Sucess() {
         AssetResponseDTO response = assetService.getAssetById(assetId);
 
@@ -675,6 +696,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the id is invalid")
     void testGetAssetById_WithInvalidId() {
         UUID invalidId = UUID.randomUUID();
         when(assetRepository.findById(invalidId)).thenReturn(Optional.empty());
@@ -684,6 +706,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get all active assets from a specific type successfully")
     void testGetActiveAssetsByAssetType() {
         AssetType mockAssetType = mock(AssetType.class);
 

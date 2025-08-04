@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -537,7 +536,7 @@ public class AssetControllerTests {
     @Test
     @DisplayName("Fails on malformed JSON input")
     void testUpdateQuotation_MalformedJson() throws Exception {
-        String malformedJson = "{ \"quotation\": 105.0"; // missing closing }
+        String malformedJson = "{ \"quotation\": 105.0"; // missing closing
 
         mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
