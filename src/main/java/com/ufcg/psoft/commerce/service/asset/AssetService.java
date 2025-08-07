@@ -13,8 +13,6 @@ public interface AssetService {
 
     void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO);
 
-    List<AssetResponseDTO> getAllAssets();
-
     List<AssetResponseDTO> getAvailableAssets();
 
     List<AssetResponseDTO> getActiveAssetsByAssetType(AssetType assetType);

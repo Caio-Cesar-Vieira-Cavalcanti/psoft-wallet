@@ -67,14 +67,6 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public List<AssetResponseDTO> getAllAssets() {
-        return assetRepository.findAll()
-                .stream()
-                .map(assetModel -> modelMapper.map(assetModel, AssetResponseDTO.class))
-                .toList();
-    }
-
-    @Override
     public AssetResponseDTO getAssetById(UUID idAsset) {
         AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
         return modelMapper.map(assetModel, AssetResponseDTO.class);

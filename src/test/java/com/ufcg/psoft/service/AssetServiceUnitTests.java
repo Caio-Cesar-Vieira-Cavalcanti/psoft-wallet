@@ -664,28 +664,6 @@ public class AssetServiceUnitTests {
     }
 
     @Test
-    @DisplayName("Should get all assets sucessfully")
-    void testGetAllAssets() {
-        AssetModel asset2 = AssetModel.builder()
-                .id(UUID.randomUUID())
-                .name("Second Asset")
-                .quotation(200.0)
-                .quotaQuantity(500.0)
-                .assetType(mockStockType())
-                .build();
-
-        List<AssetModel> mockAssets = List.of(asset, asset2);
-
-        when(assetRepository.findAll()).thenReturn(mockAssets);
-
-        List<AssetResponseDTO> result = assetService.getAllAssets();
-
-        assertEquals(2, result.size());
-        assertEquals("Test Asset", result.get(0).getName());
-        assertEquals("Second Asset", result.get(1).getName());
-    }
-
-    @Test
     @DisplayName("Should get the asset using his id successfully")
     void testGetAssetById_Sucess() {
         AssetResponseDTO response = assetService.getAssetById(assetId);
