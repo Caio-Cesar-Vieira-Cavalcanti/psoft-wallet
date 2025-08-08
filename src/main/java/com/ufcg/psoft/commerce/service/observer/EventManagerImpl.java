@@ -34,6 +34,8 @@ public class EventManagerImpl implements EventManager {
     private ClientRepository clientRepository;
 
     public SubscriptionResponseDTO subscribeToAssetEvent(UUID assetId, UUID idSubscriber, SubscriptionTypeEnum subscriptionType) {
+        this.validateClient(idSubscriber, subscriptionType);
+
         boolean alreadySubscribed = subscriptionRepository
                 .findByAssetIdAndSubscriptionType(assetId, subscriptionType)
                 .stream()
@@ -89,6 +91,23 @@ public class EventManagerImpl implements EventManager {
         return clientRepository.findById(clientId)
                 .map(client -> (ISubscriber) client)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
+    }
+
+    private void validateClientExists(UUID clientId) {
+        if (!clientRepository.existsById(clientId)) {
+            throw new ClientIdNotFoundException(clientId);
+        }
+    }
+
+    private void validateClient(UUID subscriberId, SubscriptionTypeEnum subscriptionType) {
+        this.validateClientExists(subscriberId);
+
+        ClientModel clientModel = this.clientRepository.findById(subscriberId)
+                .orElseThrow(() -> new ClientIdNotFoundException(subscriberId));
+
+        if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
+            if (clientModel.getPlanType() != PlanTypeEnum.PREMIUM) throw new ClientIsNotPremium();
+        }
     }
 
 }
