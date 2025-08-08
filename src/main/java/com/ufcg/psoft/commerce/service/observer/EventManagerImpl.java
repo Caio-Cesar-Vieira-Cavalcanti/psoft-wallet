@@ -23,36 +23,26 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class EventManagerImpl implements EventManager {
 
     @Autowired
-    private AssetRepository assetRepository;
+    private SubscriptionRepository subscriptionRepository;
 
     @Autowired
     private ClientRepository clientRepository;
 
-    @Autowired
-    private SubscriptionRepository subscriptionRepository;
-
-    public SubscriptionResponseDTO subscribeToAssetEvent(ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, UUID idSubscriber, SubscriptionTypeEnum subscriptionType) {
-        UUID idAsset = clientMarkInterestInAssetRequestDTO.getAssetId();
-
-        this.validateClient(idSubscriber, clientMarkInterestInAssetRequestDTO, subscriptionType);
-        this.validateAsset(idAsset, subscriptionType);
-
+    public SubscriptionResponseDTO subscribeToAssetEvent(UUID assetId, UUID idSubscriber, SubscriptionTypeEnum subscriptionType) {
         boolean alreadySubscribed = subscriptionRepository
-                .findByAssetIdAndSubscriptionType(idAsset, subscriptionType)
+                .findByAssetIdAndSubscriptionType(assetId, subscriptionType)
                 .stream()
                 .anyMatch(sub -> sub.getClientId().equals(idSubscriber));
 
         if (!alreadySubscribed) {
             SubscriptionModel subscription = new SubscriptionModel();
-            subscription.setAssetId(idAsset);
+            subscription.setAssetId(assetId);
             subscription.setClientId(idSubscriber);
-            subscription.setQuotationAtMoment(this.getQuotationAtMoment(idAsset));
             subscription.setSubscriptionType(subscriptionType);
 
             subscriptionRepository.save(subscription);
@@ -60,7 +50,7 @@ public class EventManagerImpl implements EventManager {
 
         return SubscriptionResponseDTO.builder()
                 .message("Subscription registered successfully")
-                .assetId(idAsset)
+                .assetId(assetId)
                 .clientId(idSubscriber)
                 .subscriptionType(subscriptionType)
                 .build();
@@ -78,23 +68,10 @@ public class EventManagerImpl implements EventManager {
         subscriptions.forEach(subscription -> {
             UUID clientId = subscription.getClientId();
 
-            if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
-                if (!priceVariationIsValidToNotify(subscription)) return;
-            }
-
             ISubscriber subscriber = getValidSubscriber(clientId);
             subscriber.notify(contextMessage);
             this.subscriptionRepository.deleteById(subscription.getId());
         });
-    }
-
-    private boolean priceVariationIsValidToNotify(SubscriptionModel subscriptionModel) {
-        AssetModel assetModel = this.assetRepository.findById(subscriptionModel.getAssetId())
-                .orElseThrow(AssetNotFoundException::new);
-
-        double oldPrice = subscriptionModel.getQuotationAtMoment();
-        double currentPrice = assetModel.getQuotation();
-        return oldPrice * 1.1 < currentPrice || oldPrice * 0.9 > currentPrice;
     }
 
     private String formatSubscriptionType(SubscriptionTypeEnum type) {
@@ -106,66 +83,6 @@ public class EventManagerImpl implements EventManager {
 
     private List<SubscriptionModel> getSubscriptionsByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {
         return subscriptionRepository.findByAssetIdAndSubscriptionType(assetId, subscriptionType);
-    }
-
-    private void validateAssetExists(UUID assetId) {
-        if (!assetRepository.existsById(assetId)) {
-            throw new AssetNotFoundException("Asset not found with ID " + assetId);
-        }
-    }
-
-    private void validateClientExists(UUID clientId) {
-        if (!clientRepository.existsById(clientId)) {
-            throw new ClientIdNotFoundException(clientId);
-        }
-    }
-
-    private void validateAssetIsInactive(AssetModel assetModel) {
-        if (assetModel.isActive()) throw new AssetIsAlreadyActive();
-    }
-
-    private void validateAssetIsActive(AssetModel assetModel) {
-        if (!assetModel.isActive()) throw new AssetIsInactive();
-    }
-
-    private void validateAssetIsStockOrCrypto(AssetModel assetModel) {
-        System.out.println(assetModel.getAssetType().getName());
-        if (!assetModel.getAssetType().getName().equals(AssetTypeEnum.STOCK.name()) && !assetModel.getAssetType().getName().equals(AssetTypeEnum.CRYPTO.name())) {
-            throw new AssetIsNotStockNeitherCrypto();
-        }
-    }
-
-    private void validateClient(UUID subscriberId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum subscriptionType) {
-        this.validateClientExists(subscriberId);
-
-        ClientModel clientModel = this.clientRepository.findById(subscriberId)
-                .orElseThrow(() -> new ClientIdNotFoundException(subscriberId));
-
-        clientModel.validateAccess(clientMarkInterestInAssetRequestDTO.getAccessCode());
-
-        if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
-            if (clientModel.getPlanType() != PlanTypeEnum.PREMIUM) throw new ClientIsNotPremium();
-        }
-    }
-
-    private void validateAsset(UUID assetId, SubscriptionTypeEnum subscriptionType) {
-        this.validateAssetExists(assetId);
-
-        AssetModel assetModel = this.assetRepository.findById(assetId).
-                orElseThrow(AssetNotFoundException::new);
-
-        if (subscriptionType == SubscriptionTypeEnum.AVAILABILITY) this.validateAssetIsInactive(assetModel);
-        else {
-            this.validateAssetIsActive(assetModel);
-            this.validateAssetIsStockOrCrypto(assetModel);
-        }
-    }
-
-    private double getQuotationAtMoment(UUID assetId) {
-        AssetModel assetModel = this.assetRepository.findById(assetId).
-                orElseThrow(AssetNotFoundException::new);
-
-        return assetModel.getQuotation();
     }
 
     private ISubscriber getValidSubscriber(UUID clientId) {

@@ -1,7 +1,9 @@
 package com.ufcg.psoft.commerce.service.asset;
 
+import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.*;
 
+import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -54,8 +56,7 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        AssetModel assetModel = this.getAsset(idAsset);
 
         adminService.validateAdmin(assetDeleteRequestDTO.getAdminEmail(), assetDeleteRequestDTO.getAdminAccessCode());
 
@@ -68,7 +69,7 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public AssetResponseDTO getAssetById(UUID idAsset) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+        AssetModel assetModel = this.getAsset(idAsset);
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 
@@ -96,8 +97,7 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        AssetModel assetModel = this.getAsset(idAsset);
 
         adminService.validateAdmin(assetQuotationUpdateDTO.getAdminEmail(), assetQuotationUpdateDTO.getAdminAccessCode());
 
@@ -110,7 +110,7 @@ public class AssetServiceImpl implements AssetService {
         double variation = Math.abs((newQuotation - currentQuotation) / currentQuotation);
         if (variation < MIN_QUOTATION_VARIATION) throw new InvalidQuotationVariationException();
 
-        assetModel.setQuotation(newQuotation);
+        assetModel.updateQuotation(newQuotation);
         assetRepository.save(assetModel);
 
         assetEventManager.notifySubscribersByType(idAsset, SubscriptionTypeEnum.PRICE_VARIATION);
@@ -118,26 +118,32 @@ public class AssetServiceImpl implements AssetService {
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 
-    private void notifyAvailabilitySubscribersOnActivation(boolean wasInactive, AssetModel asset) {
-        if (wasInactive && asset.isActive()) {
-            assetEventManager.notifySubscribersByType(asset.getId(), SubscriptionTypeEnum.AVAILABILITY);
-        }
-    }
-
     @Override
     public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        AssetModel assetModel = this.getAsset(idAsset);
 
         adminService.validateAdmin(assetPatchRequestDTO.getAdminEmail(), assetPatchRequestDTO.getAdminAccessCode());
 
-        boolean wasInactive = !assetModel.isActive();
+        assetModel.changeActiveStatus(assetPatchRequestDTO.getIsActive());
 
-        assetModel.setActive(assetPatchRequestDTO.getIsActive());
         assetRepository.save(assetModel);
-
-        this.notifyAvailabilitySubscribersOnActivation(wasInactive, assetModel);
-
         return new AssetResponseDTO(assetModel);
+    }
+
+    public SubscriptionResponseDTO subscribeToPriceVariation(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+        AssetModel asset = getAsset(clientMarkInterestInAssetRequestDTO.getAssetId());
+        return asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION);
+    }
+
+    public SubscriptionResponseDTO subscribeToAvailability(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+        AssetModel asset = getAsset(clientMarkInterestInAssetRequestDTO.getAssetId());
+        return asset.subscribe(clientId, SubscriptionTypeEnum.AVAILABILITY);
+    }
+
+    private AssetModel getAsset(UUID idAsset) {
+        AssetModel assetModel = assetRepository.findById(idAsset)
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        assetModel.setEventManager(assetEventManager);
+        return assetModel;
     }
 }

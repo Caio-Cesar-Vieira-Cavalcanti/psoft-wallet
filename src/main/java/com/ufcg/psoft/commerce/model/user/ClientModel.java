@@ -19,6 +19,9 @@ import java.util.UUID;
 @DiscriminatorValue("C")
 public class ClientModel extends UserModel implements ISubscriber {
 
+    public static final String ANSI_MAGENTA = "\u001B[35m";
+    public static final String ANSI_RESET = "\u001B[0m";
+
     @Builder
     public ClientModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode, AddressModel address, PlanTypeEnum planType, double budget, WalletModel wallet) {
         super(id, fullName, email, accessCode);
@@ -49,6 +52,6 @@ public class ClientModel extends UserModel implements ISubscriber {
 
     @Override
     public void notify(String context) {
-        System.out.println(context + " (Notified client: " + this.getFullName() + ")");
+        System.out.println(ANSI_MAGENTA + context + " (Notified client: " + this.getFullName() + ")" + ANSI_RESET);
     }
 }

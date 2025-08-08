@@ -1,6 +1,8 @@
 package com.ufcg.psoft.commerce.service.asset;
 
+import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.*;
+import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import jakarta.validation.Valid;
@@ -24,4 +26,8 @@ public interface AssetService {
     AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO);
 
     AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO);
+
+    SubscriptionResponseDTO subscribeToAvailability(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO);
+
+    SubscriptionResponseDTO subscribeToPriceVariation(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO);
 }

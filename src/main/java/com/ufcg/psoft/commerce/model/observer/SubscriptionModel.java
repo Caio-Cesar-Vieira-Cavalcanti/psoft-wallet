@@ -25,9 +25,6 @@ public class SubscriptionModel {
     @Column(name = "asset_id", nullable = false)
     private UUID assetId;
 
-    @Column(name = "quotation_at_momemnt")
-    private double quotationAtMoment;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubscriptionTypeEnum subscriptionType;

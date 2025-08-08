@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public interface EventManager {
 
-    SubscriptionResponseDTO subscribeToAssetEvent(ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, UUID idSubscriber, SubscriptionTypeEnum subscriptionType);
+    SubscriptionResponseDTO subscribeToAssetEvent(UUID assetId, UUID idSubscriber, SubscriptionTypeEnum subscriptionType);
 
     void notifySubscribersByType(UUID assetId, SubscriptionTypeEnum subscriptionType);
 }

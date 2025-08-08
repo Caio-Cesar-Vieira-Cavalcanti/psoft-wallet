@@ -7,6 +7,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
 import jakarta.validation.Valid;
 import org.springframework.data.repository.query.Param;
 
@@ -30,4 +31,6 @@ public interface ClientService {
     List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO requestDTO);
 
     AssetResponseDTO getAssetDetails(UUID clientId, UUID assetId, ClientAssetAccessRequestDTO clientAssetAccessRequestDTO);
+
+    void validateClientAccess(UUID clientId, String accessCode);
 }
