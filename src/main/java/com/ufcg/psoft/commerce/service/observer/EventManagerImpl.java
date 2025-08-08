@@ -1,22 +1,14 @@
 package com.ufcg.psoft.commerce.service.observer;
 
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;
-import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsInactive;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCrypto;
-import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
-import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
 import com.ufcg.psoft.commerce.model.observer.ISubscriber;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.repository.observer.SubscriptionRepository;
-import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

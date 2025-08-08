@@ -2,17 +2,11 @@ package com.ufcg.psoft.service;
 
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsInactive;
-import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
-import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.asset.types.Crypto;
 import com.ufcg.psoft.commerce.model.asset.types.Stock;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
-import com.ufcg.psoft.commerce.model.user.*;
-import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.model.asset.*;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
