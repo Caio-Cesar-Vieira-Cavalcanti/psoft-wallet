@@ -952,5 +952,4 @@ public class AssetServiceUnitTests {
         verify(adminService, never()).validateAdmin(anyString(), anyString());
         verify(assetRepository, never()).save(any());
     }
-
 }

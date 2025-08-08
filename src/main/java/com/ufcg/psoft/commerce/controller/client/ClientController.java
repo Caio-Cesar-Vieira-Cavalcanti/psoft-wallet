@@ -2,16 +2,15 @@ package com.ufcg.psoft.commerce.controller.client;
 
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
-import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
-import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.service.client.ClientService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,9 +24,6 @@ public class ClientController {
 
     @Autowired
     ClientService clientService;
-
-    @Autowired
-    AssetService assetService;
 
     @GetMapping("/{clientId}")
     public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable("clientId") UUID clientId) {
@@ -96,8 +92,8 @@ public class ClientController {
     public ResponseEntity<SubscriptionResponseDTO> markInterestInPriceVariationOfAsset(@PathVariable("clientId") UUID clientId,
                                                                  @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
 
-        clientService.validateClientAccess(clientId, clientMarkInterestInAssetRequestDTO.getAccessCode());
-        SubscriptionResponseDTO subscriptionResponseDTO = assetService.subscribeToPriceVariation(clientId, clientMarkInterestInAssetRequestDTO);
+
+        SubscriptionResponseDTO subscriptionResponseDTO = clientService.redirectMarkInterestInPriceVariationOfAsset(clientId, clientMarkInterestInAssetRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(subscriptionResponseDTO);
@@ -107,8 +103,7 @@ public class ClientController {
     public ResponseEntity<SubscriptionResponseDTO> markInterestInAvailabilityOfAsset(@PathVariable("clientId") UUID clientId,
                                                                @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
 
-        clientService.validateClientAccess(clientId, clientMarkInterestInAssetRequestDTO.getAccessCode());
-        SubscriptionResponseDTO subscriptionResponseDTO = assetService.subscribeToAvailability(clientId, clientMarkInterestInAssetRequestDTO);
+        SubscriptionResponseDTO subscriptionResponseDTO = clientService.redirectMarkAvailabilityOfInterestInAsset(clientId, clientMarkInterestInAssetRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(subscriptionResponseDTO);

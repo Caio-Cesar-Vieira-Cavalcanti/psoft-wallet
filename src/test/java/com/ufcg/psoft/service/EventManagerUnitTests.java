@@ -179,45 +179,7 @@ public class EventManagerUnitTests {
             eventManager.subscribeToAssetEvent(assetId1, invalidClientId, SubscriptionTypeEnum.AVAILABILITY);
         });
     }
-
-//    @Test
-//    @DisplayName("Should throw exception because the asset is already active")
-//    void testSubscribeToAssetAvailability_AssetIsActive() {
-//        AssetIsAlreadyActive exception = assertThrows(AssetIsAlreadyActive.class, () -> {
-//            eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.AVAILABILITY);
-//        });
-//        assertEquals("Asset is already active!", exception.getMessage());
-//    }
-//
-//    @Test
-//    @DisplayName("Should throw exception because the asset doesn't exist")
-//    void testSubscribeToAssetEvent_InvalidAssetId() {
-//        UUID invalidAssetId = UUID.randomUUID();
-//
-//        assertThrows(AssetNotFoundException.class, () -> {
-//            eventManager.subscribeToAssetEvent(invalidAssetId, clientId, SubscriptionTypeEnum.AVAILABILITY);
-//        });
-//    }
-//
-//    @Test
-//    @DisplayName("Should throw exception because the access is inactive")
-//    void testSubscribeToAssetPriceVariation_AssetIsInactive() {
-//        AssetIsInactive exception = assertThrows(AssetIsInactive.class, () -> {
-//            eventManager.subscribeToAssetEvent(assetId2, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
-//        });
-//        assertEquals("Asset is inactive!", exception.getMessage());
-//    }
-//
-//    @Test
-//    @DisplayName("Should throw exception because the access code is invalid")
-//    void testSubscribeToAssetEvent_InvalidAccessCode() {
-//        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () -> {
-//            eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.AVAILABILITY);
-//        });
-//        assertEquals("Unauthorized client access: access code is incorrect", exception.getMessage());
-//    }
 }
-
 
     /*
     public void notifySubscribersByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {

@@ -1,21 +1,14 @@
 package com.ufcg.psoft.commerce.service.client;
 
+import com.ufcg.psoft.commerce.enums.*;
+import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
-import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
-import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
-import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
-import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
+import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.user.ClientModel;
-import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
+import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
@@ -112,6 +105,20 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    public SubscriptionResponseDTO redirectMarkAvailabilityOfInterestInAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+        this.validateClientAccess(clientId, clientMarkInterestInAssetRequestDTO.getAccessCode());
+
+        return assetService.subscribeToAsset(clientId, clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum.AVAILABILITY);
+    }
+
+    @Override
+    public SubscriptionResponseDTO redirectMarkInterestInPriceVariationOfAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+        this.validateClientAccess(clientId, clientMarkInterestInAssetRequestDTO.getAccessCode());
+
+        return assetService.subscribeToAsset(clientId, clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum.PRICE_VARIATION);
+    }
+
+    @Override
     public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
         this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
 
@@ -134,10 +141,8 @@ public class ClientServiceImpl implements ClientService {
     }
 
     private ClientModel getClient(UUID clientId) {
-        ClientModel client = clientRepository.findById(clientId)
+        return clientRepository.findById(clientId)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
-
-        return client;
     }
 
 }

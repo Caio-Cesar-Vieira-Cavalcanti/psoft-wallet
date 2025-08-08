@@ -89,12 +89,6 @@ public class AssetServiceImpl implements AssetService {
                 .toList();
     }
 
-    // Utility Method
-    public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
-        String assetType = assetTypeEnum.name();
-        return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
-    }
-
     @Override
     public AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO) {
         AssetModel assetModel = this.getAsset(idAsset);
@@ -130,14 +124,16 @@ public class AssetServiceImpl implements AssetService {
         return new AssetResponseDTO(assetModel);
     }
 
-    public SubscriptionResponseDTO subscribeToPriceVariation(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+    @Override
+    public SubscriptionResponseDTO subscribeToAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum subscriptionType) {
         AssetModel asset = getAsset(clientMarkInterestInAssetRequestDTO.getAssetId());
-        return asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION);
+        return asset.subscribe(clientId, subscriptionType);
     }
 
-    public SubscriptionResponseDTO subscribeToAvailability(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
-        AssetModel asset = getAsset(clientMarkInterestInAssetRequestDTO.getAssetId());
-        return asset.subscribe(clientId, SubscriptionTypeEnum.AVAILABILITY);
+    // Utility Method
+    public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
+        String assetType = assetTypeEnum.name();
+        return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
     }
 
     private AssetModel getAsset(UUID idAsset) {
