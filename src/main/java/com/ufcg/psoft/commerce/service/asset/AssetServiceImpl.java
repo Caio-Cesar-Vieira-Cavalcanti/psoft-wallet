@@ -107,8 +107,6 @@ public class AssetServiceImpl implements AssetService {
         assetModel.updateQuotation(newQuotation);
         assetRepository.save(assetModel);
 
-        assetEventManager.notifySubscribersByType(idAsset, SubscriptionTypeEnum.PRICE_VARIATION);
-
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 

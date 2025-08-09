@@ -24,14 +24,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class EventManagerUnitTests {
 
@@ -179,50 +179,70 @@ public class EventManagerUnitTests {
             eventManager.subscribeToAssetEvent(assetId1, invalidClientId, SubscriptionTypeEnum.AVAILABILITY);
         });
     }
+
+    @Test
+    @DisplayName("Should process price variation notifications for subscribed clients")
+    void testPriceVariationNotification_ValidScenario() {
+        SubscriptionModel subscription = SubscriptionModel.builder()
+                .assetId(assetId1)
+                .clientId(clientId)
+                .subscriptionType(SubscriptionTypeEnum.PRICE_VARIATION)
+                .build();
+
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION))
+                .thenReturn(List.of(subscription));
+
+        eventManager.notifySubscribersByType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION);
+
+        verify(clientRepository, times(1)).findById(clientId);
+        verify(subscriptionRepository, times(1)).deleteById(subscription.getId());
+    }
+
+    @Test
+    @DisplayName("Should process availability notifications for inactive assets")
+    void testAvailabilityNotification_ValidScenario() {
+        SubscriptionModel subscription = SubscriptionModel.builder()
+                .assetId(assetId2)
+                .clientId(clientId)
+                .subscriptionType(SubscriptionTypeEnum.AVAILABILITY)
+                .build();
+
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId2, SubscriptionTypeEnum.AVAILABILITY))
+                .thenReturn(List.of(subscription));
+
+        eventManager.notifySubscribersByType(assetId2, SubscriptionTypeEnum.AVAILABILITY);
+
+        verify(clientRepository, times(1)).findById(clientId);
+        verify(subscriptionRepository, times(1)).deleteById(subscription.getId());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when client not found")
+    void testNotification_ClientNotFound_ThrowsException() {
+        UUID unknownClientId = UUID.randomUUID();
+        SubscriptionModel subscription = SubscriptionModel.builder()
+                .assetId(assetId1)
+                .clientId(unknownClientId)
+                .subscriptionType(SubscriptionTypeEnum.PRICE_VARIATION)
+                .build();
+
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION))
+                .thenReturn(List.of(subscription));
+        when(clientRepository.findById(unknownClientId)).thenReturn(Optional.empty());
+
+        assertThrows(ClientIdNotFoundException.class, () ->
+                eventManager.notifySubscribersByType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION));
+    }
+
+    @Test
+    @DisplayName("Should do nothing when no subscriptions exist")
+    void testNotification_NoSubscriptions_SilentSkip() {
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION))
+                .thenReturn(List.of());
+
+        eventManager.notifySubscribersByType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION);
+
+        verify(clientRepository, never()).findById(any());
+        verify(subscriptionRepository, never()).deleteById(any());
+    }
 }
-
-    /*
-    public void notifySubscribersByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {
-        List<SubscriptionModel> subscriptions = getSubscriptionsByType(assetId, subscriptionType);
-
-        String contextMessage = String.format(
-                "You are receiving a '%s' type notification regarding the asset with ID: %s",
-                formatSubscriptionType(subscriptionType),
-                assetId
-        );
-
-        subscriptions.forEach(subscription -> {
-            UUID clientId = subscription.getClientId();
-
-            if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
-                if (!priceVariationIsValidToNotify(subscription)) return;
-            }
-
-            ISubscriber subscriber = getValidSubscriber(clientId);
-            subscriber.notify(contextMessage);
-            this.subscriptionRepository.deleteById(subscription.getId());
-        });
-    }
-
-    private boolean priceVariationIsValidToNotify(SubscriptionModel subscriptionModel) {
-        AssetModel assetModel = this.assetRepository.findById(subscriptionModel.getAssetId())
-                .orElseThrow(AssetNotFoundException::new);
-
-        double oldPrice = subscriptionModel.getQuotationAtMoment();
-        double currentPrice = assetModel.getQuotation();
-        return oldPrice * 1.1 < currentPrice || oldPrice * 0.9 > currentPrice;
-    }
-
-    private double getQuotationAtMoment(UUID assetId) {
-        AssetModel assetModel = this.assetRepository.findById(assetId).
-                orElseThrow(AssetNotFoundException::new);
-
-        return assetModel.getQuotation();
-    }
-
-    private ISubscriber getValidSubscriber(UUID clientId) {
-        return clientRepository.findById(clientId)
-                .map(client -> (ISubscriber) client)
-                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
-    }
-    */
