@@ -1106,8 +1106,7 @@ public class AssetServiceUnitTests {
     void testSubscribe_PriceVariationForInactiveAsset_ThrowsException() {
         asset.setActive(false);
         UUID clientId = UUID.randomUUID();
-
-        // Act & Assert
+        
         assertThrows(AssetIsInactive.class, () ->
                 asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION));
     }
