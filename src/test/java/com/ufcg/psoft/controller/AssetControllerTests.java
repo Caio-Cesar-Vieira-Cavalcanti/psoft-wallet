@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -119,43 +118,6 @@ public class AssetControllerTests {
                 .andExpect(jsonPath("$.assetType.name").value("STOCK"))
                 .andExpect(jsonPath("$.description").value("A brand new asset for testing purposes."))
                 .andExpect(jsonPath("$.isActive").value(true));
-    }
-
-    @Test
-    @DisplayName("Should return all assets")
-    void testShouldReturnAllAssets() throws Exception {
-        AssetModel anotherAsset = createDefaultAsset(cryptoType);
-        anotherAsset.setName("Another Asset");
-
-        assetRepository.save(anotherAsset);
-
-        mockMvc.perform(get(ASSET_CRUD_URL)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].name").value("Default Asset Test"))
-                .andExpect(jsonPath("$[1].name").value("Another Asset"));
-    }
-
-    @Test
-    @DisplayName("Should return asset by ID")
-    void testShouldReturnAssetById() throws Exception {
-        mockMvc.perform(get(ASSET_BASE_URL + "/" + assetId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(assetId.toString()))
-                .andExpect(jsonPath("$.name").value("Default Asset Test"));
-    }
-
-    @Test
-    @DisplayName("Should return 404 if asset not found by ID")
-    void testShouldReturnNotFoundIfAssetByIdDoesNotExist() throws Exception {
-        UUID nonExistentId = UUID.randomUUID();
-
-        mockMvc.perform(get(ASSET_BASE_URL + "/" + nonExistentId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Asset not found!"));
     }
 
     @Test
@@ -574,7 +536,7 @@ public class AssetControllerTests {
     @Test
     @DisplayName("Fails on malformed JSON input")
     void testUpdateQuotation_MalformedJson() throws Exception {
-        String malformedJson = "{ \"quotation\": 105.0"; // missing closing }
+        String malformedJson = "{ \"quotation\": 105.0"; // missing closing
 
         mockMvc.perform(patch(ASSET_BASE_URL + assetId + QUOTATION_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)

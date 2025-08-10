@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.model.user;
 
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
+import com.ufcg.psoft.commerce.model.observer.ISubscriber;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -16,7 +17,10 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @DiscriminatorValue("C")
-public class ClientModel extends UserModel {
+public class ClientModel extends UserModel implements ISubscriber {
+
+    public static final String ANSI_MAGENTA = "\u001B[35m";
+    public static final String ANSI_RESET = "\u001B[0m";
 
     @Builder
     public ClientModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode, AddressModel address, PlanTypeEnum planType, double budget, WalletModel wallet) {
@@ -44,5 +48,10 @@ public class ClientModel extends UserModel {
         if (!this.getAccessCode().matches(accessCode)) {
             throw new UnauthorizedUserAccessException("Unauthorized client access: access code is incorrect");
         }
+    }
+
+    @Override
+    public void notify(String context) {
+        System.out.println(ANSI_MAGENTA + context + " (Notified client: " + this.getFullName() + ")" + ANSI_RESET);
     }
 }

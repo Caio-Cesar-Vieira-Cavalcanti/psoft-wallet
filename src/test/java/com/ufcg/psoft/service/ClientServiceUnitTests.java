@@ -1,5 +1,6 @@
 package com.ufcg.psoft.service;
 
+import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
@@ -9,11 +10,14 @@ import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
+import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import com.ufcg.psoft.commerce.service.client.ClientServiceImpl;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -36,6 +40,10 @@ public class ClientServiceUnitTests {
 
     private UUID clientId;
     private ClientModel client;
+
+    private AssetService assetService;
+    private UUID assetId;
+    private AssetResponseDTO assetResponseDTO;
 
     @BeforeEach
     void setUp() {
@@ -60,9 +68,27 @@ public class ClientServiceUnitTests {
             10000.0,
             null
         );
+
+        assetService = mock(AssetService.class);
+        ReflectionTestUtils.setField(clientService, "assetService", assetService);
+
+        assetId = UUID.randomUUID();
+        assetResponseDTO = AssetResponseDTO.builder()
+                .id(assetId)
+                .name("Bitcoin")
+                .description("Best crypto ever")
+                .quotation(100000.0)
+                .quotaQuantity(20.0)
+                .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        clientRepository.deleteAll();
     }
 
     @Test
+    @DisplayName("Should create client successfully")
     void testCreateClient_Success() {
         ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
                 .fullName("João Azevedo")
@@ -84,7 +110,8 @@ public class ClientServiceUnitTests {
     }
 
     @Test
-    void testCreateClient_WithAccessCodeHasLessThan6Digits() {
+    @DisplayName("Should throw exception because the access code has less than 6 digits")
+    void testCreateClient_WithAccessCodeLessThan6Digits() {
         ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
                 .fullName("João Azevedo")
                 .email("joao@email.com")
@@ -103,6 +130,25 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the email is invalid")
+    void testCreateClient_WithNoNameAndEmail() {
+        ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
+                .accessCode("123456")
+                .budget(10000.0)
+                .planType(PlanTypeEnum.PREMIUM)
+                .address(new AddressDTO("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"))
+                .build();
+
+        when(clientRepository.save(any(ClientModel.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            clientService.create(dto);
+        });
+        assertEquals("Invalid email", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should patch a existing client full name successfully")
     void testPatchFullName_WithValidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -115,6 +161,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the client's access code is invalid")
     void testPatchFullName_WithInvalidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -125,6 +172,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should remove the existing client successfully")
     void testRemoveClient_WithValidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -137,6 +185,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the client's access code is invalid")
     void testRemoveClient_WithInvalidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -149,6 +198,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get the client by id successfully")
     void testGetClientById_Success() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -160,6 +210,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the client doesn't exist")
     void testGetClientById_InvalidId() {
         UUID invalidId = UUID.randomUUID();
         when(clientRepository.findById(invalidId)).thenReturn(Optional.empty());
@@ -168,6 +219,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get all existing clients successfully")
     void testGetClients_Success() {
         when(clientRepository.findAll()).thenReturn(List.of(client, client));
 
@@ -189,5 +241,60 @@ public class ClientServiceUnitTests {
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals("João Azevedo", result.get(0).getFullName());
+    }
+
+    @Test
+    @DisplayName("Should return asset details with valid accessCode")
+    void testGetAssetDetails_WithValidAccessCode() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+        when(assetService.getAssetById(assetId)).thenReturn(assetResponseDTO);
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        AssetResponseDTO result = clientService.getAssetDetails(clientId, assetId, dto);
+
+        assertNotNull(result);
+        assertEquals("Bitcoin", result.getName());
+        assertEquals("Best crypto ever", result.getDescription());
+        assertEquals(100000.0, result.getQuotation());
+        assertEquals(20.0, result.getQuotaQuantity());
+        verify(clientRepository).findById(clientId);
+        verify(assetService).getAssetById(assetId);
+    }
+
+    @Test
+    @DisplayName("Should return asset details with valid accessCode")
+    void testGetAssetDetails_WithInvalidAccessCode() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("000000")
+                .build();
+
+        assertThrows(UnauthorizedUserAccessException.class, () -> {
+            clientService.getAssetDetails(clientId, assetId, dto);
+        });
+
+        verify(clientRepository).findById(clientId);
+        verify(assetService, never()).getAssetById(any());
+    }
+
+    @Test
+    @DisplayName("Should not return asset details with invalid accessCode")
+    void testGetAssetDetails_ClientNotFound() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.empty());
+
+        ClientAssetAccessRequestDTO dto = ClientAssetAccessRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        assertThrows(ClientIdNotFoundException.class, () -> {
+            clientService.getAssetDetails(clientId, assetId, dto);
+        });
+
+        verify(clientRepository).findById(clientId);
+        verify(assetService, never()).getAssetById(any());
     }
 }

@@ -1,6 +1,14 @@
 package com.ufcg.psoft.commerce.model.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
+import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsInactive;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCrypto;
+import com.ufcg.psoft.commerce.exception.notification.EventManagerNotSetException;
+import com.ufcg.psoft.commerce.service.observer.EventManager;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,4 +54,74 @@ public class AssetModel {
     @Column(nullable = false)
     private double quotaQuantity;
 
+    @Transient
+    private EventManager eventManager;
+
+    public void setEventManager(EventManager eventManager) {
+        this.eventManager = eventManager;
+    }
+
+    public SubscriptionResponseDTO subscribe(UUID clientId, SubscriptionTypeEnum type) {
+        if (eventManager == null) {
+            throw new EventManagerNotSetException();
+        }
+
+        this.validateAsset(type);
+
+        return eventManager.subscribeToAssetEvent(this.id, clientId, type);
+    }
+
+    public void updateQuotation(double newQuotation) {
+        double oldQuotation = this.quotation;
+        this.quotation = newQuotation;
+
+        double notificationThreshold = 0.10;
+
+        double variation = Math.abs((newQuotation - oldQuotation) / oldQuotation);
+
+        if (variation >= notificationThreshold && eventManager != null) {
+            eventManager.notifySubscribersByType(this.id, SubscriptionTypeEnum.PRICE_VARIATION);
+        }
+    }
+
+    public void changeActiveStatus(boolean newStatus) {
+        boolean wasInactive = !this.isActive;
+        this.isActive = newStatus;
+
+        if (wasInactive && this.isActive && eventManager != null) {
+            eventManager.notifySubscribersByType(this.id, SubscriptionTypeEnum.AVAILABILITY);
+        }
+    }
+
+    private void validateAsset(SubscriptionTypeEnum subscriptionType) {
+
+        if (subscriptionType == SubscriptionTypeEnum.AVAILABILITY) this.validateAssetIsInactive();
+        else {
+            this.validateAssetIsActive();
+            this.validateAssetIsStockOrCrypto();
+        }
+    }
+
+    private void validateAssetIsStockOrCrypto() {
+        String assetTypeName = this.getAssetType().getName();
+        AssetTypeEnum assetTypeEnum;
+
+        try {
+            assetTypeEnum = AssetTypeEnum.valueOf(assetTypeName);
+        } catch (IllegalArgumentException e) {
+            throw new AssetIsNotStockNeitherCrypto();
+        }
+
+        if (assetTypeEnum != AssetTypeEnum.STOCK && assetTypeEnum != AssetTypeEnum.CRYPTO) {
+            throw new AssetIsNotStockNeitherCrypto();
+        }
+    }
+
+    private void validateAssetIsInactive() {
+        if (this.isActive()) throw new AssetIsAlreadyActive();
+    }
+
+    private void validateAssetIsActive() {
+        if (!this.isActive()) throw new AssetIsInactive();
+    }
 }

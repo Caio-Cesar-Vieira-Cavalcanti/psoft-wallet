@@ -1,21 +1,14 @@
 package com.ufcg.psoft.commerce.service.client;
 
+import com.ufcg.psoft.commerce.enums.*;
+import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
-import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
-import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
-import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
-import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
+import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.user.ClientModel;
-import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
+import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
@@ -76,21 +69,19 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public void remove(UUID id, ClientDeleteRequestDTO clientDeleteRequestDTO) {
-        ClientModel client = clientRepository.findById(id)
-                .orElseThrow(() -> new ClientIdNotFoundException(id));
+    public void remove(UUID clientId, ClientDeleteRequestDTO clientDeleteRequestDTO) {
+        this.validateClientAccess(clientId, clientDeleteRequestDTO.getAccessCode());
 
-        client.validateAccess(clientDeleteRequestDTO.getAccessCode());
+        ClientModel client = this.getClient(clientId);
 
         clientRepository.delete(client);
     }
 
     @Override
-    public ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO clientPatchFullNameRequestDTO) {
-        ClientModel client = clientRepository.findById(id)
-                .orElseThrow(() -> new ClientIdNotFoundException(id));
+    public ClientResponseDTO patchFullName(UUID clientId, ClientPatchFullNameRequestDTO clientPatchFullNameRequestDTO) {
+        this.validateClientAccess(clientId, clientPatchFullNameRequestDTO.getAccessCode());
 
-        client.validateAccess(clientPatchFullNameRequestDTO.getAccessCode());
+        ClientModel client = this.getClient(clientId);
 
         client.setFullName(clientPatchFullNameRequestDTO.getFullName());
         clientRepository.save(client);
@@ -98,13 +89,12 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public List<AssetResponseDTO> redirectGetActiveAssets(UUID id, ClientActiveAssetsRequestDTO clientActiveAssetsRequestDTO) {
-        ClientModel client = clientRepository.findById(id)
-                .orElseThrow(() -> new ClientIdNotFoundException(id));
+    public List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO clientActiveAssetsRequestDTO) {
+        this.validateClientAccess(clientId, clientActiveAssetsRequestDTO.getAccessCode());
 
-        client.validateAccess(clientActiveAssetsRequestDTO.getAccessCode());
+        ClientModel client = this.getClient(clientId);
 
-        PlanTypeEnum planType = this.getClientById(id).getPlanType();
+        PlanTypeEnum planType = client.getPlanType();
 
         if (planType == PlanTypeEnum.PREMIUM) {
             return assetService.getAvailableAssets();
@@ -115,13 +105,44 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
-        ClientModel client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
+    public SubscriptionResponseDTO redirectMarkAvailabilityOfInterestInAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+        this.validateClientAccess(clientId, clientMarkInterestInAssetRequestDTO.getAccessCode());
 
-        client.validateAccess(clientPurchaseHistoryRequestDTO.getAccessCode());
+        return assetService.subscribeToAsset(clientId, clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum.AVAILABILITY);
+    }
+
+    @Override
+    public SubscriptionResponseDTO redirectMarkInterestInPriceVariationOfAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
+        this.validateClientAccess(clientId, clientMarkInterestInAssetRequestDTO.getAccessCode());
+
+        return assetService.subscribeToAsset(clientId, clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum.PRICE_VARIATION);
+    }
+
+    @Override
+    public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
+        this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
+
+        ClientModel client = this.getClient(clientId);
 
         return dtoMapperService.toWalletResponseDTO(client.getWallet());
+    }
+
+    @Override
+    public AssetResponseDTO getAssetDetails(UUID clientId, UUID assetId, ClientAssetAccessRequestDTO clientAssetAccessRequestDTO) {
+        this.validateClientAccess(clientId, clientAssetAccessRequestDTO.getAccessCode());
+
+        return assetService.getAssetById(assetId);
+    }
+
+    @Override
+    public void validateClientAccess(UUID clientId, String accessCode) {
+        ClientModel client = this.getClient(clientId);
+        client.validateAccess(accessCode);
+    }
+
+    private ClientModel getClient(UUID clientId) {
+        return clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
     }
 
 }

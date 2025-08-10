@@ -1,7 +1,10 @@
 package com.ufcg.psoft.commerce.service.asset;
 
+import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.*;
 
+import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;
+import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
@@ -10,6 +13,7 @@ import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
+import com.ufcg.psoft.commerce.service.observer.EventManager;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +35,9 @@ public class AssetServiceImpl implements AssetService {
     AssetTypeRepository assetTypeRepository;
 
     @Autowired
+    EventManager assetEventManager;
+
+    @Autowired
     ModelMapper modelMapper;
 
     @Autowired
@@ -49,8 +56,7 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public void delete(UUID idAsset, AssetDeleteRequestDTO assetDeleteRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        AssetModel assetModel = this.getAsset(idAsset);
 
         adminService.validateAdmin(assetDeleteRequestDTO.getAdminEmail(), assetDeleteRequestDTO.getAdminAccessCode());
 
@@ -62,16 +68,8 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public List<AssetResponseDTO> getAllAssets() {
-        return assetRepository.findAll()
-                .stream()
-                .map(assetModel -> modelMapper.map(assetModel, AssetResponseDTO.class))
-                .toList();
-    }
-
-    @Override
     public AssetResponseDTO getAssetById(UUID idAsset) {
-        AssetModel assetModel = assetRepository.findById(idAsset).orElseThrow(AssetNotFoundException::new);
+        AssetModel assetModel = this.getAsset(idAsset);
         return modelMapper.map(assetModel, AssetResponseDTO.class);
     }
 
@@ -90,16 +88,10 @@ public class AssetServiceImpl implements AssetService {
                 .map(asset -> modelMapper.map(asset, AssetResponseDTO.class))
                 .toList();
     }
-    // Utility Method
-    public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
-        String assetType = assetTypeEnum.name();
-        return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
-    }
 
     @Override
     public AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        AssetModel assetModel = this.getAsset(idAsset);
 
         adminService.validateAdmin(assetQuotationUpdateDTO.getAdminEmail(), assetQuotationUpdateDTO.getAdminAccessCode());
 
@@ -112,7 +104,7 @@ public class AssetServiceImpl implements AssetService {
         double variation = Math.abs((newQuotation - currentQuotation) / currentQuotation);
         if (variation < MIN_QUOTATION_VARIATION) throw new InvalidQuotationVariationException();
 
-        assetModel.setQuotation(newQuotation);
+        assetModel.updateQuotation(newQuotation);
         assetRepository.save(assetModel);
 
         return modelMapper.map(assetModel, AssetResponseDTO.class);
@@ -120,13 +112,32 @@ public class AssetServiceImpl implements AssetService {
 
     @Override
     public AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO) {
-        AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        AssetModel assetModel = this.getAsset(idAsset);
 
         adminService.validateAdmin(assetPatchRequestDTO.getAdminEmail(), assetPatchRequestDTO.getAdminAccessCode());
 
-        assetModel.setActive(assetPatchRequestDTO.getIsActive());
+        assetModel.changeActiveStatus(assetPatchRequestDTO.getIsActive());
+
         assetRepository.save(assetModel);
         return new AssetResponseDTO(assetModel);
+    }
+
+    @Override
+    public SubscriptionResponseDTO subscribeToAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum subscriptionType) {
+        AssetModel asset = getAsset(clientMarkInterestInAssetRequestDTO.getAssetId());
+        return asset.subscribe(clientId, subscriptionType);
+    }
+
+    // Utility Method
+    public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
+        String assetType = assetTypeEnum.name();
+        return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
+    }
+
+    private AssetModel getAsset(UUID idAsset) {
+        AssetModel assetModel = assetRepository.findById(idAsset)
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+        assetModel.setEventManager(assetEventManager);
+        return assetModel;
     }
 }
