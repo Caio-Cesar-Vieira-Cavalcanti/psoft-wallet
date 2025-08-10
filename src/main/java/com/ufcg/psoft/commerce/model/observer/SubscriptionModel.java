@@ -19,14 +19,11 @@ public class SubscriptionModel {
     @GeneratedValue
     private UUID id;
 
-    @Column(name = "client_id", nullable = false)
-    private UUID clientId;
+    @Column(name = "subscriber_id", nullable = false)
+    private UUID subscriberId;
 
     @Column(name = "asset_id", nullable = false)
     private UUID assetId;
-
-    @Column(name = "quotation_at_momemnt")
-    private double quotationAtMoment;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -2,21 +2,16 @@ package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
-import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
-import com.ufcg.psoft.commerce.model.asset.AssetModel;
-import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
-import com.ufcg.psoft.commerce.model.user.AddressModel;
-import com.ufcg.psoft.commerce.model.user.ClientModel;
-import com.ufcg.psoft.commerce.model.user.EmailModel;
-import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
-import com.ufcg.psoft.commerce.model.wallet.TransactionModel;
-import com.ufcg.psoft.commerce.model.wallet.WalletModel;
-import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
-import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
-import com.ufcg.psoft.commerce.repository.client.ClientRepository;
+import com.ufcg.psoft.commerce.dto.client.*;
+import com.ufcg.psoft.commerce.model.asset.*;
+import com.ufcg.psoft.commerce.model.asset.types.TreasuryBounds;
+import com.ufcg.psoft.commerce.model.user.*;
+import com.ufcg.psoft.commerce.model.wallet.*;
+import com.ufcg.psoft.commerce.repository.asset.*;
+import com.ufcg.psoft.commerce.repository.client.*;
+import com.ufcg.psoft.commerce.service.observer.EventManagerImpl;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,10 +52,16 @@ public class ClientControllerTests {
     @Autowired
     private AssetTypeRepository assetTypeRepository;
 
+    @Autowired
+    private EventManagerImpl eventManager;
+
     private static final String CLIENT_BASE_URL = "/clients";
     private static final String ASSETS_ENDPOINT = "/assets";
     private static final String PURCHASES_ENDPOINT = "/purchases";
     private static final String STOCK_ASSET_TYPE_NAME = "STOCK";
+    private static final String INTEREST = "/interest";
+    private static final String PRICE_VARIATION = "/price-variation";
+    private static final String AVAILABILITY = "/availability";
 
     private AssetType stockType;
     private UUID clientId;
@@ -107,7 +108,7 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Create client successfully")
+    @DisplayName("Shoud create client successfully")
     void testCreateClient_Success() throws Exception {
         ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
                 .fullName("Maria Silva")
@@ -127,7 +128,7 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Get client by ID successfully")
+    @DisplayName("Should get client by ID successfully")
     void testGetClientById_Success() throws Exception {
         mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId))
                 .andExpect(status().isOk())
@@ -136,7 +137,7 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Delete client successfully")
+    @DisplayName("Should delete client successfully")
     void testDeleteClient_Success() throws Exception {
         ClientDeleteRequestDTO dto = new ClientDeleteRequestDTO("123456");
 
@@ -147,7 +148,7 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Patch client full name successfully")
+    @DisplayName("Should patch client full name successfully")
     void testPatchClientFullName_Success() throws Exception {
         ClientPatchFullNameRequestDTO dto = new ClientPatchFullNameRequestDTO("João Carlos", "123456");
 
@@ -159,7 +160,7 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Get all clients")
+    @DisplayName("Should return all clients successfully")
     void testGetAllClients_Success() throws Exception {
         mockMvc.perform(get(CLIENT_BASE_URL))
                 .andExpect(status().isOk())
@@ -168,8 +169,8 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Invalid access code")
-    void testPatchClientFullName_InvalidAcessCode() throws Exception {
+    @DisplayName("Should return 401 Unauthorized when access code is invalid")
+    void testPatchClientFullName_InvalidAccessCode() throws Exception {
         ClientPatchFullNameRequestDTO dto = new ClientPatchFullNameRequestDTO("João Carlos", "654321");
 
         mockMvc.perform(patch(CLIENT_BASE_URL + "/" + clientId)
@@ -179,7 +180,7 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Invalid access code")
+    @DisplayName("Should return 401 Unauthorized when access code is invalid")
     void testDeleteClient_InvalidAccessCode() throws Exception {
         ClientDeleteRequestDTO dto = new ClientDeleteRequestDTO("654321");
 
@@ -190,7 +191,7 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Invalid id")
+    @DisplayName("Should return 404 Not Found when client ID is invalid")
     void testDeleteClient_WithInvalidId() throws Exception {
         UUID invalidId = UUID.randomUUID();
         ClientDeleteRequestDTO requestDTO = new ClientDeleteRequestDTO("123456");
@@ -202,36 +203,12 @@ public class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Invalid id")
+    @DisplayName("Should return 404 Not Found when client ID is invalid")
     void testGetClientById_InvalidId() throws Exception {
         UUID invalidId = UUID.randomUUID();
 
         mockMvc.perform(get(CLIENT_BASE_URL + invalidId))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testGetActiveAssets_WhenClientIdIsInvalid() throws Exception {
-        UUID randomClientId = UUID.randomUUID();
-
-        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
-        requestDTO.setAccessCode("123456");
-
-        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + randomClientId + ASSETS_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testGetActiveAssets_WhenAccessCodeIsInvalid() throws Exception {
-        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
-        requestDTO.setAccessCode("654321");
-
-        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + clientId + ASSETS_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -392,6 +369,21 @@ public class ClientControllerTests {
     }
 
     @Test
+    @DisplayName("Should return 404 Not Found when client ID is invalid")
+    void testGetActiveAssets_WhenClientIdIsInvalid() throws Exception {
+        UUID randomClientId = UUID.randomUUID();
+
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode("123456");
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + randomClientId + ASSETS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should return 400 Bad Request when id is null")
     void testGetActiveAssets_WhenClientIdIsNull() throws Exception {
         UUID randomClientId = null;
 
@@ -405,6 +397,19 @@ public class ClientControllerTests {
     }
 
     @Test
+    @DisplayName("Should return 401 Unauthorized when access code is invalid")
+    void testGetActiveAssets_WhenAccessCodeIsInvalid() throws Exception {
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode("654321");
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + clientId + ASSETS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should return 400 Bad Request when access code is null")
     void testGetActiveAssets_WhenAccessCodeIsNull() throws Exception {
         ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
         requestDTO.setAccessCode(null);
@@ -413,6 +418,53 @@ public class ClientControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 400 Bad Request when access code is missing")
+    void testGetActiveAssets_WhenAccessCodeIsMissing() throws Exception {
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + clientId + ASSETS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return the active assets available")
+    void testGetActiveAssetsForPremiumClient_Successful() throws Exception {
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode("123456");
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + clientId + ASSETS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return the active assets available")
+    void testGetActiveAssetsForNormalClient_Successful() throws Exception {
+        ClientModel client = createClient(
+                clientId,
+                "Rafael Barreto",
+                new EmailModel("rafael@email.com"),
+                new AccessCodeModel("654321"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.NORMAL,
+                10000.0,
+                new WalletModel()
+        );
+        UUID newClientId = clientRepository.save(client).getId();
+
+        ClientActiveAssetsRequestDTO requestDTO = new ClientActiveAssetsRequestDTO();
+        requestDTO.setAccessCode("654321");
+
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + newClientId + ASSETS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk());
     }
 
     private PurchaseModel createPurchase(UUID id, AssetModel asset, double quantity, LocalDate date, WalletModel wallet) {
@@ -426,11 +478,7 @@ public class ClientControllerTests {
                 .build();
     }
 
-    private WalletModel createWalletWithPurchases(Set<TransactionModel> purchases) {
-        return WalletModel.builder()
-                .purchases(purchases)
-                .build();
-    }
+
 
     private ClientModel createClient(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode,
                                      AddressModel address, PlanTypeEnum planType, double budget, WalletModel wallet) {
@@ -548,5 +596,318 @@ public class ClientControllerTests {
                         .andExpect(status().isNotFound());
     }
 
-    // Other tests related to getActiveAssets are in AssetServiceUnitTests.
+    @Test
+    @DisplayName("Should return 404 when assetId is invalid")
+    void testMarkInterestInAsset_WithInvalidAssetId() throws Exception {
+        UUID invalidAssetId = UUID.randomUUID();
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(invalidAssetId)
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should return 400 when assetId is null")
+    void testMarkInterestInAsset_WithNullAssetId() throws Exception {
+        UUID nullAssetId = null;
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(nullAssetId)
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 400 when assetId is missing")
+    void testMarkInterestInAsset_WithMissingAssetId() throws Exception {
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 404 when clientId is invalid")
+    void testMarkInterestInAsset_WithInvalidClientId() throws Exception {
+        UUID invalidClientId = UUID.randomUUID();
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + invalidClientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + invalidClientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should return 400 when clientId is null")
+    void testMarkInterestInAsset_WithNullClientId() throws Exception {
+        UUID nullClientId = null;
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + nullClientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + nullClientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 401 when access code is invalid")
+    void testMarkInterestInAsset_WithInvalidAccessCode() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("654321")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should return 400 when access code is null")
+    void testMarkInterestInAsset_WithNullAccessCode() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode(null)
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 400 when access code is missing")
+    void testMarkInterestInAsset_WithMissingAccessCode() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 400 because the asset isn't stock or crypto")
+    void testMarkInterestInPriceVariation_NeitherStockOrCrypto() throws Exception {
+        AssetType mockAssetType = new TreasuryBounds();
+        mockAssetType.setName("TREASURY_BOUNDS");
+        mockAssetType.setId(1L);
+
+        AssetModel asset = AssetModel.builder()
+                .name("Default Asset Test 2")
+                .isActive(true)
+                .assetType(mockAssetType)
+                .description("Default asset for this test")
+                .quotation(100.0)
+                .quotaQuantity(1000.0)
+                .build();
+
+        assetRepository.save(asset);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 400 because the asset is inactive")
+    void testMarkInterestInPriceVariation_InactiveAsset() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 401 because the client doesn't have a premium plan")
+    void testMarkInterestInPriceVariation_NormalClient() throws Exception {
+        AssetModel asset = AssetModel.builder()
+                .name("Default Asset Test 2")
+                .isActive(true)
+                .assetType(stockType)
+                .description("Default asset for this test")
+                .quotation(100.0)
+                .quotaQuantity(1000.0)
+                .build();
+
+        assetRepository.save(asset);
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Lucas Pereira",
+                new EmailModel("lucas@email.com"),
+                new AccessCodeModel("654321"),
+                new AddressModel("Street", "456", "Bairro", "Cidade", "Estado", "Brasil", "11111-111"),
+                PlanTypeEnum.NORMAL,
+                5000.0,
+                new WalletModel()
+        );
+
+        UUID otherClientId = clientRepository.save(client).getId();
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("654321")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + otherClientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should mark interest successfully in the price variation from an asset")
+    void testMarkInterestInPriceVariation_Successful() throws Exception {
+        AssetModel asset = AssetModel.builder()
+                .name("Default Asset Test 2")
+                .isActive(true)
+                .assetType(stockType)
+                .description("Default asset for this test")
+                .quotation(100.0)
+                .quotaQuantity(1000.0)
+                .build();
+
+        assetRepository.save(asset);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("Should return 400 because you can't mark availability interest in a active asset")
+    void testMarkInterestInAvailability_ActiveAsset() throws Exception {
+        AssetModel asset = AssetModel.builder()
+                .name("Default Asset Test")
+                .isActive(true)
+                .assetType(stockType)
+                .description("Default asset for this test")
+                .quotation(100.0)
+                .quotaQuantity(1000.0)
+                .build();
+
+        assetRepository.save(asset);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should mark interest successfully when asset gets active")
+    void testMarkInterestInAvailability_Successful() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientMarkInterestInAssetRequestDTO dto = ClientMarkInterestInAssetRequestDTO.builder()
+                .accessCode("123456")
+                .assetId(asset.getId())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated());
+    }
 }

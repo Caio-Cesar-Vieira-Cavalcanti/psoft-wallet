@@ -2,17 +2,15 @@ package com.ufcg.psoft.commerce.controller.client;
 
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
-import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
-import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
-import com.ufcg.psoft.commerce.service.observer.EventManagerImpl;
+import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.service.client.ClientService;
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,12 +25,9 @@ public class ClientController {
     @Autowired
     ClientService clientService;
 
-    @Autowired
-    EventManagerImpl eventManager;
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable("id") UUID id) {
-        ClientResponseDTO client = clientService.getClientById(id);
+    @GetMapping("/{clientId}")
+    public ResponseEntity<ClientResponseDTO> getClientById(@PathVariable("clientId") UUID clientId) {
+        ClientResponseDTO client = clientService.getClientById(clientId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(client);
@@ -54,61 +49,63 @@ public class ClientController {
                 .body(createdClient);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> remove(@PathVariable("id") UUID id,
+    @DeleteMapping("/{clientId}")
+    public ResponseEntity<?> remove(@PathVariable("clientId") UUID clientId,
                                     @RequestBody @Valid ClientDeleteRequestDTO body) {
 
-        clientService.remove(id, body);
+        clientService.remove(clientId, body);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .body("");
     }
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<ClientResponseDTO> patchFullName(@PathVariable("id") UUID id,
+    @PatchMapping("/{clientId}")
+    public ResponseEntity<ClientResponseDTO> patchFullName(@PathVariable("clientId") UUID clientId,
                                                            @RequestBody @Valid ClientPatchFullNameRequestDTO body) {
 
-        ClientResponseDTO updatedClient = clientService.patchFullName(id, body);
+        ClientResponseDTO updatedClient = clientService.patchFullName(clientId, body);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(updatedClient);
     }
 
-    @GetMapping({"/{id}/purchases"})
-    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable("id") UUID id,
+    @GetMapping({"/{clientId}/purchases"})
+    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable("clientId") UUID clientId,
                                                                 @RequestBody @Valid ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
 
-        WalletResponseDTO purchases = clientService.getPurchaseHistory(id, clientPurchaseHistoryRequestDTO);
+        WalletResponseDTO purchases = clientService.getPurchaseHistory(clientId, clientPurchaseHistoryRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(purchases);
     }
 
-    @GetMapping("/{id}/assets")
-    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable("id") UUID id,
+    @GetMapping("/{clientId}/assets")
+    public ResponseEntity<List<AssetResponseDTO>> getActiveAssets(@PathVariable("clientId") UUID clientId,
                                                                   @RequestBody @Valid ClientActiveAssetsRequestDTO requestDTO) {
-        List<AssetResponseDTO> activeAssets = clientService.redirectGetActiveAssets(id, requestDTO);
+        List<AssetResponseDTO> activeAssets = clientService.redirectGetActiveAssets(clientId, requestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(activeAssets);
     }
 
-    @PatchMapping("/{id}/interest/price-variation")
-    public ResponseEntity<?> markInterestInPriceVariationOfAsset(@PathVariable("id") UUID clientId,
+    @PatchMapping("/{clientId}/interest/price-variation")
+    public ResponseEntity<SubscriptionResponseDTO> markInterestInPriceVariationOfAsset(@PathVariable("clientId") UUID clientId,
                                                                  @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
-        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
+
+
+        SubscriptionResponseDTO subscriptionResponseDTO = clientService.redirectMarkInterestInPriceVariationOfAsset(clientId, clientMarkInterestInAssetRequestDTO);
         return ResponseEntity
-                .status(HttpStatus.OK)
+                .status(HttpStatus.CREATED)
                 .body(subscriptionResponseDTO);
     }
 
-    @PatchMapping("/{id}/interest/availability")
-    public ResponseEntity<?> markInterestInAvailabilityOfAsset(@PathVariable("id") UUID id,
+    @PatchMapping("/{clientId}/interest/availability")
+    public ResponseEntity<SubscriptionResponseDTO> markInterestInAvailabilityOfAsset(@PathVariable("clientId") UUID clientId,
                                                                @RequestBody @Valid ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO) {
 
-        SubscriptionResponseDTO subscriptionResponseDTO = eventManager.subscribeToAssetEvent(clientMarkInterestInAssetRequestDTO, id, SubscriptionTypeEnum.AVAILABILITY);
+        SubscriptionResponseDTO subscriptionResponseDTO = clientService.redirectMarkAvailabilityOfInterestInAsset(clientId, clientMarkInterestInAssetRequestDTO);
         return ResponseEntity
-                .status(HttpStatus.OK)
+                .status(HttpStatus.CREATED)
                 .body(subscriptionResponseDTO);
     }
     

@@ -4,7 +4,6 @@ import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import lombok.Builder;
 
 @Entity
 @DiscriminatorValue("STOCK")

@@ -5,8 +5,6 @@ import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
-import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.asset.types.Crypto;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
@@ -17,13 +15,13 @@ import com.ufcg.psoft.commerce.service.client.ClientService;
 import com.ufcg.psoft.commerce.service.client.ClientServiceImpl;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.security.CryptoPrimitive;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -84,7 +82,13 @@ public class ClientServiceUnitTests {
                 .build();
     }
 
+    @AfterEach
+    void tearDown() {
+        clientRepository.deleteAll();
+    }
+
     @Test
+    @DisplayName("Should create client successfully")
     void testCreateClient_Success() {
         ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
                 .fullName("João Azevedo")
@@ -106,7 +110,8 @@ public class ClientServiceUnitTests {
     }
 
     @Test
-    void testCreateClient_WithAccessCodeHasLessThan6Digits() {
+    @DisplayName("Should throw exception because the access code has less than 6 digits")
+    void testCreateClient_WithAccessCodeLessThan6Digits() {
         ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
                 .fullName("João Azevedo")
                 .email("joao@email.com")
@@ -125,6 +130,25 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the email is invalid")
+    void testCreateClient_WithNoNameAndEmail() {
+        ClientPostRequestDTO dto = ClientPostRequestDTO.builder()
+                .accessCode("123456")
+                .budget(10000.0)
+                .planType(PlanTypeEnum.PREMIUM)
+                .address(new AddressDTO("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"))
+                .build();
+
+        when(clientRepository.save(any(ClientModel.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            clientService.create(dto);
+        });
+        assertEquals("Invalid email", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should patch a existing client full name successfully")
     void testPatchFullName_WithValidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -137,6 +161,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the client's access code is invalid")
     void testPatchFullName_WithInvalidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -147,6 +172,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should remove the existing client successfully")
     void testRemoveClient_WithValidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -159,6 +185,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the client's access code is invalid")
     void testRemoveClient_WithInvalidAccessCode() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -171,6 +198,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get the client by id successfully")
     void testGetClientById_Success() {
         when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
 
@@ -182,6 +210,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the client doesn't exist")
     void testGetClientById_InvalidId() {
         UUID invalidId = UUID.randomUUID();
         when(clientRepository.findById(invalidId)).thenReturn(Optional.empty());
@@ -190,6 +219,7 @@ public class ClientServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get all existing clients successfully")
     void testGetClients_Success() {
         when(clientRepository.findAll()).thenReturn(List.of(client, client));
 

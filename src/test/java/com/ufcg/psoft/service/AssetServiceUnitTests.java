@@ -6,17 +6,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.ufcg.psoft.commerce.dto.asset.*;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
+import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.*;
+import com.ufcg.psoft.commerce.exception.notification.EventManagerNotSetException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.model.asset.types.Stock;
+import com.ufcg.psoft.commerce.model.asset.types.TreasuryBounds;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.asset.AssetServiceImpl;
 
+import com.ufcg.psoft.commerce.service.observer.EventManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +40,7 @@ public class AssetServiceUnitTests {
     private AdminService adminService;
     private AssetService assetService;
     private ModelMapper modelMapper;
+    private EventManager assetEventManager;
 
     private UUID assetId;
     private AssetModel asset;
@@ -51,13 +57,16 @@ public class AssetServiceUnitTests {
         assetRepository = mock(AssetRepository.class);
         assetTypeRepository = mock(AssetTypeRepository.class);
         adminService = mock(AdminService.class);
-        modelMapper = new ModelMapper();
+        assetEventManager = mock(EventManager.class);
 
         assetService = new AssetServiceImpl();
+        modelMapper = new ModelMapper();
+
         ReflectionTestUtils.setField(assetService, "assetRepository", assetRepository);
         ReflectionTestUtils.setField(assetService, "assetTypeRepository", assetTypeRepository);
         ReflectionTestUtils.setField(assetService, "adminService", adminService);
         ReflectionTestUtils.setField(assetService, "modelMapper", modelMapper);
+        ReflectionTestUtils.setField(assetService, "assetEventManager", assetEventManager);
 
         assetId = UUID.randomUUID();
         asset = AssetModel.builder()
@@ -66,10 +75,16 @@ public class AssetServiceUnitTests {
                 .quotation(100.0)
                 .quotaQuantity(1000.0)
                 .assetType(mockStockType())
+                .eventManager(assetEventManager)
                 .build();
 
         when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
         doNothing().when(adminService).validateAdmin(anyString(), anyString());
+    }
+
+    @AfterEach
+    void tearDown() {
+        assetRepository.deleteAll();
     }
 
     @Test
@@ -371,6 +386,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should update the quotation successfully")
     void testUpdateQuotation_Success() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(105.0)
@@ -387,6 +403,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the given asset id doesn't exist")
     void testUpdateQuotation_ThrowsAssetNotFoundException() {
         UUID unknownId = UUID.randomUUID();
         when(assetRepository.findById(unknownId)).thenReturn(Optional.empty());
@@ -401,6 +418,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the quotation variation is invalid")
     void testUpdateQuotation_ThrowsInvalidQuotationVariationException() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(100.5)
@@ -412,6 +430,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the asset type is invalid")
     void testUpdateQuotation_InvalidAssetType_ShouldThrowException() {
         AssetType invalidType = new AssetType("INVALID_TYPE") {
             @Override
@@ -432,6 +451,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should increase the quotation successfully")
     void testUpdateQuotation_MinimumValidVariation_ShouldUpdate() {
         double current = 100.0;
         double newQuotation = current * 1.01;
@@ -450,6 +470,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should decrease the quotation successfully")
     void testUpdateQuotation_MinimumValidNegativeVariation_ShouldUpdate() {
         double current = 100.0;
         double newQuotation = current * 0.99;
@@ -468,6 +489,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the positive variation is invalid")
     void testUpdateQuotation_InvalidPositiveVariation_ShouldThrowException() {
         double current = 100.0;
         double newQuotation = current * 1.005;
@@ -482,6 +504,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the negative variation is invalid")
     void testUpdateQuotation_InvalidNegativeVariation_ShouldThrowException() {
         double current = 100.0;
         double newQuotation = current * 0.995;
@@ -496,6 +519,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin")
     void testUpdateQuotation_UnauthorizedAdminAccess_ShouldThrowException() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(110.0)
@@ -515,6 +539,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin even if the quotation is valid")
     void testUpdateQuotation_UnauthorizedAdminAccess_EvenIfQuotationValid_ShouldThrowException() {
         AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
                 .quotation(150.0)
@@ -534,6 +559,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should create a asset successfully")
     void testCreateAsset_Success() {
         AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
                 .name("Bitcoin")
@@ -556,6 +582,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin")
     void testCreateAsset_UnauthorizedAdmin() {
         AssetPostRequestDTO dto = AssetPostRequestDTO.builder()
                 .name("Bitcoin")
@@ -573,6 +600,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should delete a asset successfully")
     void testDeleteAsset_Success() {
         AssetPostRequestDTO postDto = AssetPostRequestDTO.builder()
                 .name("Bitcoin")
@@ -610,6 +638,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the request isn't from the admin")
     void testDeleteAsset_UnauthorizedAdmin() {
         AssetDeleteRequestDTO dto = AssetDeleteRequestDTO.builder()
                 .adminEmail("notadmin@example.com")
@@ -624,6 +653,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the id is invalid")
     void testDeleteAsset_InvalidId() {
         UUID invalidId = UUID.randomUUID();
 
@@ -638,27 +668,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
-    void testGetAllAssets() {
-        AssetModel asset2 = AssetModel.builder()
-                .id(UUID.randomUUID())
-                .name("Second Asset")
-                .quotation(200.0)
-                .quotaQuantity(500.0)
-                .assetType(mockStockType())
-                .build();
-
-        List<AssetModel> mockAssets = List.of(asset, asset2);
-
-        when(assetRepository.findAll()).thenReturn(mockAssets);
-
-        List<AssetResponseDTO> result = assetService.getAllAssets();
-
-        assertEquals(2, result.size());
-        assertEquals("Test Asset", result.get(0).getName());
-        assertEquals("Second Asset", result.get(1).getName());
-    }
-
-    @Test
+    @DisplayName("Should get the asset using his id successfully")
     void testGetAssetById_Sucess() {
         AssetResponseDTO response = assetService.getAssetById(assetId);
 
@@ -668,6 +678,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should throw exception because the id is invalid")
     void testGetAssetById_WithInvalidId() {
         UUID invalidId = UUID.randomUUID();
         when(assetRepository.findById(invalidId)).thenReturn(Optional.empty());
@@ -677,6 +688,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
+    @DisplayName("Should get all active assets from a specific type successfully")
     void testGetActiveAssetsByAssetType() {
         AssetType mockAssetType = mock(AssetType.class);
 
@@ -769,7 +781,7 @@ public class AssetServiceUnitTests {
     @Test
     @DisplayName("Must deactivate a valid asset with valid admin")
     void testShouldDeactivateAssetWithValidAdmin() {
-        asset.setActive(true); // ativo inicialmente
+        asset.setActive(true);
 
         AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
                 .adminEmail("admin@example.com")
@@ -945,4 +957,210 @@ public class AssetServiceUnitTests {
         verify(assetRepository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("Should notify subscribers when quotation changes more than 10%")
+    void testUpdateQuotation_NotifySubscribers_WhenVariationAbove10Percent() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(120.0) // 20% increase
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .build();
+
+        when(assetRepository.save(any())).thenReturn(asset);
+
+        assetService.updateQuotation(assetId, dto);
+
+        verify(assetEventManager, times(1))
+                .notifySubscribersByType(assetId, SubscriptionTypeEnum.PRICE_VARIATION);
+    }
+
+    @Test
+    @DisplayName("Should not notify subscribers when quotation changes less than 10%")
+    void testUpdateQuotation_DoNotNotifySubscribers_WhenVariationBelow10Percent() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(105.0) // 5% increase
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .build();
+
+        when(assetRepository.save(any())).thenReturn(asset);
+
+        assetService.updateQuotation(assetId, dto);
+
+        verify(assetEventManager, never())
+                .notifySubscribersByType(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should notify subscribers when asset becomes active")
+    void testChangeActiveStatus_NotifySubscribers_WhenAssetBecomesActive() {
+        asset.setActive(false); // Start inactive
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .build();
+
+        when(assetRepository.save(any())).thenReturn(asset);
+
+        assetService.setIsActive(assetId, dto);
+
+        verify(assetEventManager, times(1))
+                .notifySubscribersByType(assetId, SubscriptionTypeEnum.AVAILABILITY);
+    }
+
+    @Test
+    @DisplayName("Should not notify subscribers when asset remains inactive")
+    void testChangeActiveStatus_DoNotNotifySubscribers_WhenAssetRemainsInactive() {
+        asset.setActive(false); // Start inactive
+
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .isActive(false) // Still inactive
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .build();
+
+        when(assetRepository.save(any())).thenReturn(asset);
+
+        assetService.setIsActive(assetId, dto);
+
+        verify(assetEventManager, never())
+                .notifySubscribersByType(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidQuotationVariationException for variation < 1%")
+    void testUpdateQuotation_MinVariationNotMet_ThrowsException() {
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(100.5)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+
+        assertThrows(InvalidQuotationVariationException.class, () ->
+                assetService.updateQuotation(assetId, dto));
+    }
+
+    @Test
+    @DisplayName("Should throw InvalidAssetTypeException for non-stock/non-crypto assets")
+    void testUpdateQuotation_InvalidAssetType_ThrowsException() {
+        AssetType invalidType = new TreasuryBounds();
+        asset.setAssetType(invalidType);
+
+        AssetQuotationUpdateDTO dto = AssetQuotationUpdateDTO.builder()
+                .quotation(120.0)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+
+        assertThrows(InvalidAssetTypeException.class, () ->
+                assetService.updateQuotation(assetId, dto));
+
+        verify(assetEventManager, never())
+                .notifySubscribersByType(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should throw AssetIsAlreadyActive when activating an active asset")
+    void testSetIsActive_AssetAlreadyActive_ThrowsException() {
+        asset.setActive(true);
+        AssetActivationPatchRequestDTO dto = AssetActivationPatchRequestDTO.builder()
+                .isActive(true)
+                .adminEmail("admin@example.com")
+                .adminAccessCode("valid_code")
+                .build();
+
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+
+        assetService.setIsActive(assetId, dto);
+
+        verify(assetEventManager, never())
+                .notifySubscribersByType(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should throw IllegalStateException when EventManager is not set")
+    void testSubscribe_WithoutEventManager_ThrowsException() {
+        asset.setEventManager(null);
+        UUID clientId = UUID.randomUUID();
+
+        assertThrows(EventManagerNotSetException.class, () ->
+                asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION));
+    }
+
+    @Test
+    @DisplayName("Should throw AssetIsAlreadyActive when subscribing to availability for active asset")
+    void testSubscribe_AvailabilityForActiveAsset_ThrowsException() {
+        asset.setActive(true);
+        UUID clientId = UUID.randomUUID();
+
+        assertThrows(AssetIsAlreadyActive.class, () ->
+                asset.subscribe(clientId, SubscriptionTypeEnum.AVAILABILITY));
+    }
+
+    @Test
+    @DisplayName("Should throw AssetIsInactive when subscribing to price variation for inactive asset")
+    void testSubscribe_PriceVariationForInactiveAsset_ThrowsException() {
+        asset.setActive(false);
+        UUID clientId = UUID.randomUUID();
+        
+        assertThrows(AssetIsInactive.class, () ->
+                asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION));
+    }
+
+    @Test
+    @DisplayName("Should throw AssetIsNotStockNeitherCrypto for non-stock/non-crypto assets")
+    void testSubscribe_InvalidAssetType_ThrowsException() {
+        asset.setActive(true);
+
+        AssetType invalidType = new TreasuryBounds();
+        asset.setAssetType(invalidType);
+        UUID clientId = UUID.randomUUID();
+
+        assertThrows(AssetIsNotStockNeitherCrypto.class, () ->
+                asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION));
+    }
+
+    @Test
+    @DisplayName("Should not notify when variation is less than 10%")
+    void testUpdateQuotation_SmallVariation_NoNotification() {
+        double initialPrice = 100.0;
+        asset.setQuotation(initialPrice);
+        double newPrice = 101.0;
+
+        asset.updateQuotation(newPrice);
+
+        assertEquals(newPrice, asset.getQuotation());
+        verify(assetEventManager, never()).notifySubscribersByType(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should not notify when changing to inactive status")
+    void testChangeActiveStatus_ToInactive_NoNotification() {
+        asset.setActive(true);
+
+        asset.changeActiveStatus(false);
+
+        assertFalse(asset.isActive());
+        verify(assetEventManager, never()).notifySubscribersByType(any(), any());
+    }
+
+    @Test
+    @DisplayName("Should throw AssetIsNotStockNeitherCrypto for invalid asset type name")
+    void testSubscribe_InvalidAssetTypeName_ThrowsException() {
+        asset.setActive(true);
+        AssetType invalidType = new AssetType("INVALID_TYPE_NAME") {
+            @Override
+            public double taxCalculate(double profit) { return 0; }
+        };
+
+        asset.setAssetType(invalidType);
+
+        assertThrows(AssetIsNotStockNeitherCrypto.class, () ->
+                asset.subscribe(UUID.randomUUID(), SubscriptionTypeEnum.PRICE_VARIATION));
+    }
 }

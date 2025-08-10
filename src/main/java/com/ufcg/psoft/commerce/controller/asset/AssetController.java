@@ -65,5 +65,4 @@ public class AssetController {
                 .status(HttpStatus.OK)
                 .body(availableAssets);
     }
-
 }
