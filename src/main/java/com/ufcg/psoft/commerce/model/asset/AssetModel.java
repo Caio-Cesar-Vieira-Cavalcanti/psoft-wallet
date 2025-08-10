@@ -7,6 +7,7 @@ import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsInactive;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCrypto;
+import com.ufcg.psoft.commerce.exception.notification.EventManagerNotSetException;
 import com.ufcg.psoft.commerce.service.observer.EventManager;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -62,7 +63,7 @@ public class AssetModel {
 
     public SubscriptionResponseDTO subscribe(UUID clientId, SubscriptionTypeEnum type) {
         if (eventManager == null) {
-            throw new IllegalStateException("EventManager is not set in AssetModel");
+            throw new EventManagerNotSetException();
         }
 
         this.validateAsset(type);

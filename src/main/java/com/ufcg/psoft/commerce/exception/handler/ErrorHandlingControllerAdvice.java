@@ -1,12 +1,15 @@
 package com.ufcg.psoft.commerce.exception.handler;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.ufcg.psoft.commerce.exception.asset.*;
+import com.ufcg.psoft.commerce.exception.notification.AlreadySubscribedException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -153,4 +156,34 @@ public class ErrorHandlingControllerAdvice {
         );
     }
 
+    @ExceptionHandler(AlreadySubscribedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public CustomErrorType onAlreadySubscribedException(AlreadySubscribedException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        Throwable cause = ex.getCause();
+
+        while (cause != null) {
+            if (cause instanceof InvalidFormatException invalidFormatException) {
+                if (invalidFormatException.getTargetType() == java.util.UUID.class) {
+                    return defaultCustomErrorTypeConstruct(
+                            "Invalid UUID format: please provide a UUID with 36 characters in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx."
+                    );
+                }
+            }
+            cause = cause.getCause();
+        }
+
+        return defaultCustomErrorTypeConstruct(
+                "Malformed JSON request."
+        );
+    }
 }

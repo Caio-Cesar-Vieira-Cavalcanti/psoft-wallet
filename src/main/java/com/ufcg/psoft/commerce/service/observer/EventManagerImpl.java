@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.service.observer;
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
+import com.ufcg.psoft.commerce.exception.notification.AlreadySubscribedException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
@@ -25,27 +26,21 @@ public class EventManagerImpl implements EventManager {
     @Autowired
     private ClientRepository clientRepository;
 
-    public SubscriptionResponseDTO subscribeToAssetEvent(UUID assetId, UUID idSubscriber, SubscriptionTypeEnum subscriptionType) {
-        this.validateClient(idSubscriber, subscriptionType);
+    public SubscriptionResponseDTO subscribeToAssetEvent(UUID assetId, UUID subscriberId, SubscriptionTypeEnum subscriptionType) {
+        this.validateClient(subscriberId, subscriptionType);
+        this.ensureNotAlreadySubscribed(assetId, subscriberId, subscriptionType);
 
-        boolean alreadySubscribed = subscriptionRepository
-                .findByAssetIdAndSubscriptionType(assetId, subscriptionType)
-                .stream()
-                .anyMatch(sub -> sub.getClientId().equals(idSubscriber));
+        SubscriptionModel subscription = new SubscriptionModel();
+        subscription.setAssetId(assetId);
+        subscription.setSubscriberId(subscriberId);
+        subscription.setSubscriptionType(subscriptionType);
 
-        if (!alreadySubscribed) {
-            SubscriptionModel subscription = new SubscriptionModel();
-            subscription.setAssetId(assetId);
-            subscription.setClientId(idSubscriber);
-            subscription.setSubscriptionType(subscriptionType);
-
-            subscriptionRepository.save(subscription);
-        }
+        subscriptionRepository.save(subscription);
 
         return SubscriptionResponseDTO.builder()
                 .message("Subscription registered successfully")
                 .assetId(assetId)
-                .clientId(idSubscriber)
+                .clientId(subscriberId)
                 .subscriptionType(subscriptionType)
                 .build();
     }
@@ -60,7 +55,7 @@ public class EventManagerImpl implements EventManager {
         );
 
         subscriptions.forEach(subscription -> {
-            UUID clientId = subscription.getClientId();
+            UUID clientId = subscription.getSubscriberId();
 
             ISubscriber subscriber = getValidSubscriber(clientId);
             subscriber.notify(contextMessage);
@@ -102,4 +97,14 @@ public class EventManagerImpl implements EventManager {
         }
     }
 
+    private void ensureNotAlreadySubscribed(UUID assetId, UUID clientId, SubscriptionTypeEnum subscriptionType) {
+        boolean alreadySubscribed = subscriptionRepository
+                .findByAssetIdAndSubscriptionType(assetId, subscriptionType)
+                .stream()
+                .anyMatch(sub -> sub.getSubscriberId().equals(clientId));
+
+        if (alreadySubscribed) {
+            throw new AlreadySubscribedException(assetId, subscriptionType);
+        }
+    }
 }

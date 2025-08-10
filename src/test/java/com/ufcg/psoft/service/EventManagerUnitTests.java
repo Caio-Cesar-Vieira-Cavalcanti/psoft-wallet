@@ -185,7 +185,7 @@ public class EventManagerUnitTests {
     void testPriceVariationNotification_ValidScenario() {
         SubscriptionModel subscription = SubscriptionModel.builder()
                 .assetId(assetId1)
-                .clientId(clientId)
+                .subscriberId(clientId)
                 .subscriptionType(SubscriptionTypeEnum.PRICE_VARIATION)
                 .build();
 
@@ -203,7 +203,7 @@ public class EventManagerUnitTests {
     void testAvailabilityNotification_ValidScenario() {
         SubscriptionModel subscription = SubscriptionModel.builder()
                 .assetId(assetId2)
-                .clientId(clientId)
+                .subscriberId(clientId)
                 .subscriptionType(SubscriptionTypeEnum.AVAILABILITY)
                 .build();
 
@@ -222,7 +222,7 @@ public class EventManagerUnitTests {
         UUID unknownClientId = UUID.randomUUID();
         SubscriptionModel subscription = SubscriptionModel.builder()
                 .assetId(assetId1)
-                .clientId(unknownClientId)
+                .subscriberId(unknownClientId)
                 .subscriptionType(SubscriptionTypeEnum.PRICE_VARIATION)
                 .build();
 

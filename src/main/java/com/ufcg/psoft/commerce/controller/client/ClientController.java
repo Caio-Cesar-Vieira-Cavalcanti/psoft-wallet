@@ -95,7 +95,7 @@ public class ClientController {
 
         SubscriptionResponseDTO subscriptionResponseDTO = clientService.redirectMarkInterestInPriceVariationOfAsset(clientId, clientMarkInterestInAssetRequestDTO);
         return ResponseEntity
-                .status(HttpStatus.OK)
+                .status(HttpStatus.CREATED)
                 .body(subscriptionResponseDTO);
     }
 
@@ -105,7 +105,7 @@ public class ClientController {
 
         SubscriptionResponseDTO subscriptionResponseDTO = clientService.redirectMarkAvailabilityOfInterestInAsset(clientId, clientMarkInterestInAssetRequestDTO);
         return ResponseEntity
-                .status(HttpStatus.OK)
+                .status(HttpStatus.CREATED)
                 .body(subscriptionResponseDTO);
     }
     

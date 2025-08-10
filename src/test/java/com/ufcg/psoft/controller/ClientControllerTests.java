@@ -867,7 +867,7 @@ public class ClientControllerTests {
         mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + PRICE_VARIATION)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -908,6 +908,6 @@ public class ClientControllerTests {
         mockMvc.perform(MockMvcRequestBuilders.patch(CLIENT_BASE_URL + "/" + clientId + INTEREST + AVAILABILITY)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 }

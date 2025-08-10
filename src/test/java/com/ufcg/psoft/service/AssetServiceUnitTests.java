@@ -8,6 +8,7 @@ import com.ufcg.psoft.commerce.dto.asset.*;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.*;
+import com.ufcg.psoft.commerce.exception.notification.EventManagerNotSetException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
@@ -1084,10 +1085,10 @@ public class AssetServiceUnitTests {
     @Test
     @DisplayName("Should throw IllegalStateException when EventManager is not set")
     void testSubscribe_WithoutEventManager_ThrowsException() {
-        asset.setEventManager(null); // Remove o EventManager
+        asset.setEventManager(null);
         UUID clientId = UUID.randomUUID();
 
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(EventManagerNotSetException.class, () ->
                 asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION));
     }
 
