@@ -109,11 +109,11 @@ public class AssetModel {
         try {
             assetTypeEnum = AssetTypeEnum.valueOf(assetTypeName);
         } catch (IllegalArgumentException e) {
-            throw new AssetIsNotStockNeitherCrypto();
+            throw new AssetIsNotStockNeitherCrypto(this.name);
         }
 
         if (assetTypeEnum != AssetTypeEnum.STOCK && assetTypeEnum != AssetTypeEnum.CRYPTO) {
-            throw new AssetIsNotStockNeitherCrypto();
+            throw new AssetIsNotStockNeitherCrypto(this.name);
         }
     }
 

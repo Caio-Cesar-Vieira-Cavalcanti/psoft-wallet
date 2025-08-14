@@ -253,7 +253,7 @@ public class ClientServiceUnitTests {
                 .accessCode("123456")
                 .build();
 
-        AssetResponseDTO result = clientService.getAssetDetails(clientId, assetId, dto);
+        AssetResponseDTO result = clientService.redirectGetAssetDetails(clientId, assetId, dto);
 
         assertNotNull(result);
         assertEquals("Bitcoin", result.getName());
@@ -274,7 +274,7 @@ public class ClientServiceUnitTests {
                 .build();
 
         assertThrows(UnauthorizedUserAccessException.class, () -> {
-            clientService.getAssetDetails(clientId, assetId, dto);
+            clientService.redirectGetAssetDetails(clientId, assetId, dto);
         });
 
         verify(clientRepository).findById(clientId);
@@ -291,7 +291,7 @@ public class ClientServiceUnitTests {
                 .build();
 
         assertThrows(ClientIdNotFoundException.class, () -> {
-            clientService.getAssetDetails(clientId, assetId, dto);
+            clientService.redirectGetAssetDetails(clientId, assetId, dto);
         });
 
         verify(clientRepository).findById(clientId);

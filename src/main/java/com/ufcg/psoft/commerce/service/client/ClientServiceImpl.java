@@ -1,21 +1,27 @@
 package com.ufcg.psoft.commerce.service.client;
 
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.model.wallet.states.PurchaseRequestedState;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.service.wallet.WalletService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,26 +35,13 @@ public class ClientServiceImpl implements ClientService {
     AssetService assetService;
 
     @Autowired
+    WalletService walletService;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
     private DTOMapperService dtoMapperService;
-
-    @Override
-    public ClientResponseDTO getClientById(UUID id) {
-        ClientModel client = clientRepository.findById(id)
-                .orElseThrow(() -> new ClientIdNotFoundException(id));
-
-        return dtoMapperService.toClientResponseDTO(client);
-    }
-
-    @Override
-    public List<ClientResponseDTO> getClients() {
-        List<ClientModel> clients = clientRepository.findAll();
-        return clients.stream()
-                .map(dtoMapperService::toClientResponseDTO)
-                .toList();
-    }
 
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
@@ -70,29 +63,46 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public void remove(UUID clientId, ClientDeleteRequestDTO clientDeleteRequestDTO) {
-        this.validateClientAccess(clientId, clientDeleteRequestDTO.getAccessCode());
-
-        ClientModel client = this.getClient(clientId);
+        ClientModel client = this.validateClientAccess(clientId, clientDeleteRequestDTO.getAccessCode());
 
         clientRepository.delete(client);
     }
 
     @Override
+    public ClientResponseDTO getClientById(UUID id) {
+        ClientModel client = clientRepository.findById(id)
+                .orElseThrow(() -> new ClientIdNotFoundException(id));
+
+        return dtoMapperService.toClientResponseDTO(client);
+    }
+
+    @Override
+    public List<ClientResponseDTO> getClients() {
+        List<ClientModel> clients = clientRepository.findAll();
+        return clients.stream()
+                .map(dtoMapperService::toClientResponseDTO)
+                .toList();
+    }
+
+    @Override
     public ClientResponseDTO patchFullName(UUID clientId, ClientPatchFullNameRequestDTO clientPatchFullNameRequestDTO) {
-        this.validateClientAccess(clientId, clientPatchFullNameRequestDTO.getAccessCode());
-
-        ClientModel client = this.getClient(clientId);
-
+        ClientModel client = this.validateClientAccess(clientId, clientPatchFullNameRequestDTO.getAccessCode());
         client.setFullName(clientPatchFullNameRequestDTO.getFullName());
+
         clientRepository.save(client);
         return dtoMapperService.toClientResponseDTO(client);
     }
 
     @Override
-    public List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO clientActiveAssetsRequestDTO) {
-        this.validateClientAccess(clientId, clientActiveAssetsRequestDTO.getAccessCode());
+    public AssetResponseDTO redirectGetAssetDetails(UUID clientId, UUID assetId, ClientAssetAccessRequestDTO clientAssetAccessRequestDTO) {
+        this.validateClientAccess(clientId, clientAssetAccessRequestDTO.getAccessCode());
 
-        ClientModel client = this.getClient(clientId);
+        return assetService.getAssetById(assetId);
+    }
+
+    @Override
+    public List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO clientActiveAssetsRequestDTO) {
+        ClientModel client = this.validateClientAccess(clientId, clientActiveAssetsRequestDTO.getAccessCode());
 
         PlanTypeEnum planType = client.getPlanType();
 
@@ -100,7 +110,7 @@ public class ClientServiceImpl implements ClientService {
             return assetService.getAvailableAssets();
         }
 
-        AssetType assetType = assetService.getAssetType(AssetTypeEnum.TREASURY_BOUNDS);
+        AssetType assetType = assetService.fetchAssetType(AssetTypeEnum.TREASURY_BOUNDS);
         return assetService.getActiveAssetsByAssetType(assetType);
     }
 
@@ -120,24 +130,39 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
-        this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
-
-        ClientModel client = this.getClient(clientId);
+        ClientModel client = this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
 
         return dtoMapperService.toWalletResponseDTO(client.getWallet());
     }
 
     @Override
-    public AssetResponseDTO getAssetDetails(UUID clientId, UUID assetId, ClientAssetAccessRequestDTO clientAssetAccessRequestDTO) {
-        this.validateClientAccess(clientId, clientAssetAccessRequestDTO.getAccessCode());
+    public PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto) {
+        ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
+        AssetModel asset = assetService.validateAssetIsAvailable(assetId);
 
-        return assetService.getAssetById(assetId);
+        PurchaseModel purchaseModel = PurchaseModel.builder()
+                .id(UUID.randomUUID())
+                .asset(asset)
+                .wallet(client.getWallet())
+                .quantity(dto.getAssetQuantity())
+                .date(LocalDate.now())
+                .acquisitionPrice(asset.getQuotation() * dto.getAssetQuantity())
+                .stateEnum(PurchaseStateEnum.REQUESTED)
+                .build();
+
+        UUID purchaseId = purchaseModel.getId();
+
+        client.getWallet().getPurchases().put(purchaseId, purchaseModel);
+        clientRepository.save(client);
+
+        return dtoMapperService.toPurchaseResponseDTO(purchaseModel);
     }
 
     @Override
-    public void validateClientAccess(UUID clientId, String accessCode) {
+    public ClientModel validateClientAccess(UUID clientId, String accessCode) {
         ClientModel client = this.getClient(clientId);
         client.validateAccess(accessCode);
+        return client;
     }
 
     private ClientModel getClient(UUID clientId) {

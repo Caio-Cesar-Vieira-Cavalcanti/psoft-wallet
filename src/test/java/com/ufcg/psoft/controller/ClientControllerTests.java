@@ -3,12 +3,13 @@ package com.ufcg.psoft.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
-import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.dto.client.*;
+import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.model.asset.*;
 import com.ufcg.psoft.commerce.model.asset.types.TreasuryBounds;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.wallet.*;
+import com.ufcg.psoft.commerce.model.wallet.states.PurchaseInWalletState;
 import com.ufcg.psoft.commerce.repository.asset.*;
 import com.ufcg.psoft.commerce.repository.client.*;
 import com.ufcg.psoft.commerce.service.observer.EventManagerImpl;
@@ -57,7 +58,8 @@ public class ClientControllerTests {
 
     private static final String CLIENT_BASE_URL = "/clients";
     private static final String ASSETS_ENDPOINT = "/assets";
-    private static final String PURCHASES_ENDPOINT = "/purchases";
+    private static final String WALLET = "/wallet";
+    private static final String PURCHASES_ENDPOINT = "/purchase";
     private static final String STOCK_ASSET_TYPE_NAME = "STOCK";
     private static final String INTEREST = "/interest";
     private static final String PRICE_VARIATION = "/price-variation";
@@ -231,7 +233,7 @@ public class ClientControllerTests {
         ClientPurchaseHistoryRequestDTO requestDTO = new ClientPurchaseHistoryRequestDTO();
         requestDTO.setAccessCode("invalid_code");
 
-        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + this.clientId + PURCHASES_ENDPOINT)
+        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + this.clientId + WALLET + PURCHASES_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDTO)))
                 .andExpect(status().isUnauthorized());
@@ -244,7 +246,7 @@ public class ClientControllerTests {
                 // não setar accessCode
                 .build();
 
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + this.clientId + PURCHASES_ENDPOINT)
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + this.clientId + WALLET + PURCHASES_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -257,7 +259,7 @@ public class ClientControllerTests {
                 .accessCode("")
                 .build();
 
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + this.clientId + PURCHASES_ENDPOINT)
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + this.clientId + WALLET + PURCHASES_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -270,7 +272,7 @@ public class ClientControllerTests {
                 .accessCode("123456")
                 .build();
 
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + this.clientId + PURCHASES_ENDPOINT)
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + this.clientId + WALLET + PURCHASES_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -285,7 +287,7 @@ public class ClientControllerTests {
         AssetModel asset = createAndSaveAsset(stockType);
 
         // Crie o Set vazio
-        Set<TransactionModel> purchases = new HashSet<>();
+        Map<UUID, PurchaseModel> purchases = new HashMap<>();
 
         // Crie wallet com o Set inicializado
         WalletModel wallet = WalletModel.builder().purchases(purchases).build();
@@ -297,8 +299,8 @@ public class ClientControllerTests {
         PurchaseModel purchase2 = createPurchase(purchaseId2, asset, 3.0, LocalDate.now().minusDays(2), wallet);
 
         // Adicione as compras no Set
-        purchases.add(purchase1);
-        purchases.add(purchase2);
+        purchases.put(purchaseId1, purchase1);
+        purchases.put(purchaseId2, purchase2);
 
         ClientModel clientWithPurchases = createClient(
                 UUID.randomUUID(),
@@ -318,7 +320,7 @@ public class ClientControllerTests {
                 .accessCode("123456")
                 .build();
 
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + PURCHASES_ENDPOINT)
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -333,14 +335,16 @@ public class ClientControllerTests {
     void testDeleteAsset_WhenReferencedInPurchases_ReturnsConflict() throws Exception {
         AssetModel asset = createAndSaveAsset(stockType);
 
-        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
+        WalletModel wallet = WalletModel.builder().purchases(new HashMap<>()).build();
 
-        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
-        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), wallet);
+        UUID p1 = UUID.randomUUID();
+        UUID p2 = UUID.randomUUID();
+        PurchaseModel purchase1 = createPurchase(p1, asset, 5.0, LocalDate.now().minusDays(1), wallet);
+        PurchaseModel purchase2 = createPurchase(p2, asset, 3.0, LocalDate.now().minusDays(2), wallet);
 
-        Set<TransactionModel> purchases = new HashSet<>();
-        purchases.add(purchase1);
-        purchases.add(purchase2);
+        Map<UUID, PurchaseModel> purchases = new HashMap<>();
+        purchases.put(p1, purchase1);
+        purchases.put(p2, purchase2);
         wallet.setPurchases(purchases);
 
         ClientModel clientWithPurchases = createClient(
@@ -472,7 +476,7 @@ public class ClientControllerTests {
                 .id(id)
                 .asset(asset)
                 .quantity(quantity)
-                .state(PurchaseStateEnum.IN_WALLET)
+                .stateEnum(PurchaseStateEnum.IN_WALLET)
                 .date(date)
                 .wallet(wallet)
                 .build();
@@ -490,7 +494,7 @@ public class ClientControllerTests {
     void testGetAssetDetailsForClient_Success() throws Exception {
         AssetModel asset = createAndSaveAsset(stockType);
 
-        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
+        WalletModel wallet = WalletModel.builder().purchases(new HashMap<>()).build();
 
         ClientModel client = createClient(
                 UUID.randomUUID(),
@@ -525,7 +529,7 @@ public class ClientControllerTests {
     void testGetAssetDetailsForClient_InvalidAccessCode() throws Exception {
         AssetModel asset = createAndSaveAsset(stockType);
 
-        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
+        WalletModel wallet = WalletModel.builder().purchases(new HashMap<>()).build();
 
         ClientModel client = createClient(
                 UUID.randomUUID(),
@@ -571,7 +575,7 @@ public class ClientControllerTests {
     void testGetAssetDetailsForClient_AssetNotFound() throws Exception {
         UUID invalidAssetId = UUID.randomUUID();
 
-        WalletModel wallet = WalletModel.builder().purchases(new HashSet<>()).build();
+        WalletModel wallet = WalletModel.builder().purchases(new HashMap<>()).build();
 
         ClientModel client = createClient(
                 UUID.randomUUID(),

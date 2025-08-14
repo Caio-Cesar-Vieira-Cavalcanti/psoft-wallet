@@ -9,6 +9,7 @@ import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
@@ -128,15 +129,27 @@ public class AssetServiceImpl implements AssetService {
         return asset.subscribe(clientId, subscriptionType);
     }
 
-    // Utility Method
-    public AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
-        String assetType = assetTypeEnum.name();
-        return assetTypeRepository.findByName(assetType).orElseThrow(() -> new AssetTypeNotFoundException(assetType));
+    @Override
+    public AssetModel validateAssetIsAvailable(UUID assetId) {
+        AssetModel asset = this.getAsset(assetId);
+        if (!asset.isActive()) throw new AssetIsInactive();
+        return asset;
     }
 
-    private AssetModel getAsset(UUID idAsset) {
-        AssetModel assetModel = assetRepository.findById(idAsset)
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " + idAsset));
+    @Override
+    public AssetType fetchAssetType(AssetTypeEnum assetTypeEnum) {
+        return getAssetType(assetTypeEnum);
+    }
+
+    private AssetType getAssetType(AssetTypeEnum assetTypeEnum) {
+        String assetType = assetTypeEnum.name();
+        return assetTypeRepository.findByName(assetType)
+                .orElseThrow(() -> new AssetTypeNotFoundException(assetType));
+    }
+
+    private AssetModel getAsset(UUID assetId) {
+        AssetModel assetModel = assetRepository.findById(assetId)
+                .orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " +  assetId));
         assetModel.setEventManager(assetEventManager);
         return assetModel;
     }

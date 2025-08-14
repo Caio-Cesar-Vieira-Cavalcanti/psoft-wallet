@@ -2,20 +2,22 @@ package com.ufcg.psoft.commerce.model.wallet;
 
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public abstract class TransactionModel {
+public class HoldingModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -32,6 +34,6 @@ public abstract class TransactionModel {
     @Column(name = "quantity", nullable = false)
     private double quantity;
 
-    @Column(name = "date", nullable = false)
-    private LocalDate date;
+    @Column(name = "accumulatedPrice", nullable = false)
+    private double accumulatedPrice;
 }

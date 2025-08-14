@@ -2,12 +2,14 @@ package com.ufcg.psoft.commerce.service.client;
 
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,7 +26,7 @@ public interface ClientService {
 
     ClientResponseDTO patchFullName(UUID id, ClientPatchFullNameRequestDTO clientPatchFullNameRequestDTO);
 
-    WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
+    AssetResponseDTO redirectGetAssetDetails(UUID clientId, UUID assetId, ClientAssetAccessRequestDTO clientAssetAccessRequestDTO);
 
     List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO requestDTO);
 
@@ -32,7 +34,9 @@ public interface ClientService {
 
     SubscriptionResponseDTO redirectMarkInterestInPriceVariationOfAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO);
 
-    AssetResponseDTO getAssetDetails(UUID clientId, UUID assetId, ClientAssetAccessRequestDTO clientAssetAccessRequestDTO);
+    WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
 
-    void validateClientAccess(UUID clientId, String accessCode);
+    PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto);
+
+    ClientModel validateClientAccess(UUID clientId, String accessCode);
 }

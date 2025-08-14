@@ -4,6 +4,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
+import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -32,7 +33,7 @@ public class DTOMapperService {
         WalletResponseDTO dto = modelMapper.map(walletModel, WalletResponseDTO.class);
 
         if (walletModel.getPurchases() != null) {
-            List<PurchaseResponseDTO> purchases = walletModel.getPurchases().stream()
+            List<PurchaseResponseDTO> purchases = walletModel.getPurchases().values().stream()
                     .map(p -> modelMapper.map(p, PurchaseResponseDTO.class))
                     .sorted(Comparator.comparing(PurchaseResponseDTO::getDate).reversed())
                     .toList();
@@ -40,6 +41,22 @@ public class DTOMapperService {
         } else {
             dto.setPurchases(List.of());
         }
+
+        return dto;
+    }
+
+    public PurchaseResponseDTO toPurchaseResponseDTO(PurchaseModel purchaseModel) {
+        if (purchaseModel == null) {
+            return null;
+        }
+
+        PurchaseResponseDTO dto = modelMapper.map(purchaseModel, PurchaseResponseDTO.class);
+
+        dto.setId(purchaseModel.getId());
+        dto.setWalletId(purchaseModel.getWallet().getId());
+        dto.setDate(purchaseModel.getDate());
+        dto.setAssetId(purchaseModel.getAsset().getId());
+        dto.setPurchaseState(purchaseModel.getStateEnum());
 
         return dto;
     }

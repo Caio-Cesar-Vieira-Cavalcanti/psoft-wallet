@@ -5,6 +5,7 @@ import com.ufcg.psoft.commerce.dto.asset.*;
 import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
+import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import jakarta.validation.Valid;
 
@@ -20,8 +21,6 @@ public interface AssetService {
 
     List<AssetResponseDTO> getActiveAssetsByAssetType(AssetType assetType);
 
-    AssetType getAssetType(AssetTypeEnum assetTypeEnum);
-
     AssetResponseDTO getAssetById(UUID idAsset);
 
     AssetResponseDTO updateQuotation(UUID idAsset, AssetQuotationUpdateDTO assetQuotationUpdateDTO);
@@ -29,4 +28,8 @@ public interface AssetService {
     AssetResponseDTO setIsActive(UUID idAsset, @Valid AssetActivationPatchRequestDTO assetPatchRequestDTO);
 
     SubscriptionResponseDTO subscribeToAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO, SubscriptionTypeEnum subscriptionType);
+
+    AssetType fetchAssetType(AssetTypeEnum assetTypeEnum);
+
+    AssetModel validateAssetIsAvailable(UUID assetId);
 }
