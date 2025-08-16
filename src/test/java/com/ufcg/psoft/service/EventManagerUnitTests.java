@@ -3,7 +3,7 @@ package com.ufcg.psoft.service;
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
+import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremiumException;
 import com.ufcg.psoft.commerce.model.asset.types.Crypto;
 import com.ufcg.psoft.commerce.model.asset.types.Stock;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
@@ -24,6 +24,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -76,6 +77,11 @@ public class EventManagerUnitTests {
                 .build();
         mockAsset2.setEventManager(eventManager);
 
+        WalletModel wallet = WalletModel.builder()
+                .budget(10000)
+                .holdings(new HashMap<>())
+                .build();
+
         ClientModel mockClient = new ClientModel(
                 clientId,
                 "João Azevedo",
@@ -83,8 +89,7 @@ public class EventManagerUnitTests {
                 new AccessCodeModel("123456"),
                 new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
                 PlanTypeEnum.PREMIUM,
-                10000.0,
-                new WalletModel()
+                wallet
         );
 
 
@@ -109,7 +114,7 @@ public class EventManagerUnitTests {
     }
 
     @Test
-    @DisplayName("Should ignore subscription but return a String saying it was successful")
+    @DisplayName("Should ignore Subscription but return a String saying it was successful")
     void testSubscribeToAssetPriceVariation_SameSubscription() {
         eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
         eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
@@ -126,6 +131,11 @@ public class EventManagerUnitTests {
     void testSubscribeToAssetPriceVariation_ClientIsNotPremium() {
         UUID otherClientId = UUID.randomUUID();
 
+        WalletModel wallet = WalletModel.builder()
+                .budget(10000)
+                .holdings(new HashMap<>())
+                .build();
+
         ClientModel otherMockClient = new ClientModel(
                 otherClientId,
                 "Rafael Barreto",
@@ -133,14 +143,13 @@ public class EventManagerUnitTests {
                 new AccessCodeModel("654321"),
                 new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
                 PlanTypeEnum.NORMAL,
-                10000.0,
-                new WalletModel()
+                wallet
         );
 
         when(clientRepository.existsById(otherClientId)).thenReturn(true);
         when(clientRepository.findById(otherClientId)).thenReturn(Optional.of(otherMockClient));
 
-        ClientIsNotPremium exception = assertThrows(ClientIsNotPremium.class, () -> {
+        ClientIsNotPremiumException exception = assertThrows(ClientIsNotPremiumException.class, () -> {
             eventManager.subscribeToAssetEvent(assetId1, otherClientId, SubscriptionTypeEnum.PRICE_VARIATION);
         });
         assertEquals("Client is not Premium!", exception.getMessage());
@@ -158,7 +167,7 @@ public class EventManagerUnitTests {
     }
 
     @Test
-    @DisplayName("Should ignore subscription but return a String saying it was successful")
+    @DisplayName("Should ignore Subscription but return a String saying it was successful")
     void testSubscribeToAssetAvailability_SameSubscription() {
         eventManager.subscribeToAssetEvent(assetId2, clientId, SubscriptionTypeEnum.AVAILABILITY);
         eventManager.subscribeToAssetEvent(assetId2, clientId, SubscriptionTypeEnum.AVAILABILITY);

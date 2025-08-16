@@ -9,7 +9,6 @@ import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
-import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
@@ -130,9 +129,17 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public AssetModel validateAssetIsAvailable(UUID assetId) {
+    public AssetModel validateAssetPurchase(UUID assetId, Integer assetQuantity) {
         AssetModel asset = this.getAsset(assetId);
-        if (!asset.isActive()) throw new AssetIsInactive();
+
+        if (asset.getQuotaQuantity() < assetQuantity) {
+            throw new AssetQuantityAvailableIsInsufficientException();
+        }
+
+        if (!asset.isActive()) {
+            throw new AssetIsInactiveException();
+        }
+
         return asset;
     }
 

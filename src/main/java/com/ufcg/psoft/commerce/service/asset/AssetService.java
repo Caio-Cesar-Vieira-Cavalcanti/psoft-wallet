@@ -31,5 +31,5 @@ public interface AssetService {
 
     AssetType fetchAssetType(AssetTypeEnum assetTypeEnum);
 
-    AssetModel validateAssetIsAvailable(UUID assetId);
+    AssetModel validateAssetPurchase(UUID assetId, Integer assetQuantity);
 }

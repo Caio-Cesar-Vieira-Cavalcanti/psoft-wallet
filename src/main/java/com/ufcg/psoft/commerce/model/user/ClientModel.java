@@ -23,11 +23,10 @@ public class ClientModel extends UserModel implements ISubscriber {
     public static final String ANSI_RESET = "\u001B[0m";
 
     @Builder
-    public ClientModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode, AddressModel address, PlanTypeEnum planType, double budget, WalletModel wallet) {
+    public ClientModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode, AddressModel address, PlanTypeEnum planType, WalletModel wallet) {
         super(id, fullName, email, accessCode);
         this.address = address;
         this.planType = planType;
-        this.budget = budget;
         this.wallet = wallet;
     }
 
@@ -36,9 +35,6 @@ public class ClientModel extends UserModel implements ISubscriber {
 
     @Column(nullable = false)
     private PlanTypeEnum planType;
-
-    @Column(nullable = false)
-    private double budget;
 
     @OneToOne(cascade = CascadeType.ALL)
     private WalletModel wallet;

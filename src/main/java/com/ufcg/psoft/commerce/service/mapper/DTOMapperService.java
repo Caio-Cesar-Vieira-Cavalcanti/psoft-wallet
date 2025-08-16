@@ -26,35 +26,12 @@ public class DTOMapperService {
     }
 
     public WalletResponseDTO toWalletResponseDTO(WalletModel walletModel) {
-        if (walletModel == null) {
-            return null;
-        }
-
-        WalletResponseDTO dto = modelMapper.map(walletModel, WalletResponseDTO.class);
-
-        if (walletModel.getPurchases() != null) {
-            List<PurchaseResponseDTO> purchases = walletModel.getPurchases().values().stream()
-                    .map(p -> modelMapper.map(p, PurchaseResponseDTO.class))
-                    .sorted(Comparator.comparing(PurchaseResponseDTO::getDate).reversed())
-                    .toList();
-            dto.setPurchases(purchases);
-        } else {
-            dto.setPurchases(List.of());
-        }
-
-        return dto;
+        return null;
     }
 
     public PurchaseResponseDTO toPurchaseResponseDTO(PurchaseModel purchaseModel) {
-        if (purchaseModel == null) {
-            return null;
-        }
-
         PurchaseResponseDTO dto = modelMapper.map(purchaseModel, PurchaseResponseDTO.class);
-
-        dto.setId(purchaseModel.getId());
         dto.setWalletId(purchaseModel.getWallet().getId());
-        dto.setDate(purchaseModel.getDate());
         dto.setAssetId(purchaseModel.getAsset().getId());
         dto.setPurchaseState(purchaseModel.getStateEnum());
 

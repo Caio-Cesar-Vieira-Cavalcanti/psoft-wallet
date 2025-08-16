@@ -5,7 +5,7 @@ import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.notification.AlreadySubscribedException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
+import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremiumException;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
 import com.ufcg.psoft.commerce.model.observer.ISubscriber;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
@@ -93,7 +93,7 @@ public class EventManagerImpl implements EventManager {
                 .orElseThrow(() -> new ClientIdNotFoundException(subscriberId));
 
         if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
-            if (clientModel.getPlanType() != PlanTypeEnum.PREMIUM) throw new ClientIsNotPremium();
+            if (clientModel.getPlanType() != PlanTypeEnum.PREMIUM) throw new ClientIsNotPremiumException();
         }
     }
 

@@ -4,15 +4,14 @@ import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
-import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.model.wallet.states.PurchaseRequestedState;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
@@ -21,8 +20,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -46,7 +46,11 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
         AddressModel addressModel = modelMapper.map(clientPostRequestDTO.getAddress(), AddressModel.class);
-        WalletModel walletModel = WalletModel.builder().build();
+        WalletModel walletModel = WalletModel.builder()
+                .budget(clientPostRequestDTO.getBudget())
+                .holdings(new HashMap<>())
+                .build();
+
         ClientModel clientModel = new ClientModel(
                 UUID.randomUUID(),
                 clientPostRequestDTO.getFullName(),
@@ -54,10 +58,10 @@ public class ClientServiceImpl implements ClientService {
                 new AccessCodeModel(clientPostRequestDTO.getAccessCode()),
                 addressModel,
                 clientPostRequestDTO.getPlanType(),
-                clientPostRequestDTO.getBudget(),
                 walletModel
         );
         ClientModel savedClient = clientRepository.save(clientModel);
+
         return dtoMapperService.toClientResponseDTO(savedClient);
     }
 
@@ -79,6 +83,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public List<ClientResponseDTO> getClients() {
         List<ClientModel> clients = clientRepository.findAll();
+
         return clients.stream()
                 .map(dtoMapperService::toClientResponseDTO)
                 .toList();
@@ -103,7 +108,6 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public List<AssetResponseDTO> redirectGetActiveAssets(UUID clientId, ClientActiveAssetsRequestDTO clientActiveAssetsRequestDTO) {
         ClientModel client = this.validateClientAccess(clientId, clientActiveAssetsRequestDTO.getAccessCode());
-
         PlanTypeEnum planType = client.getPlanType();
 
         if (planType == PlanTypeEnum.PREMIUM) {
@@ -129,31 +133,17 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public WalletResponseDTO getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
+    public List<PurchaseResponseDTO> getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
         ClientModel client = this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
 
-        return dtoMapperService.toWalletResponseDTO(client.getWallet());
+        return walletService.redirectGetPurchaseHistory(client.getWallet().getId());
     }
 
     @Override
     public PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto) {
         ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
-        AssetModel asset = assetService.validateAssetIsAvailable(assetId);
-
-        PurchaseModel purchaseModel = PurchaseModel.builder()
-                .id(UUID.randomUUID())
-                .asset(asset)
-                .wallet(client.getWallet())
-                .quantity(dto.getAssetQuantity())
-                .date(LocalDate.now())
-                .acquisitionPrice(asset.getQuotation() * dto.getAssetQuantity())
-                .stateEnum(PurchaseStateEnum.REQUESTED)
-                .build();
-
-        UUID purchaseId = purchaseModel.getId();
-
-        client.getWallet().getPurchases().put(purchaseId, purchaseModel);
-        clientRepository.save(client);
+        AssetModel asset = assetService.validateAssetPurchase(assetId, dto.getAssetQuantity());
+        PurchaseModel purchaseModel = walletService.redirectCreatePurchaseRequest(client.getWallet(), asset, dto.getAssetQuantity());
 
         return dtoMapperService.toPurchaseResponseDTO(purchaseModel);
     }
@@ -162,6 +152,7 @@ public class ClientServiceImpl implements ClientService {
     public ClientModel validateClientAccess(UUID clientId, String accessCode) {
         ClientModel client = this.getClient(clientId);
         client.validateAccess(accessCode);
+
         return client;
     }
 

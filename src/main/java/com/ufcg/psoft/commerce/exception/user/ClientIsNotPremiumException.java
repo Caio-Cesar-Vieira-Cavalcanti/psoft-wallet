@@ -1,8 +1,8 @@
 package com.ufcg.psoft.commerce.exception.user;
 
-public class ClientIsNotPremium extends RuntimeException {
-    public ClientIsNotPremium() { super("Client is not Premium!"); }
-    public ClientIsNotPremium(String message) {
+public class ClientIsNotPremiumException extends RuntimeException {
+    public ClientIsNotPremiumException() { super("Client is not Premium!"); }
+    public ClientIsNotPremiumException(String message) {
         super(message);
     }
 }

@@ -1103,17 +1103,17 @@ public class AssetServiceUnitTests {
     }
 
     @Test
-    @DisplayName("Should throw AssetIsInactive when subscribing to price variation for inactive asset")
+    @DisplayName("Should throw AssetIsInactiveException when subscribing to price variation for inactive asset")
     void testSubscribe_PriceVariationForInactiveAsset_ThrowsException() {
         asset.setActive(false);
         UUID clientId = UUID.randomUUID();
         
-        assertThrows(AssetIsInactive.class, () ->
+        assertThrows(AssetIsInactiveException.class, () ->
                 asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION));
     }
 
     @Test
-    @DisplayName("Should throw AssetIsNotStockNeitherCrypto for non-stock/non-crypto assets")
+    @DisplayName("Should throw AssetIsNotStockNeitherCryptoException for non-stock/non-crypto assets")
     void testSubscribe_InvalidAssetType_ThrowsException() {
         asset.setActive(true);
 
@@ -1121,7 +1121,7 @@ public class AssetServiceUnitTests {
         asset.setAssetType(invalidType);
         UUID clientId = UUID.randomUUID();
 
-        assertThrows(AssetIsNotStockNeitherCrypto.class, () ->
+        assertThrows(AssetIsNotStockNeitherCryptoException.class, () ->
                 asset.subscribe(clientId, SubscriptionTypeEnum.PRICE_VARIATION));
     }
 
@@ -1150,7 +1150,7 @@ public class AssetServiceUnitTests {
     }
 
     @Test
-    @DisplayName("Should throw AssetIsNotStockNeitherCrypto for invalid asset type name")
+    @DisplayName("Should throw AssetIsNotStockNeitherCryptoException for invalid asset type name")
     void testSubscribe_InvalidAssetTypeName_ThrowsException() {
         asset.setActive(true);
         AssetType invalidType = new AssetType("INVALID_TYPE_NAME") {
@@ -1160,7 +1160,7 @@ public class AssetServiceUnitTests {
 
         asset.setAssetType(invalidType);
 
-        assertThrows(AssetIsNotStockNeitherCrypto.class, () ->
+        assertThrows(AssetIsNotStockNeitherCryptoException.class, () ->
                 asset.subscribe(UUID.randomUUID(), SubscriptionTypeEnum.PRICE_VARIATION));
     }
 }

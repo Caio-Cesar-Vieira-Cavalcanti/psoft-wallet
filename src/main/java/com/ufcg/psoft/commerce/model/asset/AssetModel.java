@@ -5,8 +5,8 @@ import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsInactive;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCrypto;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsInactiveException;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCryptoException;
 import com.ufcg.psoft.commerce.exception.notification.EventManagerNotSetException;
 import com.ufcg.psoft.commerce.service.observer.EventManager;
 import jakarta.persistence.*;
@@ -109,11 +109,11 @@ public class AssetModel {
         try {
             assetTypeEnum = AssetTypeEnum.valueOf(assetTypeName);
         } catch (IllegalArgumentException e) {
-            throw new AssetIsNotStockNeitherCrypto(this.name);
+            throw new AssetIsNotStockNeitherCryptoException(this.name);
         }
 
         if (assetTypeEnum != AssetTypeEnum.STOCK && assetTypeEnum != AssetTypeEnum.CRYPTO) {
-            throw new AssetIsNotStockNeitherCrypto(this.name);
+            throw new AssetIsNotStockNeitherCryptoException(this.name);
         }
     }
 
@@ -122,6 +122,6 @@ public class AssetModel {
     }
 
     private void validateAssetIsActive() {
-        if (!this.isActive()) throw new AssetIsInactive();
+        if (!this.isActive()) throw new AssetIsInactiveException();
     }
 }

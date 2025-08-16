@@ -3,8 +3,9 @@ package com.ufcg.psoft.commerce.exception.handler;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.exception.notification.AlreadySubscribedException;
+import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
+import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremiumException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -34,7 +35,7 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public CustomErrorType onMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    public CustomErrorType handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         CustomErrorType customErrorType = defaultCustomErrorTypeConstruct(
                 "Validation errors found"
         );
@@ -47,7 +48,7 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(ConstraintViolationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public CustomErrorType onConstraintViolation(ConstraintViolationException e) {
+    public CustomErrorType handleConstraintViolation(ConstraintViolationException e) {
         CustomErrorType customErrorType = defaultCustomErrorTypeConstruct(
                 "Validation errors found"
         );
@@ -60,7 +61,7 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(InvalidQuotationVariationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public CustomErrorType onInvalidQuotationVariationException(InvalidQuotationVariationException e) {
+    public CustomErrorType handleInvalidQuotationVariationException(InvalidQuotationVariationException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -69,25 +70,25 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(AssetIsAlreadyActive.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public CustomErrorType onAssetIsAlreadyActive(AssetIsAlreadyActive e) {
+    public CustomErrorType handleAssetIsAlreadyActive(AssetIsAlreadyActive e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
     }
 
-    @ExceptionHandler(AssetIsInactive.class)
+    @ExceptionHandler(AssetIsInactiveException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public CustomErrorType onAssetIsInactive(AssetIsInactive e) {
+    public CustomErrorType handleAssetIsInactive(AssetIsInactiveException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
     }
 
-    @ExceptionHandler(AssetIsNotStockNeitherCrypto.class)
+    @ExceptionHandler(AssetIsNotStockNeitherCryptoException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public CustomErrorType onAssetIsNotStockNeitherCrypto(AssetIsNotStockNeitherCrypto e) {
+    public CustomErrorType handleAssetIsNotStockNeitherCrypto(AssetIsNotStockNeitherCryptoException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -96,7 +97,7 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(InvalidAssetTypeException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public CustomErrorType onInvalidAssetTypeException(InvalidAssetTypeException e) {
+    public CustomErrorType handleInvalidAssetTypeException(InvalidAssetTypeException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -105,7 +106,7 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(AssetNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public CustomErrorType onAssetNotFoundException(AssetNotFoundException e) {
+    public CustomErrorType handleAssetNotFoundException(AssetNotFoundException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -114,7 +115,16 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(AssetTypeNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public CustomErrorType onAssetTypeNotFoundException(AssetTypeNotFoundException e) {
+    public CustomErrorType handleAssetTypeNotFoundException(AssetTypeNotFoundException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(AssetQuantityAvailableIsInsufficientException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType handleAssetQuantityAvailableIsInsufficient(AssetQuantityAvailableIsInsufficientException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -129,10 +139,10 @@ public class ErrorHandlingControllerAdvice {
         );
     }
 
-    @ExceptionHandler(ClientIsNotPremium.class)
+    @ExceptionHandler(ClientIsNotPremiumException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ResponseBody
-    public CustomErrorType handleClientIsNotPremium(ClientIsNotPremium e) {
+    public CustomErrorType handleClientIsNotPremium(ClientIsNotPremiumException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -141,7 +151,16 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(ClientIdNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ResponseBody
-    public CustomErrorType onClientIdNotFoundException(ClientIdNotFoundException e) {
+    public CustomErrorType handleClientIdNotFoundException(ClientIdNotFoundException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+    @ExceptionHandler(ClientBudgetIsInsufficientException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType handleClientBudgetIsInsufficientException(ClientBudgetIsInsufficientException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -150,7 +169,7 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(AssetReferencedInPurchaseException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
-    public CustomErrorType onAssetReferencedInPurchaseException(AssetReferencedInPurchaseException e) {
+    public CustomErrorType handleAssetReferencedInPurchaseException(AssetReferencedInPurchaseException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );
@@ -159,7 +178,7 @@ public class ErrorHandlingControllerAdvice {
     @ExceptionHandler(AlreadySubscribedException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
-    public CustomErrorType onAlreadySubscribedException(AlreadySubscribedException e) {
+    public CustomErrorType handleAlreadySubscribedException(AlreadySubscribedException e) {
         return defaultCustomErrorTypeConstruct(
                 e.getMessage()
         );

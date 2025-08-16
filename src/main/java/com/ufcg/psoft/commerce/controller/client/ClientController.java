@@ -3,7 +3,6 @@ package com.ufcg.psoft.commerce.controller.client;
 import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import org.springframework.http.HttpStatus;
@@ -111,10 +110,10 @@ public class ClientController {
     }
 
     @GetMapping({"/{clientId}/wallet/purchase"})
-    public ResponseEntity<WalletResponseDTO> getPurchaseHistory(@PathVariable("clientId") UUID clientId,
+    public ResponseEntity<List<PurchaseResponseDTO>> getPurchaseHistory(@PathVariable("clientId") UUID clientId,
                                                                 @RequestBody @Valid ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
 
-        WalletResponseDTO purchases = clientService.getPurchaseHistory(clientId, clientPurchaseHistoryRequestDTO);
+        List<PurchaseResponseDTO> purchases = clientService.getPurchaseHistory(clientId, clientPurchaseHistoryRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(purchases);

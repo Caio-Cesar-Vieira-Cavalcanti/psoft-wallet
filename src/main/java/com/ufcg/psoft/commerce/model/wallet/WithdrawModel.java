@@ -1,6 +1,5 @@
 package com.ufcg.psoft.commerce.model.wallet;
 
-import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.wallet.states.*;
 import jakarta.persistence.*;

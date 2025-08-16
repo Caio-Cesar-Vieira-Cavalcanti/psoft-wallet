@@ -1,10 +1,10 @@
 package com.ufcg.psoft.commerce.exception.asset;
 
-public class AssetIsInactive extends RuntimeException {
-    public AssetIsInactive() {
+public class AssetIsInactiveException extends RuntimeException {
+    public AssetIsInactiveException() {
         super("Asset is inactive!");
     }
-    public AssetIsInactive(String message) {
+    public AssetIsInactiveException(String message) {
         super(message);
     }
 }

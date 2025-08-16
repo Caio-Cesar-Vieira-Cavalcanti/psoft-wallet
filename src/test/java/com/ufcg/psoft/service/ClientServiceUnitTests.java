@@ -9,6 +9,7 @@ import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
+import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.client.ClientService;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.modelmapper.ModelMapper;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -57,6 +59,11 @@ public class ClientServiceUnitTests {
         ReflectionTestUtils.setField(clientService, "modelMapper", modelMapper);
         ReflectionTestUtils.setField(clientService, "dtoMapperService", dtoMapperService);
 
+        WalletModel wallet = WalletModel.builder()
+                .budget(5000)
+                .holdings(new HashMap<>())
+                .build();
+
         clientId = UUID.randomUUID();
         client = new ClientModel(
             clientId,
@@ -65,8 +72,7 @@ public class ClientServiceUnitTests {
             new AccessCodeModel("123456"),
             new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
             PlanTypeEnum.PREMIUM,
-            10000.0,
-            null
+            wallet
         );
 
         assetService = mock(AssetService.class);
@@ -105,7 +111,7 @@ public class ClientServiceUnitTests {
 
         assertThat(result)
                 .usingRecursiveComparison()
-                .ignoringFields("accessCode", "id", "email", "wallet") // Id is generated, accessCode is not returned on DTO, email has a different structure, wallet is null
+                .ignoringFields("accessCode", "id", "email", "wallet", "budget") // Id is generated, accessCode is not returned on DTO, email has a different structure, wallet is null
                 .isEqualTo(client);
     }
 
