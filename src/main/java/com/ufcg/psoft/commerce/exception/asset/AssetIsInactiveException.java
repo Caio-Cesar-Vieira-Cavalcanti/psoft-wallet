@@ -4,7 +4,4 @@ public class AssetIsInactiveException extends RuntimeException {
     public AssetIsInactiveException() {
         super("Asset is inactive!");
     }
-    public AssetIsInactiveException(String message) {
-        super(message);
-    }
 }

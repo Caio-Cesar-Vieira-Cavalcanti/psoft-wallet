@@ -4,7 +4,4 @@ public class AssetQuantityAvailableIsInsufficientException extends RuntimeExcept
     public AssetQuantityAvailableIsInsufficientException() {
         super("The are not enough assets available for what was requested in the purchase!");
     }
-    public AssetQuantityAvailableIsInsufficientException(String message) {
-        super(message);
-    }
 }
