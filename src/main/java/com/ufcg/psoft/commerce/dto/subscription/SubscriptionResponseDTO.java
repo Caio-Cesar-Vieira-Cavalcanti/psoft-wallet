@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.dto.Subscription;
+package com.ufcg.psoft.commerce.dto.subscription;
 
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import java.util.UUID;

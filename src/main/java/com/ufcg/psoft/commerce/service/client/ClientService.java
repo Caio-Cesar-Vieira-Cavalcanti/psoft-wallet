@@ -1,6 +1,6 @@
 package com.ufcg.psoft.commerce.service.client;
 
-import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;

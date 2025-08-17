@@ -2,13 +2,12 @@ package com.ufcg.psoft.commerce.service.client;
 
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.*;
-import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
-import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
@@ -22,7 +21,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Service

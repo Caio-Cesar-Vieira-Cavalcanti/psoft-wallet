@@ -1,6 +1,6 @@
 package com.ufcg.psoft.commerce.service.asset;
 
-import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.*;
 
 import com.ufcg.psoft.commerce.dto.client.ClientMarkInterestInAssetRequestDTO;

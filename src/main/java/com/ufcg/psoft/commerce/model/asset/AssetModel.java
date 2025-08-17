@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.model.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
