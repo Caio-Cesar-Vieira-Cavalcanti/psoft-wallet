@@ -1,7 +1,6 @@
-package com.ufcg.psoft.commerce.model.wallet.states;
+package com.ufcg.psoft.commerce.model.wallet.states.withdraw;
 
 import com.ufcg.psoft.commerce.model.wallet.WithdrawModel;
-import com.ufcg.psoft.commerce.model.wallet.WithdrawState;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 

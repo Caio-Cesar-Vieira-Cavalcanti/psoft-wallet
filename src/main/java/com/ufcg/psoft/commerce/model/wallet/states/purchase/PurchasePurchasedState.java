@@ -1,8 +1,8 @@
-package com.ufcg.psoft.commerce.model.wallet.states;
+package com.ufcg.psoft.commerce.model.wallet.states.purchase;
 
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
+import com.ufcg.psoft.commerce.model.user.UserModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
-import com.ufcg.psoft.commerce.model.wallet.PurchaseState;
 import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 
@@ -13,7 +13,7 @@ public class PurchasePurchasedState implements PurchaseState {
     PurchaseModel purchase;
 
     @Override
-    public void modify() {
+    public void modify(UserModel user) {
         this.purchase.setState(new PurchaseInWalletState(this.purchase), PurchaseStateEnum.IN_WALLET);
     }
 }

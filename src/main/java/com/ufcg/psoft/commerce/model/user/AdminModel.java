@@ -22,4 +22,8 @@ public class AdminModel extends UserModel {
         }
     }
 
+    @Override
+    public boolean isAdmin() {
+        return true;
+    }
 }

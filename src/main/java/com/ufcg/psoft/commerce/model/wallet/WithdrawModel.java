@@ -1,7 +1,10 @@
 package com.ufcg.psoft.commerce.model.wallet;
 
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
-import com.ufcg.psoft.commerce.model.wallet.states.*;
+import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawConfirmedState;
+import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawInAccountState;
+import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawRequestedState;
+import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

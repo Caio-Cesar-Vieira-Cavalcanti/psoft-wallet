@@ -119,7 +119,7 @@ public class ClientController {
                 .body(purchases);
     }
 
-    @GetMapping("/{clientId}/wallet/purchase/{assetId}")
+    @PostMapping("/{clientId}/wallet/purchase/{assetId}")
     public ResponseEntity<PurchaseResponseDTO> purchaseRequestForAvailableAsset(@PathVariable UUID clientId,
                                                                       @PathVariable UUID assetId,
                                                                       @RequestBody @Valid ClientPurchaseAssetRequestDTO dto) {

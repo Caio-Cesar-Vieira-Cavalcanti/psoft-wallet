@@ -45,6 +45,10 @@ public abstract class UserModel {
         return id;
     }
 
+    public boolean isAdmin() {
+        return false;
+    }
+
     public String getFullName() {
         return fullName;
     }

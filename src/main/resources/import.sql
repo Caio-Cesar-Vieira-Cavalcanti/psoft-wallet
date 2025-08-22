@@ -22,6 +22,6 @@ INSERT INTO transaction_model (id, date, quantity, asset_id, wallet_id) VALUES (
 INSERT INTO purchase_model (id, acquisition_price, state) VALUES ('55555555-5555-5555-5555-555555555555', 850.0, 'IN_WALLET');
 
 INSERT INTO transaction_model (id, date, quantity, asset_id, wallet_id) VALUES ('66666666-6666-6666-6666-666666666666', '2025-07-30', 3, '22222222-2222-2222-2222-222222222222', '1afcd28d-967e-4dd5-be8a-d692d15ac32d');
-INSERT INTO purchase_model (id, acquisition_price, state) VALUES ('66666666-6666-6666-6666-666666666666', 850.0, 'IN_WALLET');
+INSERT INTO purchase_model (id, acquisition_price, state) VALUES ('66666666-6666-6666-6666-666666666666', 850.0, 'REQUESTED');
 
-INSERT INTO asset (id, name, asset_type_id, description, is_active, quotation, quota_quantity) VALUES ('11111111-1111-1111-1111-111111111111', 'Tesla Stock', 2, 'Ações da Tesla', false, 85.0, 100);
+INSERT INTO asset (id, name, asset_type_id, description, is_active, quotation, quota_quantity) VALUES ('11111111-1111-1111-1111-111111111111', 'Tesla Stock', 2, 'Ações da Tesla', false, 85.0, 1);

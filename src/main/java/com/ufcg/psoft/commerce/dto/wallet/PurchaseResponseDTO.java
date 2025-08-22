@@ -2,7 +2,7 @@ package com.ufcg.psoft.commerce.dto.wallet;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
-import com.ufcg.psoft.commerce.model.wallet.PurchaseState;
+import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,4 +41,13 @@ public class PurchaseResponseDTO {
     @JsonProperty("date")
     @NotNull(message = "The 'date' field cannot be null")
     private LocalDate date;
+
+    public PurchaseResponseDTO(PurchaseModel purchase) {
+        this.id = purchase.getId();
+        this.walletId = purchase.getWallet().getId();
+        this.assetId = purchase.getAsset().getId();
+        this.quantity = purchase.getQuantity();
+        this.purchaseState = purchase.getStateEnum();
+        this.date = purchase.getDate();
+    }
 }
