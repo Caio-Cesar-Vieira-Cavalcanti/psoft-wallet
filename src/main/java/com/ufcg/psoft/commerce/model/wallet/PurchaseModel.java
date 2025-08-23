@@ -8,6 +8,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Map;
+import java.util.function.Function;
+
 
 @Entity
 @Getter
@@ -16,6 +19,14 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 public class PurchaseModel extends TransactionModel {
+
+    private static final Map<PurchaseStateEnum, Function<PurchaseModel, PurchaseState>> STATE_FACTORIES =
+            Map.of(
+                    PurchaseStateEnum.REQUESTED, PurchaseRequestedState::new,
+                    PurchaseStateEnum.AVAILABLE, PurchaseAvailableState::new,
+                    PurchaseStateEnum.PURCHASED, PurchasePurchasedState::new,
+                    PurchaseStateEnum.IN_WALLET, PurchaseInWalletState::new
+            );
 
     @Column(name = "acquisitionPrice", nullable = false)
     private double acquisitionPrice;
@@ -30,16 +41,9 @@ public class PurchaseModel extends TransactionModel {
 
     @PostLoad
     public void loadState() {
-        switch (stateEnum) {
-            case REQUESTED -> this.state = new PurchaseRequestedState(this);
-            case AVAILABLE -> this.state = new PurchaseAvailableState(this);
-            case PURCHASED -> this.state = new PurchasePurchasedState(this);
-            case IN_WALLET -> this.state = new PurchaseInWalletState(this);
-            default -> {
-                this.state = new PurchaseRequestedState(this);
-                this.stateEnum = PurchaseStateEnum.REQUESTED;
-            }
-        }
+        this.state = STATE_FACTORIES
+                .getOrDefault(stateEnum, PurchaseRequestedState::new)
+                .apply(this);
     }
 
     public void modify(UserModel user) {

@@ -50,13 +50,13 @@ public class ClientController {
     }
 
     @DeleteMapping("/{clientId}")
-    public ResponseEntity<?> remove(@PathVariable("clientId") UUID clientId,
+    public ResponseEntity<Void> remove(@PathVariable("clientId") UUID clientId,
                                     @RequestBody @Valid ClientDeleteRequestDTO body) {
 
         clientService.remove(clientId, body);
         return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .body("");
+                .noContent()
+                .build();
     }
 
     @PatchMapping("/{clientId}")

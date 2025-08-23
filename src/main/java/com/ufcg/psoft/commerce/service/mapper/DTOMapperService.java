@@ -10,9 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class DTOMapperService {
@@ -26,7 +23,10 @@ public class DTOMapperService {
     }
 
     public WalletResponseDTO toWalletResponseDTO(WalletModel walletModel) {
-        return null;
+        WalletResponseDTO dto = new WalletResponseDTO();
+        dto.setId(walletModel.getId());
+        dto.setBudget(walletModel.getBudget());
+        return dto;
     }
 
     public PurchaseResponseDTO toPurchaseResponseDTO(PurchaseModel purchaseModel) {

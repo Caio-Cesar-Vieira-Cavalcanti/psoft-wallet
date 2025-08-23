@@ -6,11 +6,11 @@ import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawInAccountSta
 import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawRequestedState;
 import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawState;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import java.util.Map;
+import java.util.function.Function;
 
 @Entity
 @Getter
@@ -19,6 +19,13 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 public class WithdrawModel extends TransactionModel {
+
+    private static final Map<WithdrawStateEnum, Function<WithdrawModel, WithdrawState>> STATE_FACTORIES =
+            Map.of(
+                    WithdrawStateEnum.REQUESTED, WithdrawRequestedState::new,
+                    WithdrawStateEnum.CONFIRMED, WithdrawConfirmedState::new,
+                    WithdrawStateEnum.IN_ACCOUNT, WithdrawInAccountState::new
+            );
 
     @Column(name = "sellingPrice", nullable = false)
     private double sellingPrice;
@@ -32,15 +39,9 @@ public class WithdrawModel extends TransactionModel {
 
     @PostLoad
     public void loadState() {
-        switch (stateEnum) {
-            case REQUESTED -> this.state = new WithdrawRequestedState(this);
-            case CONFIRMED -> this.state = new WithdrawConfirmedState(this);
-            case IN_ACCOUNT -> this.state = new WithdrawInAccountState(this);
-            default -> {
-                this.state = new WithdrawRequestedState(this);
-                this.stateEnum = WithdrawStateEnum.REQUESTED;
-            }
-        }
+        this.state = STATE_FACTORIES
+                .getOrDefault(stateEnum, WithdrawRequestedState::new)
+                .apply(this);
     }
 
     public void setState(WithdrawState newState, WithdrawStateEnum type) {

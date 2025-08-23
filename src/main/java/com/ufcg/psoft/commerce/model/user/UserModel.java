@@ -2,12 +2,13 @@ package com.ufcg.psoft.commerce.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
+@Getter
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "user_type")
 public abstract class UserModel {
@@ -17,6 +18,7 @@ public abstract class UserModel {
     private UUID id;
 
     @Column(nullable = false)
+    @Setter
     private String fullName;
 
     @Embedded
@@ -41,27 +43,7 @@ public abstract class UserModel {
         throw new UnsupportedOperationException("Access validation not supported for this user type");
     }
 
-    public UUID getId() {
-        return id;
-    }
-
     public boolean isAdmin() {
         return false;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public EmailModel getEmail() {
-        return email;
-    }
-
-    public AccessCodeModel getAccessCode() {
-        return accessCode;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
     }
 }

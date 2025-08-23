@@ -20,6 +20,6 @@ public class WalletResponseDTO {
     @NotNull(message = "The 'id' field cannot be null")
     private UUID id;
 
-    @JsonProperty("purchases")
-    private List<PurchaseResponseDTO> purchases;
+    @JsonProperty("budget")
+    private double budget;
 }

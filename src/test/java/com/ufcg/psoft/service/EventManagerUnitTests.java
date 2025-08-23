@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class EventManagerUnitTests {
+class EventManagerUnitTests {
 
     private AssetRepository assetRepository;
     private ClientRepository clientRepository;
@@ -107,20 +107,20 @@ public class EventManagerUnitTests {
     void testSubscribeToAssetPriceVariation_Success() {
         SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
 
-        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals("subscription registered successfully", response.getMessage());
         assertEquals(clientId, response.getClientId());
         assertEquals(assetId1, response.getAssetId());
         assertEquals(SubscriptionTypeEnum.PRICE_VARIATION, response.getSubscriptionType());
     }
 
     @Test
-    @DisplayName("Should ignore Subscription but return a String saying it was successful")
+    @DisplayName("Should ignore subscription but return a String saying it was successful")
     void testSubscribeToAssetPriceVariation_SameSubscription() {
         eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
         eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
         SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
 
-        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals("subscription registered successfully", response.getMessage());
         assertEquals(clientId, response.getClientId());
         assertEquals(assetId1, response.getAssetId());
         assertEquals(SubscriptionTypeEnum.PRICE_VARIATION, response.getSubscriptionType());
@@ -160,20 +160,20 @@ public class EventManagerUnitTests {
     void testSubscribeToAssetAvailability_Success() {
         SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId2, clientId, SubscriptionTypeEnum.AVAILABILITY);
 
-        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals("subscription registered successfully", response.getMessage());
         assertEquals(clientId, response.getClientId());
         assertEquals(assetId2, response.getAssetId());
         assertEquals(SubscriptionTypeEnum.AVAILABILITY, response.getSubscriptionType());
     }
 
     @Test
-    @DisplayName("Should ignore Subscription but return a String saying it was successful")
+    @DisplayName("Should ignore subscription but return a String saying it was successful")
     void testSubscribeToAssetAvailability_SameSubscription() {
         eventManager.subscribeToAssetEvent(assetId2, clientId, SubscriptionTypeEnum.AVAILABILITY);
         eventManager.subscribeToAssetEvent(assetId2, clientId, SubscriptionTypeEnum.AVAILABILITY);
         SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId2, clientId, SubscriptionTypeEnum.AVAILABILITY);
 
-        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals("subscription registered successfully", response.getMessage());
         assertEquals(clientId, response.getClientId());
         assertEquals(assetId2, response.getAssetId());
         assertEquals(SubscriptionTypeEnum.AVAILABILITY, response.getSubscriptionType());

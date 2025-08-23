@@ -21,14 +21,6 @@ public class WalletModel {
     @Column(nullable = false)
     private double budget;
 
-    /*
-    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Map<UUID, PurchaseModel> purchases;
-
-    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Map<UUID, WithdrawModel> withdraws;
-    */
-
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
     private Map<UUID, HoldingModel> holdings;
 }

@@ -7,7 +7,7 @@ import lombok.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "Subscription")
+@Table(name = "subscription")
 @Getter
 @Setter
 @NoArgsConstructor

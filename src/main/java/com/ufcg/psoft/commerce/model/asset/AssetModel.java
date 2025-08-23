@@ -10,15 +10,13 @@ import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCryptoExcep
 import com.ufcg.psoft.commerce.exception.notification.EventManagerNotSetException;
 import com.ufcg.psoft.commerce.service.observer.EventManager;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity(name = "asset")
 @Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -55,11 +53,8 @@ public class AssetModel {
     private double quotaQuantity;
 
     @Transient
+    @Setter
     private EventManager eventManager;
-
-    public void setEventManager(EventManager eventManager) {
-        this.eventManager = eventManager;
-    }
 
     public SubscriptionResponseDTO subscribe(UUID clientId, SubscriptionTypeEnum type) {
         if (eventManager == null) {

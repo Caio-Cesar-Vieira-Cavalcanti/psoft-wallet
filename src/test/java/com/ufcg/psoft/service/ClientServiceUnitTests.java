@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class ClientServiceUnitTests {
+class ClientServiceUnitTests {
 
     private ClientRepository clientRepository;
     private ClientService clientService;

@@ -38,7 +38,7 @@ public class EventManagerImpl implements EventManager {
         subscriptionRepository.save(subscription);
 
         return SubscriptionResponseDTO.builder()
-                .message("Subscription registered successfully")
+                .message("subscription registered successfully")
                 .assetId(assetId)
                 .clientId(subscriberId)
                 .subscriptionType(subscriptionType)
@@ -76,7 +76,7 @@ public class EventManagerImpl implements EventManager {
 
     private ISubscriber getValidSubscriber(UUID clientId) {
         return clientRepository.findById(clientId)
-                .map(client -> (ISubscriber) client)
+                .map(ISubscriber.class::cast)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
     }
 
@@ -92,8 +92,8 @@ public class EventManagerImpl implements EventManager {
         ClientModel clientModel = this.clientRepository.findById(subscriberId)
                 .orElseThrow(() -> new ClientIdNotFoundException(subscriberId));
 
-        if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
-            if (clientModel.getPlanType() != PlanTypeEnum.PREMIUM) throw new ClientIsNotPremiumException();
+        if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION && clientModel.getPlanType() != PlanTypeEnum.PREMIUM) {
+            throw new ClientIsNotPremiumException();
         }
     }
 

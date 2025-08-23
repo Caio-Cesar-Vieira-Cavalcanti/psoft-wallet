@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = CommerceApplication.class)
 @AutoConfigureMockMvc
 @DisplayName("Assets controller tests")
-public class AssetControllerTests {
+class AssetControllerTests {
 
     @Autowired
     private MockMvc mockMvc;

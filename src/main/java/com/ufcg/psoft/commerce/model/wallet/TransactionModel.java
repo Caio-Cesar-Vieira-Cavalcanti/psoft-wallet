@@ -11,7 +11,6 @@ import java.util.UUID;
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
@@ -30,6 +29,7 @@ public abstract class TransactionModel {
     private WalletModel wallet;
 
     @Column(name = "quantity", nullable = false)
+    @Setter
     private double quantity;
 
     @Column(name = "date", nullable = false)

@@ -5,10 +5,7 @@ import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.observer.ISubscriber;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.util.UUID;
 
@@ -41,7 +38,7 @@ public class ClientModel extends UserModel implements ISubscriber {
 
     @Override
     public void validateAccess(String accessCode) {
-        if (!this.getAccessCode().matches(accessCode)) {
+        if (this.getAccessCode().matches(accessCode)) {
             throw new UnauthorizedUserAccessException("Unauthorized client access: access code is incorrect");
         }
     }
