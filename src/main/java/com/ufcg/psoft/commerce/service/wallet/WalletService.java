@@ -13,4 +13,5 @@ public interface WalletService {
     List<PurchaseResponseDTO> redirectGetPurchaseHistory(UUID walletId);
     PurchaseModel redirectCreatePurchaseRequest(WalletModel wallet, AssetModel asset, Integer assetQuantity);
     HoldingModel findHoldingByAsset(WalletModel wallet, AssetModel asset);
+    PurchaseResponseDTO addPurchase(PurchaseModel purchase);
 }

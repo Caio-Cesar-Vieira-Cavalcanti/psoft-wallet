@@ -31,12 +31,6 @@ public class PurchaseServiceImpl implements PurchaseService {
     AdminService adminService;
 
     @Autowired
-    ClientService clientService;
-
-    @Autowired
-    WalletService walletService;
-
-    @Autowired
     HoldingRepository holdingRepository;
 
     @Override
@@ -74,9 +68,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     }
 
     @Override
-    public PurchaseResponseDTO confirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
-        clientService.validateClientAccess(clientId, dto.getAccessCode());
-
+    public PurchaseModel confirmationByClient(UUID purchaseId) {
         PurchaseModel purchase = purchaseRepository.findById(purchaseId)
                 .orElseThrow(() -> new PurchaseNotFoundException(purchaseId));
 
@@ -84,12 +76,10 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         this.purchaseRepository.save(purchase);
 
-        return this.addedInWallet(purchase);
+        return purchase;
     }
 
-    private PurchaseResponseDTO addedInWallet(PurchaseModel purchase) {
-        HoldingModel holdingModel = walletService.findHoldingByAsset(purchase.getWallet(), purchase.getAsset());
-
+    public PurchaseResponseDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel) {
         if (holdingModel == null) {
             HoldingModel newHoldingModel = HoldingModel.builder()
                     .asset(purchase.getAsset())
@@ -99,14 +89,12 @@ public class PurchaseServiceImpl implements PurchaseService {
                     .build();
             this.holdingRepository.save(newHoldingModel);
         } else {
-            double newQuantity = holdingModel.getQuantity() + purchase.getQuantity();
-            holdingModel.setQuantity(newQuantity);
-
-            double newAccumulatedPrice = holdingModel.getAccumulatedPrice() + purchase.getAcquisitionPrice();
-            holdingModel.setAccumulatedPrice(newAccumulatedPrice);
-
-            holdingRepository.save(holdingModel);
+            holdingModel.increaseQuantityAfterPurchase(purchase.getQuantity());
+            holdingModel.increaseAccumulatedPrice(purchase.getAcquisitionPrice());
         }
+
+        purchase.modify(null);
+        this.purchaseRepository.save(purchase);
 
         return new PurchaseResponseDTO(purchase);
     }

@@ -35,16 +35,6 @@ public class PurchaseController {
         return ResponseEntity.ok(updated);
     }
 
-    @PostMapping("/{purchaseId}/confirmation-by-client/{clientId}")
-    public ResponseEntity<PurchaseResponseDTO> confirmationByClient(
-        @PathVariable UUID purchaseId,
-        @PathVariable UUID clientId,
-        @RequestBody @Valid PurchaseConfirmationByClientDTO dto
-    ) {
-        PurchaseResponseDTO updated = purchaseService.confirmationByClient(purchaseId, clientId, dto);
-        return  ResponseEntity.ok(updated);
-    }
-
 //
 //    @GetMapping("/{purchaseId}")
 //    public ResponseEntity<PurchaseResponseDTO> getById(@PathVariable UUID purchaseId) {

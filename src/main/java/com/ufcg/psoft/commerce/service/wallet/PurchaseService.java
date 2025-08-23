@@ -4,6 +4,7 @@ import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
+import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 
@@ -17,5 +18,7 @@ public interface PurchaseService {
 
     PurchaseResponseDTO confirmAvailability(UUID purchaseId, PurchaseConfirmationRequestDTO purchaseConfirmationRequestDTO);
 
-    PurchaseResponseDTO confirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto);
+    PurchaseModel confirmationByClient(UUID purchaseId);
+
+    PurchaseResponseDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel);
 }

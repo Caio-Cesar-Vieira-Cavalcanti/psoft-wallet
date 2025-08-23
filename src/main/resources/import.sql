@@ -6,7 +6,7 @@ INSERT INTO asset_type (id, name, type_discriminator) VALUES (2, 'STOCK', 'STOCK
 INSERT INTO asset_type (id, name, type_discriminator) VALUES (3, 'CRYPTO', 'CRYPTO');
 
 -- Carteira
-INSERT INTO wallet_model (id, budget) VALUES ('1afcd28d-967e-4dd5-be8a-d692d15ac32d', 1000.0);
+INSERT INTO wallet_model (id, budget) VALUES ('1afcd28d-967e-4dd5-be8a-d692d15ac32d', 10000.0);
 
 -- Usuário
 INSERT INTO user_model (user_type, id, access_code, email, full_name, city, country, neighborhood, number, state, street, zip_code, plan_type, wallet_id) VALUES ('C', '8e83cd10-520a-49f4-9b65-7c3e963e2968', '789032', 'walber@gmail.com', 'Walber Wesley', 'Campina Grande', 'Brasil', 'Centro', '123', 'PB', 'Rua Projetada', '58400-000', 0, '1afcd28d-967e-4dd5-be8a-d692d15ac32d');

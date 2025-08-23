@@ -56,6 +56,11 @@ public class WalletServiceImpl implements WalletService {
                 .orElse(null);
     }
 
+    public PurchaseResponseDTO addPurchase(PurchaseModel purchase) {
+        HoldingModel holdingModel = this.findHoldingByAsset(purchase.getWallet(), purchase.getAsset());
+        return purchaseService.addedInWallet(purchase, holdingModel);
+    }
+
     private void validateWalletBudget(WalletModel wallet, double purchasePrice) {
         if (wallet.getBudget() < purchasePrice) {
             throw new ClientBudgetIsInsufficientException(

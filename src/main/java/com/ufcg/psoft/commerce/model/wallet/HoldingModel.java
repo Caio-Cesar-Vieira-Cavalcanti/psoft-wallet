@@ -33,4 +33,12 @@ public class HoldingModel {
     @Column(name = "accumulatedPrice", nullable = false)
     @Setter
     private double accumulatedPrice;
+
+    public void increaseQuantityAfterPurchase(double purchaseQuantity) {
+        this.quantity += purchaseQuantity;
+    }
+
+    public void increaseAccumulatedPrice(double purchaseAccumulatedPrice) {
+        this.accumulatedPrice += purchaseAccumulatedPrice;
+    }
 }

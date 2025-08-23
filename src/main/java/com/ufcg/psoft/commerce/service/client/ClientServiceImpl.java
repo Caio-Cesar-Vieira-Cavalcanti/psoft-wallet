@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.service.client;
 
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
@@ -14,6 +15,7 @@ import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
 import com.ufcg.psoft.commerce.service.wallet.WalletService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +36,9 @@ public class ClientServiceImpl implements ClientService {
 
     @Autowired
     WalletService walletService;
+
+    @Autowired
+    PurchaseService purchaseService;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -157,6 +162,17 @@ public class ClientServiceImpl implements ClientService {
     private ClientModel getClient(UUID clientId) {
         return clientRepository.findById(clientId)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
+    }
+
+    public PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
+        this.validateClientAccess(clientId, dto.getAccessCode());
+        ClientModel clientModel = getClient(clientId);
+
+        PurchaseModel purchaseModel = purchaseService.confirmationByClient(purchaseId);
+
+        clientModel.getWallet().decreaseBudgetAfterPurchase(purchaseModel.getAcquisitionPrice());
+
+        return walletService.addPurchase(purchaseModel);
     }
 
 }
