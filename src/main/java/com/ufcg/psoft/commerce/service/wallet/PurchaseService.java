@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -15,4 +16,6 @@ public interface PurchaseService {
     PurchaseModel createPurchaseRequest(WalletModel wallet, AssetModel asset, double purchasePrice, Integer assetQuantity);
 
     PurchaseResponseDTO confirmAvailability(UUID purchaseId, PurchaseConfirmationRequestDTO purchaseConfirmationRequestDTO);
+
+    PurchaseResponseDTO confirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto);
 }

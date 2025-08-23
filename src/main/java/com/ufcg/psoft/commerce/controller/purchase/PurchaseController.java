@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.controller.purchase;
 
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
@@ -25,13 +26,23 @@ public class PurchaseController {
         this.purchaseService = purchaseService;
     }
 
-    @PostMapping("/{purchaseId}/confirmation")
+    @PostMapping("/{purchaseId}/availability-confirmation")
     public ResponseEntity<PurchaseResponseDTO> confirmAvailability(
             @PathVariable UUID purchaseId,
             @RequestBody @Valid PurchaseConfirmationRequestDTO purchaseConfirmationRequestDTO) {
 
         PurchaseResponseDTO updated = purchaseService.confirmAvailability(purchaseId, purchaseConfirmationRequestDTO);
         return ResponseEntity.ok(updated);
+    }
+
+    @PostMapping("/{purchaseId}/confirmation-by-client/{clientId}")
+    public ResponseEntity<PurchaseResponseDTO> confirmationByClient(
+        @PathVariable UUID purchaseId,
+        @PathVariable UUID clientId,
+        @RequestBody @Valid PurchaseConfirmationByClientDTO dto
+    ) {
+        PurchaseResponseDTO updated = purchaseService.confirmationByClient(purchaseId, clientId, dto);
+        return  ResponseEntity.ok(updated);
     }
 
 //
