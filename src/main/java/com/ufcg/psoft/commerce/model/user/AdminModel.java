@@ -17,9 +17,13 @@ public class AdminModel extends UserModel {
 
     @Override
     public void validateAccess(String email, String accessCode) {
-        if (!this.getEmail().matches(email) || !this.getAccessCode().matches(accessCode)) {
+        if (!this.getEmail().matches(email) || this.getAccessCode().matches(accessCode)) {
             throw new UnauthorizedUserAccessException("Unauthorized admin access: email or access code is incorrect");
         }
     }
 
+    @Override
+    public boolean isAdmin() {
+        return true;
+    }
 }

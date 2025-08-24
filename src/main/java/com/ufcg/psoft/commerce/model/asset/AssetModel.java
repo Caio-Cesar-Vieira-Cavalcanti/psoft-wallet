@@ -1,24 +1,22 @@
 package com.ufcg.psoft.commerce.model.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsAlreadyActive;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsInactive;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCrypto;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsInactiveException;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsNotStockNeitherCryptoException;
 import com.ufcg.psoft.commerce.exception.notification.EventManagerNotSetException;
 import com.ufcg.psoft.commerce.service.observer.EventManager;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity(name = "asset")
 @Data
+@Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -55,11 +53,8 @@ public class AssetModel {
     private double quotaQuantity;
 
     @Transient
+    @Setter
     private EventManager eventManager;
-
-    public void setEventManager(EventManager eventManager) {
-        this.eventManager = eventManager;
-    }
 
     public SubscriptionResponseDTO subscribe(UUID clientId, SubscriptionTypeEnum type) {
         if (eventManager == null) {
@@ -109,11 +104,11 @@ public class AssetModel {
         try {
             assetTypeEnum = AssetTypeEnum.valueOf(assetTypeName);
         } catch (IllegalArgumentException e) {
-            throw new AssetIsNotStockNeitherCrypto();
+            throw new AssetIsNotStockNeitherCryptoException(this.name);
         }
 
         if (assetTypeEnum != AssetTypeEnum.STOCK && assetTypeEnum != AssetTypeEnum.CRYPTO) {
-            throw new AssetIsNotStockNeitherCrypto();
+            throw new AssetIsNotStockNeitherCryptoException(this.name);
         }
     }
 
@@ -122,6 +117,6 @@ public class AssetModel {
     }
 
     private void validateAssetIsActive() {
-        if (!this.isActive()) throw new AssetIsInactive();
+        if (!this.isActive()) throw new AssetIsInactiveException();
     }
 }

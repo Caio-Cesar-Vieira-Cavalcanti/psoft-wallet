@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AssetTypeServiceImpl implements AssetTypeService {
@@ -24,6 +23,6 @@ public class AssetTypeServiceImpl implements AssetTypeService {
         List<AssetType> assetTypes = assetTypeRepository.findAll();
         return assetTypes.stream()
                 .map(assetType -> modelMapper.map(assetType, AssetTypeResponseDTO.class))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

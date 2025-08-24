@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class AdminServiceUnitTests {
+class AdminServiceUnitTests {
 
     private AdminServiceImpl adminService;
     private AdminModel adminMock;

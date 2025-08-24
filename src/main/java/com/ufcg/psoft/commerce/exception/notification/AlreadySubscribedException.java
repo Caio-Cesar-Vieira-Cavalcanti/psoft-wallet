@@ -11,6 +11,4 @@ public class AlreadySubscribedException extends RuntimeException {
             assetId, type
         ));
     }
-
-    public AlreadySubscribedException(String message) {super(message);}
 }

@@ -3,7 +3,7 @@ package com.ufcg.psoft.commerce.model.wallet;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -18,6 +18,13 @@ public class WalletModel {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @Column(nullable = false)
+    private double budget;
+
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<TransactionModel> purchases;
+    private Map<UUID, HoldingModel> holdings;
+
+    public void decreaseBudgetAfterPurchase(double purchaseValue) {
+        this.budget -= purchaseValue;
+    }
 }

@@ -1,11 +1,11 @@
 package com.ufcg.psoft.commerce.service.observer;
 
-import com.ufcg.psoft.commerce.dto.Subscription.SubscriptionResponseDTO;
+import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.notification.AlreadySubscribedException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremium;
+import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremiumException;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
 import com.ufcg.psoft.commerce.model.observer.ISubscriber;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
@@ -26,6 +26,7 @@ public class EventManagerImpl implements EventManager {
     @Autowired
     private ClientRepository clientRepository;
 
+    @Override
     public SubscriptionResponseDTO subscribeToAssetEvent(UUID assetId, UUID subscriberId, SubscriptionTypeEnum subscriptionType) {
         this.validateClient(subscriberId, subscriptionType);
         this.ensureNotAlreadySubscribed(assetId, subscriberId, subscriptionType);
@@ -38,13 +39,14 @@ public class EventManagerImpl implements EventManager {
         subscriptionRepository.save(subscription);
 
         return SubscriptionResponseDTO.builder()
-                .message("Subscription registered successfully")
+                .message("subscription registered successfully")
                 .assetId(assetId)
                 .clientId(subscriberId)
                 .subscriptionType(subscriptionType)
                 .build();
     }
 
+    @Override
     public void notifySubscribersByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {
         List<SubscriptionModel> subscriptions = getSubscriptionsByType(assetId, subscriptionType);
 
@@ -76,7 +78,7 @@ public class EventManagerImpl implements EventManager {
 
     private ISubscriber getValidSubscriber(UUID clientId) {
         return clientRepository.findById(clientId)
-                .map(client -> (ISubscriber) client)
+                .map(ISubscriber.class::cast)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
     }
 
@@ -92,8 +94,8 @@ public class EventManagerImpl implements EventManager {
         ClientModel clientModel = this.clientRepository.findById(subscriberId)
                 .orElseThrow(() -> new ClientIdNotFoundException(subscriberId));
 
-        if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION) {
-            if (clientModel.getPlanType() != PlanTypeEnum.PREMIUM) throw new ClientIsNotPremium();
+        if (subscriptionType == SubscriptionTypeEnum.PRICE_VARIATION && clientModel.getPlanType() != PlanTypeEnum.PREMIUM) {
+            throw new ClientIsNotPremiumException();
         }
     }
 
