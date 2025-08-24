@@ -444,7 +444,7 @@ class PurchaseServiceUnitTests {
 
         assertNotNull(result);
         verify(holdingModel).increaseQuantityAfterPurchase(purchase.getQuantity());
-        verify(holdingModel).increaseAccumulatedPrice(purchase.getAcquisitionPrice());
+        verify(holdingModel).increaseAccumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice());
         verify(purchaseRepository).save(purchase);
     }
 }
