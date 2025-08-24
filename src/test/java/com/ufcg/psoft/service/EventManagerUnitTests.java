@@ -4,6 +4,7 @@ import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.enums.SubscriptionTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremiumException;
+import com.ufcg.psoft.commerce.exception.notification.AlreadySubscribedException;
 import com.ufcg.psoft.commerce.model.asset.types.Crypto;
 import com.ufcg.psoft.commerce.model.asset.types.Stock;
 import com.ufcg.psoft.commerce.model.observer.SubscriptionModel;
@@ -14,7 +15,6 @@ import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
-import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.repository.observer.SubscriptionRepository;
 import com.ufcg.psoft.commerce.service.observer.EventManager;
@@ -34,9 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class EventManagerUnitTests {
+class EventManagerUnitTests {
 
-    private AssetRepository assetRepository;
     private ClientRepository clientRepository;
     private SubscriptionRepository subscriptionRepository;
 
@@ -253,5 +252,95 @@ public class EventManagerUnitTests {
 
         verify(clientRepository, never()).findById(any());
         verify(subscriptionRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("Should throw AlreadySubscribedException when client tries to subscribe to same asset and type")
+    void testSubscribeToAssetEvent_AlreadySubscribed_ThrowsException() {
+        SubscriptionModel existingSubscription = SubscriptionModel.builder()
+                .assetId(assetId1)
+                .subscriberId(clientId)
+                .subscriptionType(SubscriptionTypeEnum.AVAILABILITY)
+                .build();
+
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.AVAILABILITY))
+                .thenReturn(List.of(existingSubscription));
+
+        AlreadySubscribedException exception = assertThrows(AlreadySubscribedException.class, () -> {
+            eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.AVAILABILITY);
+        });
+
+        String expectedMessage = String.format(
+            "Client is already subscribed to asset %s for %s notifications",
+            assetId1, SubscriptionTypeEnum.AVAILABILITY
+        );
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should throw AlreadySubscribedException for price variation subscription when already subscribed")
+    void testSubscribeToAssetEvent_AlreadySubscribedPriceVariation_ThrowsException() {
+        SubscriptionModel existingSubscription = SubscriptionModel.builder()
+                .assetId(assetId1)
+                .subscriberId(clientId)
+                .subscriptionType(SubscriptionTypeEnum.PRICE_VARIATION)
+                .build();
+
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION))
+                .thenReturn(List.of(existingSubscription));
+
+        AlreadySubscribedException exception = assertThrows(AlreadySubscribedException.class, () -> {
+            eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
+        });
+
+        String expectedMessage = String.format(
+            "Client is already subscribed to asset %s for %s notifications",
+            assetId1, SubscriptionTypeEnum.PRICE_VARIATION
+        );
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should allow subscription when client is subscribed to different asset")
+    void testSubscribeToAssetEvent_DifferentAsset_Allowed() {
+        SubscriptionModel existingSubscription = SubscriptionModel.builder()
+                .assetId(assetId2)
+                .subscriberId(clientId)
+                .subscriptionType(SubscriptionTypeEnum.AVAILABILITY)
+                .build();
+
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.AVAILABILITY))
+                .thenReturn(List.of()); // No existing subscription for assetId1
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId2, SubscriptionTypeEnum.AVAILABILITY))
+                .thenReturn(List.of(existingSubscription)); // Existing subscription for assetId2
+
+        SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.AVAILABILITY);
+
+        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals(clientId, response.getClientId());
+        assertEquals(assetId1, response.getAssetId());
+        assertEquals(SubscriptionTypeEnum.AVAILABILITY, response.getSubscriptionType());
+    }
+
+    @Test
+    @DisplayName("Should allow subscription when client is subscribed to different type for same asset")
+    void testSubscribeToAssetEvent_DifferentType_Allowed() {
+        SubscriptionModel existingSubscription = SubscriptionModel.builder()
+                .assetId(assetId1)
+                .subscriberId(clientId)
+                .subscriptionType(SubscriptionTypeEnum.AVAILABILITY)
+                .build();
+
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.PRICE_VARIATION))
+                .thenReturn(List.of()); // No existing subscription for PRICE_VARIATION
+        when(subscriptionRepository.findByAssetIdAndSubscriptionType(assetId1, SubscriptionTypeEnum.AVAILABILITY))
+                .thenReturn(List.of(existingSubscription)); // Existing subscription for AVAILABILITY
+
+        SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
+
+        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals(clientId, response.getClientId());
+        assertEquals(assetId1, response.getAssetId());
+        assertEquals(SubscriptionTypeEnum.PRICE_VARIATION, response.getSubscriptionType());
     }
 }

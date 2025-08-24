@@ -1,13 +1,11 @@
 package com.ufcg.psoft.commerce.model.wallet;
 
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
-import com.ufcg.psoft.commerce.exception.purchase.PurchaseStateNotInitializedException;
 import com.ufcg.psoft.commerce.model.user.UserModel;
 import com.ufcg.psoft.commerce.model.wallet.states.purchase.*;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
 
 @Entity
 @Getter
@@ -30,6 +28,10 @@ public class PurchaseModel extends TransactionModel {
 
     @PostLoad
     public void loadState() {
+        if (stateEnum == null) {
+            this.stateEnum = PurchaseStateEnum.REQUESTED;
+        }
+        
         switch (stateEnum) {
             case REQUESTED -> this.state = new PurchaseRequestedState(this);
             case AVAILABLE -> this.state = new PurchaseAvailableState(this);
@@ -44,7 +46,7 @@ public class PurchaseModel extends TransactionModel {
 
     public void modify(UserModel user) {
         if (this.state == null) {
-            throw new PurchaseStateNotInitializedException();
+            this.loadState();
         }
         this.state.modify(user);
     }

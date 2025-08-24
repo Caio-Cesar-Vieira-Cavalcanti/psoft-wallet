@@ -132,10 +132,6 @@ public class AssetServiceImpl implements AssetService {
     public AssetModel validateAssetPurchase(UUID assetId, Integer assetQuantity) {
         AssetModel asset = this.getAsset(assetId);
 
-        if (asset.getQuotaQuantity() < assetQuantity) {
-            throw new AssetQuantityAvailableIsInsufficientException();
-        }
-
         if (!asset.isActive()) {
             throw new AssetIsInactiveException();
         }
