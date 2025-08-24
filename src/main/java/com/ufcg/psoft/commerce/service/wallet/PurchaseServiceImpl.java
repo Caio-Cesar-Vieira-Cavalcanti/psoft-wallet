@@ -90,7 +90,7 @@ public class PurchaseServiceImpl implements PurchaseService {
             this.holdingRepository.save(newHoldingModel);
         } else {
             holdingModel.increaseQuantityAfterPurchase(purchase.getQuantity());
-            holdingModel.increaseAccumulatedPrice(purchase.getAcquisitionPrice());
+            holdingModel.increaseAccumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice());
         }
 
         purchase.modify(null);
