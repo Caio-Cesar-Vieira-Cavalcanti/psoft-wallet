@@ -159,7 +159,7 @@ public class ErrorHandlingControllerAdvice {
     }
 
     @ExceptionHandler(ClientBudgetIsInsufficientException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     public CustomErrorType handleClientBudgetIsInsufficientException(ClientBudgetIsInsufficientException e) {
         return defaultCustomErrorTypeConstruct(
