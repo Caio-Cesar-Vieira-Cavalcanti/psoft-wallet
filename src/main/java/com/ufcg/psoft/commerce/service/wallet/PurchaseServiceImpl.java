@@ -85,7 +85,7 @@ public class PurchaseServiceImpl implements PurchaseService {
                     .asset(purchase.getAsset())
                     .wallet(purchase.getWallet())
                     .quantity(purchase.getQuantity())
-                    .accumulatedPrice(purchase.getAcquisitionPrice())
+                    .accumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice())
                     .build();
             this.holdingRepository.save(newHoldingModel);
         } else {
