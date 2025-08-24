@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 @AllArgsConstructor
 public class PurchaseRequestedState implements PurchaseState {
 
-    private static final Logger logger = LoggerFactory.getLogger(PurchaseRequestedState.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PurchaseRequestedState.class);
     
     @Column(nullable = false)
     PurchaseModel purchase;
@@ -43,9 +43,9 @@ public class PurchaseRequestedState implements PurchaseState {
 
     private void notifyClientAboutPurchaseAvailability(AssetModel asset) {
         try {
-            final String MAGENTA = "\u001B[35m";
-            final String RESET = "\u001B[0m";
-            final String BOLD = "\u001B[1m";
+            final String magenta = "\u001B[35m";
+            final String reset = "\u001B[0m";
+            final String bold = "\u001B[1m";
 
             String assetName = asset.getName();
             double quantity = purchase.getQuantity();
@@ -62,20 +62,25 @@ public class PurchaseRequestedState implements PurchaseState {
                 Status: Asset and liquidity confirmed
                 Reason: Purchase available for execution
                 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━%s""",
-                MAGENTA, BOLD, RESET,
+                magenta, bold, reset,
                 assetName, quantity, assetPrice, totalValue,
-                RESET
+                reset
             );
 
-            if (logger.isInfoEnabled()) {
-                logger.info("Availability notification sent - Asset: {}, Quantity: {}, Value: $ {}", 
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Availability notification sent - Asset: {}, Quantity: {}, Value: $ {}", 
                            assetName, quantity, String.format("%.2f", totalValue));
             }
-            logger.info("Purchase Notification:\n{}", notificationMessage);
+            LOGGER.info("Purchase Notification:\n{}", notificationMessage);
             
         } catch (Exception e) {
-            logger.error("Error generating availability notification: {}", e.getMessage());
-            logger.warn("Fallback notification: Purchase available for asset {}", asset.getName());
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.error("Error generating availability notification: {}", e.getMessage());
+            }
+
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn("Fallback notification: Purchase available for asset {}", asset.getName());
+            }
         }
     }
 }

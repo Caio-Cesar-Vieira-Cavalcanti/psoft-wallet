@@ -2,7 +2,7 @@ package com.ufcg.psoft.commerce.config;
 
 import org.modelmapper.ModelMapper;
 
-public class PatchMapper {
+public final class PatchMapper {
     private static final ModelMapper PATCH_MAPPER;
 
     private PatchMapper() {

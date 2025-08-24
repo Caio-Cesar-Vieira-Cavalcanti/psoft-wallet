@@ -1,20 +1,17 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.exception.purchase.PurchaseNotFoundException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.AdminModel;
-import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
 import com.ufcg.psoft.commerce.repository.wallet.PurchaseRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
-import com.ufcg.psoft.commerce.service.client.ClientService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -80,6 +77,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         return purchase;
     }
 
+    @Override
     public PurchaseResponseAfterAddedInWalletDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel) {
         purchase.modify(null);
         this.purchaseRepository.save(purchase);

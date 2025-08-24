@@ -203,12 +203,10 @@ public class ErrorHandlingControllerAdvice {
         Throwable cause = ex.getCause();
 
         while (cause != null) {
-            if (cause instanceof InvalidFormatException invalidFormatException) {
-                if (invalidFormatException.getTargetType() == java.util.UUID.class) {
+            if (cause instanceof InvalidFormatException invalidFormatException && invalidFormatException.getTargetType() == java.util.UUID.class) {
                     return defaultCustomErrorTypeConstruct(
                             "Invalid UUID format: please provide a UUID with 36 characters in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx."
                     );
-                }
             }
             cause = cause.getCause();
         }

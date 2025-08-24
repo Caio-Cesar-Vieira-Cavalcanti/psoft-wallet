@@ -159,6 +159,7 @@ public class ClientServiceImpl implements ClientService {
         return client;
     }
 
+    @Override
     public PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
         this.validateClientAccess(clientId, dto.getAccessCode());
         ClientModel clientModel = getClient(clientId);

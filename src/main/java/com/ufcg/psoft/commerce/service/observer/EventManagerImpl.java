@@ -26,6 +26,7 @@ public class EventManagerImpl implements EventManager {
     @Autowired
     private ClientRepository clientRepository;
 
+    @Override
     public SubscriptionResponseDTO subscribeToAssetEvent(UUID assetId, UUID subscriberId, SubscriptionTypeEnum subscriptionType) {
         this.validateClient(subscriberId, subscriptionType);
         this.ensureNotAlreadySubscribed(assetId, subscriberId, subscriptionType);
@@ -45,6 +46,7 @@ public class EventManagerImpl implements EventManager {
                 .build();
     }
 
+    @Override
     public void notifySubscribersByType(UUID assetId, SubscriptionTypeEnum subscriptionType) {
         List<SubscriptionModel> subscriptions = getSubscriptionsByType(assetId, subscriptionType);
 

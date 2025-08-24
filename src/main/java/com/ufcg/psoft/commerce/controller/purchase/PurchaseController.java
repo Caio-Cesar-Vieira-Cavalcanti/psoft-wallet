@@ -1,6 +1,5 @@
 package com.ufcg.psoft.commerce.controller.purchase;
 
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
@@ -23,10 +22,6 @@ public class PurchaseController {
 
     @Autowired
     PurchaseService purchaseService;
-
-    public PurchaseController(PurchaseService purchaseService) {
-        this.purchaseService = purchaseService;
-    }
 
     @PostMapping("/{purchaseId}/availability-confirmation")
     public ResponseEntity<PurchaseResponseDTO> confirmAvailability(

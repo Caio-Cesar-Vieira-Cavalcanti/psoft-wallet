@@ -10,7 +10,7 @@ import org.apache.commons.validator.routines.EmailValidator;
 @Builder
 @Getter
 @NoArgsConstructor
-public class EmailModel {
+public final class EmailModel {
 
     @Column(unique = true, nullable = false)
     private String email;

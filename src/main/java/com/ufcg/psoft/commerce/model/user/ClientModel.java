@@ -6,6 +6,8 @@ import com.ufcg.psoft.commerce.model.observer.ISubscriber;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import jakarta.persistence.*;
 import lombok.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
@@ -18,6 +20,7 @@ public class ClientModel extends UserModel implements ISubscriber {
 
     public static final String ANSI_MAGENTA = "\u001B[35m";
     public static final String ANSI_RESET = "\u001B[0m";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientModel.class);
 
     @Builder
     public ClientModel(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode, AddressModel address, PlanTypeEnum planType, WalletModel wallet) {
@@ -45,6 +48,8 @@ public class ClientModel extends UserModel implements ISubscriber {
 
     @Override
     public void notify(String context) {
-        System.out.println(ANSI_MAGENTA + context + " (Notified client: " + this.getFullName() + ")" + ANSI_RESET);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("{}{} (Notified client: {}){}", ANSI_MAGENTA, context, this.getFullName(), ANSI_RESET);
+        }
     }
 }

@@ -9,7 +9,7 @@ import lombok.*;
 @Getter
 @Builder
 @NoArgsConstructor
-public class AccessCodeModel {
+public final class AccessCodeModel {
 
     @Column(length = 6, nullable = false)
     private String accessCode;

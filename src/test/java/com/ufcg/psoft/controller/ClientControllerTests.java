@@ -34,7 +34,6 @@ import java.util.*;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -96,6 +95,7 @@ class ClientControllerTests {
                 tempWallet
         );
         clientId = clientRepository.save(client).getId();
+        walletRepository.save(tempWallet);
 
         stockType = assetTypeRepository.findByName(STOCK_ASSET_TYPE_NAME)
                 .orElseThrow(() -> new RuntimeException("No STOCK asset found. Please ensure it's pre-populated for tests."));
@@ -875,14 +875,13 @@ class ClientControllerTests {
                 wallet
         );
         client = clientRepository.save(client);
-        wallet = walletRepository.save(wallet);
 
         ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
                 .accessCode("123456")
                 .build();
 
-        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
-        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), wallet);
+        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), client.getWallet());
+        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), client.getWallet());
 
         purchaseRepository.saveAll(List.of(purchase1, purchase2));
 
@@ -890,15 +889,12 @@ class ClientControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
-                /* RETORNA UM ARRAY VAZIO INVÉS DE UM ARRAY DE 2 ELEMENTOS, HÁ ALGO DE ERRADO COM O TESTE JÁ QUE NO POSTMAN EXECUTA CORRETAMENTE
+                .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].quantity").value(5.0))
                 .andExpect(jsonPath("$[1].quantity").value(3.0));
-                */
     }
 
-    // Esse teste realmente é valido? Não deveriamos verificar se algum cliente possui esse asset na carteira invés de verificar as compras? Poderiamos simplesmente deixar ele nas compras/resgates ou apagar essas compras/resgates...
     @Test
     @DisplayName("Should return 409 Conflict when trying to delete asset referenced in purchases")
     void testDeleteAsset_WhenReferencedInPurchases_ReturnsConflict() throws Exception {

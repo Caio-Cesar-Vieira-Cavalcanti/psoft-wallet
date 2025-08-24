@@ -47,6 +47,7 @@ public class WalletServiceImpl implements WalletService {
                 .toList();
     }
 
+    @Override
     public HoldingModel findHoldingByAsset(WalletModel wallet, AssetModel asset) {
         if (wallet.getHoldings() == null || wallet.getHoldings().isEmpty()) {
             return null;
@@ -60,6 +61,7 @@ public class WalletServiceImpl implements WalletService {
                 .orElse(null);
     }
 
+    @Override
     public PurchaseResponseDTO addPurchase(PurchaseModel purchase) {
         HoldingModel holdingModel = this.findHoldingByAsset(purchase.getWallet(), purchase.getAsset());
         PurchaseResponseAfterAddedInWalletDTO dto = purchaseService.addedInWallet(purchase, holdingModel);
