@@ -1,7 +1,6 @@
 package com.ufcg.psoft.commerce.service.client;
 
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.*;
 import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
@@ -9,6 +8,7 @@ import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
@@ -41,10 +41,10 @@ public class ClientServiceImpl implements ClientService {
     PurchaseService purchaseService;
 
     @Autowired
-    private ModelMapper modelMapper;
+    ModelMapper modelMapper;
 
     @Autowired
-    private DTOMapperService dtoMapperService;
+    DTOMapperService dtoMapperService;
 
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
@@ -159,11 +159,6 @@ public class ClientServiceImpl implements ClientService {
         return client;
     }
 
-    private ClientModel getClient(UUID clientId) {
-        return clientRepository.findById(clientId)
-                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
-    }
-
     public PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
         this.validateClientAccess(clientId, dto.getAccessCode());
         ClientModel clientModel = getClient(clientId);
@@ -173,6 +168,61 @@ public class ClientServiceImpl implements ClientService {
         clientModel.getWallet().decreaseBudgetAfterPurchase(purchaseModel.getAcquisitionPrice());
 
         return walletService.addPurchase(purchaseModel);
+    }
+
+    @Override
+    public WalletHoldingResponseDTO getClientWalletHolding(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO) {
+        this.validateClientAccess(clientId, clientWalletRequestDTO.getAccessCode());
+        ClientModel clientModel = getClient(clientId);
+
+        WalletModel walletModel = clientModel.getWallet();
+
+        List<HoldingResponseDTO> holdings = buildHoldings(walletModel);
+
+        double totalInvested   = calculateTotalInvested(holdings);
+        double totalCurrent    = calculateTotalCurrent(holdings);
+        double totalPerformance = totalCurrent - totalInvested;
+
+        return dtoMapperService.toWalletHoldingResponseDTO(walletModel, holdings, totalCurrent, totalInvested, totalPerformance);
+    }
+
+    private List<HoldingResponseDTO> buildHoldings(WalletModel walletModel) {
+        if (walletModel.getHoldings() == null) {
+            return List.of();
+        }
+        return walletModel.getHoldings()
+                .values()
+                .stream()
+                .map(this::mapHoldingToDTO)
+                .toList();
+    }
+
+    private HoldingResponseDTO mapHoldingToDTO(HoldingModel holding) {
+        AssetModel asset = holding.getAsset();
+
+        double quantity         = holding.getQuantity();
+        double acquisitionTotal = holding.getAccumulatedPrice();
+        double currentPrice     = asset.getQuotation();
+        double currentTotal     = quantity * currentPrice;
+
+        double performance      = currentTotal - acquisitionTotal;
+
+        double acquisitionPrice = quantity == 0 ? 0 : (holding.getAccumulatedPrice()/quantity);
+
+        return dtoMapperService.toHoldingResponseDTO(holding, asset, acquisitionPrice, acquisitionTotal, currentTotal, performance);
+    }
+
+    private double calculateTotalInvested(List<HoldingResponseDTO> holdings) {
+        return holdings.stream().mapToDouble(HoldingResponseDTO::getAcquisitionTotal).sum();
+    }
+
+    private double calculateTotalCurrent(List<HoldingResponseDTO> holdings) {
+        return holdings.stream().mapToDouble(HoldingResponseDTO::getCurrentTotal).sum();
+    }
+
+    private ClientModel getClient(UUID clientId) {
+        return clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
     }
 
 }
