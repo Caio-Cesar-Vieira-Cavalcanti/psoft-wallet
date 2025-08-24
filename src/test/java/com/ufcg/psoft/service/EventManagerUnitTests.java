@@ -316,7 +316,7 @@ class EventManagerUnitTests {
 
         SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.AVAILABILITY);
 
-        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals("subscription registered successfully", response.getMessage());
         assertEquals(clientId, response.getClientId());
         assertEquals(assetId1, response.getAssetId());
         assertEquals(SubscriptionTypeEnum.AVAILABILITY, response.getSubscriptionType());
@@ -338,7 +338,7 @@ class EventManagerUnitTests {
 
         SubscriptionResponseDTO response = eventManager.subscribeToAssetEvent(assetId1, clientId, SubscriptionTypeEnum.PRICE_VARIATION);
 
-        assertEquals("Subscription registered successfully", response.getMessage());
+        assertEquals("subscription registered successfully", response.getMessage());
         assertEquals(clientId, response.getClientId());
         assertEquals(assetId1, response.getAssetId());
         assertEquals(SubscriptionTypeEnum.PRICE_VARIATION, response.getSubscriptionType());

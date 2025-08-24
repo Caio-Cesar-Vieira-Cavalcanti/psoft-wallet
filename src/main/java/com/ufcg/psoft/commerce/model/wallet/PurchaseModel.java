@@ -1,7 +1,6 @@
 package com.ufcg.psoft.commerce.model.wallet;
 
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
-import com.ufcg.psoft.commerce.exception.purchase.PurchaseStateNotInitializedException;
 import com.ufcg.psoft.commerce.model.user.UserModel;
 import com.ufcg.psoft.commerce.model.wallet.states.purchase.*;
 import jakarta.persistence.*;

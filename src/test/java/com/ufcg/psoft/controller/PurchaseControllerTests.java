@@ -66,7 +66,7 @@ class PurchaseControllerTests {
     private AssetType stockType;
 
     private static final String PURCHASE_BASE_URL = "/purchases/";
-    private static final String CONFIRMATION_ENDPOINT = "/confirmation";
+    private static final String CONFIRMATION_ENDPOINT = "/availability-confirmation";
     private static final String ADMIN_EMAIL = "admin@example.com";
     private static final String ADMIN_ACCESS_CODE = "123456";
     private static final String INVALID_JSON = "{ invalid json }";
