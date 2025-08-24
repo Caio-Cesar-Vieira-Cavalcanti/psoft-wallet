@@ -48,7 +48,7 @@ public class PurchaseModel extends TransactionModel {
 
     public void modify(UserModel user) {
         if (this.state == null) {
-            throw new PurchaseStateNotInitializedException();
+            this.loadState();
         }
         this.state.modify(user);
     }

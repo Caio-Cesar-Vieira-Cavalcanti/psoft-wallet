@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.exception.handler;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.ufcg.psoft.commerce.exception.asset.*;
 import com.ufcg.psoft.commerce.exception.notification.AlreadySubscribedException;
+import com.ufcg.psoft.commerce.exception.purchase.PurchaseNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremiumException;
@@ -183,6 +184,17 @@ public class ErrorHandlingControllerAdvice {
                 e.getMessage()
         );
     }
+
+    @ExceptionHandler(PurchaseNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType handlePurchaseNotFoundException(PurchaseNotFoundException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
+
+
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

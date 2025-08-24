@@ -11,5 +11,4 @@ public class AlreadySubscribedException extends RuntimeException {
             assetId, type
         ));
     }
-
 }

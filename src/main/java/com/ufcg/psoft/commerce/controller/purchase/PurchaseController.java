@@ -5,7 +5,9 @@ import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
 import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,14 +34,9 @@ public class PurchaseController {
             @RequestBody @Valid PurchaseConfirmationRequestDTO purchaseConfirmationRequestDTO) {
 
         PurchaseResponseDTO updated = purchaseService.confirmAvailability(purchaseId, purchaseConfirmationRequestDTO);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(updated);
     }
-
-//
-//    @GetMapping("/{purchaseId}")
-//    public ResponseEntity<PurchaseResponseDTO> getById(@PathVariable UUID purchaseId) {
-//        PurchaseResponseDTO dto = purchaseService.getById(purchaseId);
-//        return ResponseEntity.ok(dto);
-//    }
 }
 
