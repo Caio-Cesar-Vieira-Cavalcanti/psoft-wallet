@@ -5,6 +5,7 @@ import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
+import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -141,4 +142,14 @@ public class ClientController {
         return ResponseEntity.ok(updated);
     }
 
+    @GetMapping("/{clientId}/wallet-holding")
+    public ResponseEntity<WalletHoldingResponseDTO> getClientWalletHolding(
+            @PathVariable UUID clientId,
+            @RequestBody @Valid ClientWalletRequestDTO dto
+    ) {
+        WalletHoldingResponseDTO walletHolding = clientService.getClientWalletHolding(clientId, dto);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(walletHolding);
+    }
 }
