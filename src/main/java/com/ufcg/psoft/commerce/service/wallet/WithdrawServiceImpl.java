@@ -5,5 +5,5 @@ import org.springframework.stereotype.Service;
 @Service
 public class WithdrawServiceImpl implements WithdrawService {
 
-    // Nothing at the moment, may be used in the future
+    // Nothing at the moment, may be used in next stage
 }

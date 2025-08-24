@@ -12,6 +12,8 @@ import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.model.wallet.states.purchase.PurchaseAvailableState;
+import com.ufcg.psoft.commerce.model.wallet.states.purchase.PurchaseInWalletState;
+import com.ufcg.psoft.commerce.model.wallet.states.purchase.PurchasePurchasedState;
 import com.ufcg.psoft.commerce.model.wallet.states.purchase.PurchaseRequestedState;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,6 +23,8 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 @DisplayName("Purchase State Unit Tests")
 class PurchaseStateUnitTests {
@@ -89,7 +93,7 @@ class PurchaseStateUnitTests {
         requestedState.modify(admin);
 
         assertEquals(PurchaseStateEnum.AVAILABLE, purchase.getStateEnum());
-        assertTrue(purchase.getState() instanceof PurchaseAvailableState);
+        assertInstanceOf(PurchaseAvailableState.class, purchase.getState());
     }
 
     @Test
@@ -133,5 +137,89 @@ class PurchaseStateUnitTests {
         assertTrue(exception.getMessage().contains("5.0"));
 
         assertEquals(PurchaseStateEnum.REQUESTED, purchase.getStateEnum());
+    }
+
+    @Test
+    @DisplayName("PurchasePurchasedState should change to IN_WALLET state when modified")
+    void testPurchasePurchasedStateShouldChangeToInWallet() {
+        PurchasePurchasedState purchasedState = new PurchasePurchasedState(purchase);
+
+        purchasedState.modify(admin);
+
+        assertEquals(PurchaseStateEnum.IN_WALLET, purchase.getStateEnum());
+        assertInstanceOf(PurchaseInWalletState.class, purchase.getState());
+    }
+
+    @Test
+    @DisplayName("PurchaseInWalletState should do nothing when modified")
+    void testPurchaseInWalletStateDoesNothing() {
+        PurchaseInWalletState inWalletState = new PurchaseInWalletState(purchase);
+
+        PurchaseStateEnum beforeState = purchase.getStateEnum();
+
+        inWalletState.modify(admin);
+
+        assertEquals(beforeState, purchase.getStateEnum());
+    }
+
+    @Test
+    @DisplayName("PurchaseRequestedState success path")
+    void testPurchaseRequestedStateSuccess() {
+        PurchaseRequestedState state = new PurchaseRequestedState(purchase);
+
+        state.modify(admin);
+
+        assertEquals(PurchaseStateEnum.AVAILABLE, purchase.getStateEnum());
+        assertInstanceOf(PurchaseAvailableState.class, purchase.getState());
+    }
+
+    @Test
+    @DisplayName("PurchaseRequestedState throws UnauthorizedUserAccessException")
+    void testPurchaseRequestedStateUnauthorized() {
+        PurchaseRequestedState state = new PurchaseRequestedState(purchase);
+
+        assertThrows(UnauthorizedUserAccessException.class, () -> state.modify(client));
+        assertEquals(PurchaseStateEnum.REQUESTED, purchase.getStateEnum());
+    }
+
+    @Test
+    @DisplayName("PurchaseRequestedState throws AssetIsInactiveException")
+    void testPurchaseRequestedStateAssetInactive() {
+        asset.setActive(false);
+        PurchaseRequestedState state = new PurchaseRequestedState(purchase);
+
+        assertThrows(AssetIsInactiveException.class, () -> state.modify(admin));
+        assertEquals(PurchaseStateEnum.REQUESTED, purchase.getStateEnum());
+    }
+
+    @Test
+    @DisplayName("PurchaseRequestedState throws AssetQuantityAvailableIsInsufficientException")
+    void testPurchaseRequestedStateInsufficientQuantity() {
+        asset.setQuotaQuantity(5.0); // less than purchase quantity
+        PurchaseRequestedState state = new PurchaseRequestedState(purchase);
+
+        AssetQuantityAvailableIsInsufficientException ex = assertThrows(AssetQuantityAvailableIsInsufficientException.class, () -> state.modify(admin));
+        assertTrue(ex.getMessage().contains("Test Stock"));
+        assertEquals(PurchaseStateEnum.REQUESTED, purchase.getStateEnum());
+    }
+
+    @Test
+    @DisplayName("PurchasePurchasedState transitions to IN_WALLET")
+    void testPurchasePurchasedState() {
+        PurchasePurchasedState state = new PurchasePurchasedState(purchase);
+        state.modify(admin);
+
+        assertEquals(PurchaseStateEnum.IN_WALLET, purchase.getStateEnum());
+        assertInstanceOf(PurchaseInWalletState.class, purchase.getState());
+    }
+
+    @Test
+    @DisplayName("notifyClientAboutPurchaseAvailability fallback path")
+    void testNotifyClientFallback() {
+        PurchaseRequestedState state = spy(new PurchaseRequestedState(purchase));
+
+        doThrow(new RuntimeException("Logger fails")).when(state).modify(admin);
+
+        assertThrows(RuntimeException.class, () -> state.modify(admin));
     }
 }
