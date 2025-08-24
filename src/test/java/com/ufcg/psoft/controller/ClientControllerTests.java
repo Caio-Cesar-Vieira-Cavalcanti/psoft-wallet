@@ -2,10 +2,13 @@ package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.HoldingResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
+import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.model.asset.*;
 import com.ufcg.psoft.commerce.model.asset.types.TreasuryBounds;
 import com.ufcg.psoft.commerce.model.user.*;
@@ -34,6 +37,7 @@ import java.util.*;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -69,6 +73,7 @@ class ClientControllerTests {
     private static final String CLIENT_BASE_URL = "/clients";
     private static final String ASSETS_ENDPOINT = "/assets";
     private static final String WALLET = "/wallet";
+    private static final String WALLET_HOLDING = "/wallet-holding";
     private static final String PURCHASES_ENDPOINT = "/purchase";
     private static final String STOCK_ASSET_TYPE_NAME = "STOCK";
     private static final String INTEREST = "/interest";
@@ -1036,4 +1041,109 @@ class ClientControllerTests {
         assertEquals(1, updatedWallet.getHoldings().size());
     }
 
+    @Test
+    @Transactional
+    @DisplayName("Should get client wallet holdings successfully")
+    void testGetClientWalletHolding_Success_Alternative() throws Exception {
+        WalletModel clientWallet = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientIdNotFoundException(clientId))
+                .getWallet();
+
+        AssetModel asset1 = createAndSaveAsset(stockType);
+        AssetModel asset2 = createAndSaveAsset(stockType);
+
+        HoldingModel holding1 = HoldingModel.builder()
+                .asset(asset1)
+                .quantity(10.0)
+                .wallet(clientWallet)
+                .build();
+
+        HoldingModel holding2 = HoldingModel.builder()
+                .asset(asset2)
+                .quantity(25.0)
+                .wallet(clientWallet)
+                .build();
+
+        clientWallet.getHoldings().put(asset1.getId(), holding1);
+        clientWallet.getHoldings().put(asset2.getId(), holding2);
+        walletRepository.save(clientWallet);
+
+        ClientWalletRequestDTO dto = ClientWalletRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+
+        String responseContent = mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET_HOLDING)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.wallet.walletId").value(clientWallet.getId().toString()))
+                .andExpect(jsonPath("$.wallet.budget").value(clientWallet.getBudget()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        WalletHoldingResponseDTO responseDto = objectMapper.readValue(responseContent, WalletHoldingResponseDTO.class);
+
+        assertEquals(2, responseDto.getHoldings().size());
+
+        List<UUID> assetIdsInResponse = responseDto.getHoldings().stream()
+                .map(HoldingResponseDTO::getAssetId)
+                .toList();
+
+        assertTrue(assetIdsInResponse.contains(asset1.getId()));
+        assertTrue(assetIdsInResponse.contains(asset2.getId()));
+    }
+
+    @Test
+    @DisplayName("Should return 401 Unauthorized when access code is invalid")
+    void testGetClientWalletHolding_InvalidAccessCode() throws Exception {
+        ClientWalletRequestDTO dto = ClientWalletRequestDTO.builder()
+                .accessCode("654321")
+                .build();
+
+
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET_HOLDING)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should return 404 Not Found when client ID is invalid")
+    void testGetClientWalletHolding_InvalidClientId() throws Exception {
+        UUID invalidId = UUID.randomUUID();
+        ClientWalletRequestDTO dto = ClientWalletRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + invalidId + WALLET_HOLDING)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should return 400 Bad Request when access code is null")
+    void testGetClientWalletHolding_NullAccessCode() throws Exception {
+        ClientWalletRequestDTO dto = ClientWalletRequestDTO.builder()
+                .accessCode(null)
+                .build();
+
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET_HOLDING)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 400 Bad Request when access code is missing")
+    void testGetClientWalletHolding_MissingAccessCode() throws Exception {
+        String jsonWithoutAccessCode = "{}";
+
+        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET_HOLDING)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonWithoutAccessCode))
+                .andExpect(status().isBadRequest());
+    }
 }
