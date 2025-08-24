@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.dto.wallet;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
+import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PurchaseResponseDTO {
+public class PurchaseResponseAfterAddedInWalletDTO {
 
     @JsonProperty("id")
     @NotNull(message = "The 'id' field cannot be null")
@@ -42,21 +43,17 @@ public class PurchaseResponseDTO {
     @NotNull(message = "The 'date' field cannot be null")
     private LocalDate date;
 
-    public PurchaseResponseDTO(PurchaseModel purchase) {
+    @JsonProperty("holding")
+    @NotNull(message = "The 'holding' field cannot be null")
+    private HoldingModel holding;
+
+    public PurchaseResponseAfterAddedInWalletDTO(PurchaseModel purchase, HoldingModel holding) {
         this.id = purchase.getId();
         this.walletId = purchase.getWallet().getId();
         this.assetId = purchase.getAsset().getId();
         this.quantity = purchase.getQuantity();
         this.purchaseState = purchase.getStateEnum();
         this.date = purchase.getDate();
-    }
-
-    public PurchaseResponseDTO(PurchaseResponseAfterAddedInWalletDTO dto) {
-        this.id = dto.getId();
-        this.walletId = dto.getWalletId();
-        this.assetId = dto.getAssetId();
-        this.quantity = dto.getQuantity();
-        this.purchaseState = dto.getPurchaseState();
-        this.date = dto.getDate();
+        this.holding = holding;
     }
 }

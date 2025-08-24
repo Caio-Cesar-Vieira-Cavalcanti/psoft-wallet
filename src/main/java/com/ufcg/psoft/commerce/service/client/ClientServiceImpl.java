@@ -170,7 +170,7 @@ public class ClientServiceImpl implements ClientService {
 
         PurchaseModel purchaseModel = purchaseService.confirmationByClient(purchaseId);
 
-        clientModel.getWallet().decreaseBudgetAfterPurchase(purchaseModel.getAcquisitionPrice());
+        clientModel.getWallet().decreaseBudgetAfterPurchase(purchaseModel.getAcquisitionPrice() * purchaseModel.getQuantity());
 
         return walletService.addPurchase(purchaseModel);
     }

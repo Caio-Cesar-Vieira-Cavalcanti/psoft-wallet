@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.service.wallet;
 
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
@@ -20,5 +21,5 @@ public interface PurchaseService {
 
     PurchaseModel confirmationByClient(UUID purchaseId);
 
-    PurchaseResponseDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel);
+    PurchaseResponseAfterAddedInWalletDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel);
 }
