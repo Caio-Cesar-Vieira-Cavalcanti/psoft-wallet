@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -23,6 +24,9 @@ public class WalletServiceImpl implements WalletService {
 
     @Autowired
     WithdrawService withdrawService;
+
+    @Autowired
+    WalletRepository walletRepository;
 
     @Autowired
     private DTOMapperService dtoMapperService;
@@ -58,7 +62,10 @@ public class WalletServiceImpl implements WalletService {
 
     public PurchaseResponseDTO addPurchase(PurchaseModel purchase) {
         HoldingModel holdingModel = this.findHoldingByAsset(purchase.getWallet(), purchase.getAsset());
-        return purchaseService.addedInWallet(purchase, holdingModel);
+        PurchaseResponseAfterAddedInWalletDTO dto = purchaseService.addedInWallet(purchase, holdingModel);
+        purchase.getWallet().getHoldings().put(dto.getHolding().getId(), dto.getHolding());
+        this.walletRepository.save(purchase.getWallet());
+        return new PurchaseResponseDTO(dto);
     }
 
     private void validateWalletBudget(WalletModel wallet, double purchasePrice) {

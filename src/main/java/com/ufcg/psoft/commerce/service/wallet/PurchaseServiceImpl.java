@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.service.wallet;
 
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.exception.purchase.PurchaseNotFoundException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -79,7 +80,10 @@ public class PurchaseServiceImpl implements PurchaseService {
         return purchase;
     }
 
-    public PurchaseResponseDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel) {
+    public PurchaseResponseAfterAddedInWalletDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel) {
+        purchase.modify(null);
+        this.purchaseRepository.save(purchase);
+
         if (holdingModel == null) {
             HoldingModel newHoldingModel = HoldingModel.builder()
                     .asset(purchase.getAsset())
@@ -88,15 +92,12 @@ public class PurchaseServiceImpl implements PurchaseService {
                     .accumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice())
                     .build();
             this.holdingRepository.save(newHoldingModel);
+            return new PurchaseResponseAfterAddedInWalletDTO(purchase, newHoldingModel);
         } else {
             holdingModel.increaseQuantityAfterPurchase(purchase.getQuantity());
             holdingModel.increaseAccumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice());
         }
-
-        purchase.modify(null);
-        this.purchaseRepository.save(purchase);
-
-        return new PurchaseResponseDTO(purchase);
+        return new PurchaseResponseAfterAddedInWalletDTO(purchase, holdingModel);
     }
 
 }

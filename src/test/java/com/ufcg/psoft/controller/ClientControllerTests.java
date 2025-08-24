@@ -2,6 +2,7 @@ package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
@@ -15,6 +16,7 @@ import com.ufcg.psoft.commerce.repository.wallet.PurchaseRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.service.observer.EventManagerImpl;
 
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +33,8 @@ import java.time.LocalDate;
 import java.util.*;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -99,7 +103,9 @@ class ClientControllerTests {
 
     @AfterEach
     void tearDown() {
+        purchaseRepository.deleteAll();
         clientRepository.deleteAll();
+        assetRepository.deleteAll();
     }
 
     private ClientModel createClient(UUID id, String fullName, EmailModel email, AccessCodeModel accessCode,
@@ -932,4 +938,106 @@ class ClientControllerTests {
                 .andExpect(jsonPath("$.message").value("Cannot delete asset: it is referenced in purchases"))
                 .andExpect(jsonPath("$.errors").isEmpty());
     }
+
+    @Test
+    @Transactional
+    void confirmationByClient_createsNewHolding_ShouldReturn200() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+
+        ClientModel client = createClient(
+                null, // deixa null se o ID for @GeneratedValue
+                "Test User",
+                new EmailModel("testuser@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        client = clientRepository.save(client);
+
+        PurchaseModel purchase = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
+        purchase = purchaseRepository.save(purchase);
+
+        PurchaseConfirmationByClientDTO requestDto = PurchaseConfirmationByClientDTO.builder()
+                .accessCode(client.getAccessCode().getAccessCode())
+                .build();
+
+        mockMvc.perform(post("/clients/{clientId}/wallet/purchase/{purchaseId}/confirmation-by-client",
+                        client.getId(), purchase.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(purchase.getId().toString()))
+                .andExpect(jsonPath("$.walletId").value(wallet.getId().toString()))
+                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
+                .andExpect(jsonPath("$.quantity").value(5.0))
+                .andExpect(jsonPath("$.state").value("IN_WALLET"))
+                .andExpect(jsonPath("$.date").value(purchase.getDate().toString()));
+
+        WalletModel updatedWallet = walletRepository.findById(wallet.getId()).orElseThrow();
+        assertEquals(500, updatedWallet.getBudget());
+
+        assertEquals(1, updatedWallet.getHoldings().size());
+    }
+
+    @Test
+    @Transactional
+    void confirmationByClient_alreadyExistsAHolding_ShouldReturn200() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+
+        ClientModel client = createClient(
+                null, // deixa null se o ID for @GeneratedValue
+                "Test User",
+                new EmailModel("testuser@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        client = clientRepository.save(client);
+
+        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
+        purchase1 = purchaseRepository.save(purchase1);
+
+        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(1), wallet);
+        purchase2 = purchaseRepository.save(purchase2);
+
+        PurchaseConfirmationByClientDTO requestDto = PurchaseConfirmationByClientDTO.builder()
+                .accessCode(client.getAccessCode().getAccessCode())
+                .build();
+
+        mockMvc.perform(post("/clients/{clientId}/wallet/purchase/{purchaseId}/confirmation-by-client",
+                        client.getId(), purchase1.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/clients/{clientId}/wallet/purchase/{purchaseId}/confirmation-by-client",
+                        client.getId(), purchase2.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(purchase2.getId().toString()))
+                .andExpect(jsonPath("$.walletId").value(wallet.getId().toString()))
+                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
+                .andExpect(jsonPath("$.quantity").value(3.0))
+                .andExpect(jsonPath("$.state").value("IN_WALLET"))
+                .andExpect(jsonPath("$.date").value(purchase2.getDate().toString()));
+
+        WalletModel updatedWallet = walletRepository.findById(wallet.getId()).orElseThrow();
+        assertEquals(200, updatedWallet.getBudget());
+
+        assertEquals(1, updatedWallet.getHoldings().size());
+    }
+
 }
