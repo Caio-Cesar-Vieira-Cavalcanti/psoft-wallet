@@ -11,6 +11,7 @@ public class Crypto extends AssetType {
 
     private static final double LOW_PROFIT_TAX = 0.15;
     private static final double HIGH_PROFIT_TAX = 0.225;
+    private static final Integer TAX_PROFIT_THRESHOLD = 5000;
 
     public Crypto() {
         super(AssetTypeEnum.CRYPTO.name());
@@ -18,7 +19,7 @@ public class Crypto extends AssetType {
 
     @Override
     public double taxCalculate(double profit) {
-        if (profit <= 5000) {
+        if (profit <= TAX_PROFIT_THRESHOLD) {
             return LOW_PROFIT_TAX * profit;
         }
         return HIGH_PROFIT_TAX * profit;

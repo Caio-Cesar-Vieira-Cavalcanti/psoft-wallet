@@ -2,9 +2,7 @@ package com.ufcg.psoft.commerce.model.asset;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity(name = "asset_type")
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)

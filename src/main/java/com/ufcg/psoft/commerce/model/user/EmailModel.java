@@ -2,16 +2,15 @@ package com.ufcg.psoft.commerce.model.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.apache.commons.validator.routines.EmailValidator;
 
 @Data
 @Embeddable
 @Builder
+@Getter
 @NoArgsConstructor
-public class EmailModel {
+public final class EmailModel {
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -25,9 +24,5 @@ public class EmailModel {
 
     public boolean matches(String email) {
         return this.email.equals(email);
-    }
-
-    public String getEmail() {
-        return email;
     }
 }

@@ -20,7 +20,13 @@ public class AdminServiceImpl implements AdminService {
         );
     }
 
+    @Override
     public void validateAdmin(String email, String accessCode) {
         this.admin.validateAccess(email, accessCode);
+    }
+
+    @Override
+    public AdminModel getAdmin() {
+        return this.admin;
     }
 }
