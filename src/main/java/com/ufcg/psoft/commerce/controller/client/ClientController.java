@@ -6,6 +6,7 @@ import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -151,5 +152,17 @@ public class ClientController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(walletHolding);
+    }
+
+    @PostMapping("/{clientId}/wallet/withdraw/{assetId}")
+    public ResponseEntity<WithdrawResponseDTO> withdrawAsset(
+            @PathVariable UUID clientId,
+            @PathVariable UUID assetId,
+            @RequestBody @Valid ClientWithdrawAssetRequestDTO dto
+    ) {
+        WithdrawResponseDTO response = clientService.withdrawClientAsset(clientId, assetId, dto);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
     }
 }

@@ -10,6 +10,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPostRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 
 import java.util.List;
@@ -44,4 +45,6 @@ public interface ClientService {
     PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto);
 
     WalletHoldingResponseDTO getClientWalletHolding(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO);
+
+    WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto);
 }

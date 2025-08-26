@@ -5,6 +5,7 @@ import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
@@ -12,11 +13,14 @@ import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
+import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
 import com.ufcg.psoft.commerce.service.wallet.WalletService;
+import com.ufcg.psoft.commerce.service.wallet.WithdrawService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,6 +49,15 @@ public class ClientServiceImpl implements ClientService {
 
     @Autowired
     DTOMapperService dtoMapperService;
+
+    @Autowired
+    private WithdrawService withdrawService;
+
+    @Autowired
+    private WalletRepository walletRepository;
+
+    @Autowired
+    private AssetRepository assetRepository;
 
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
@@ -187,6 +200,15 @@ public class ClientServiceImpl implements ClientService {
         return dtoMapperService.toWalletHoldingResponseDTO(walletModel, holdings, totalCurrent, totalInvested, totalPerformance);
     }
 
+    @Override
+    public WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto) {
+        ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
+        WalletModel wallet = client.getWallet();
+        AssetModel asset = assetRepository.findById(assetId).orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " +  assetId));
+
+        return withdrawService.withdrawAsset(wallet, asset, dto.getQuantityToWithdraw());
+    }
+
     private List<HoldingResponseDTO> buildHoldings(WalletModel walletModel) {
         if (walletModel.getHoldings() == null) {
             return List.of();
@@ -225,5 +247,4 @@ public class ClientServiceImpl implements ClientService {
         return clientRepository.findById(clientId)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
     }
-
 }

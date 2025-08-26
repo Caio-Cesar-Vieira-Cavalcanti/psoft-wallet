@@ -2,10 +2,7 @@ package com.ufcg.psoft.commerce.service.mapper;
 
 import com.ufcg.psoft.commerce.dto.asset.AssetTypeResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.HoldingResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.*;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
@@ -16,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -74,6 +72,19 @@ public class DTOMapperService {
                 .performance(performance)
                 .acquisitionTotal(acquisitionTotal)
                 .currentTotal(currentTotal)
+                .build();
+    }
+
+    public WithdrawResponseDTO toWithdrawResponseDTO(WalletModel wallet,
+                                                     AssetModel asset,
+                                                     double quantityWithdrawn,
+                                                     double valueReceived) {
+        return WithdrawResponseDTO.builder()
+                .walletId(wallet.getId())
+                .assetId(asset.getId())
+                .quantityWithdrawn(quantityWithdrawn)
+                .valueReceived(valueReceived)
+                .newWalletBudget(wallet.getBudget())
                 .build();
     }
 }
