@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@DisplayName("Asset Service Unit Tests")
 class AssetServiceUnitTests {
 
     private AssetRepository assetRepository;

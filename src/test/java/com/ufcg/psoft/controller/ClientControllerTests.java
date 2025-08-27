@@ -1335,4 +1335,86 @@ class ClientControllerTests {
                 .andExpect(jsonPath("$.quantity").value(5))
                 .andExpect(jsonPath("$.state").value("REQUESTED"));
     }
+
+    @Test
+    @Transactional
+    @DisplayName("Should withdraw asset via controller successfully")
+    void testWithdrawAsset_Controller_Success() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = walletRepository.findById(walletId).orElseThrow();
+        wallet.getHoldings().size(); // Initialize lazy collection
+
+        HoldingModel holding = HoldingModel.builder()
+                .asset(asset)
+                .wallet(wallet)
+                .quantity(10)
+                .accumulatedPrice(1000.0)
+                .build();
+
+        wallet.getHoldings().put(asset.getId(), holding);
+        walletRepository.save(wallet);
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5)
+                .build();
+
+        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + "/wallet/withdraw/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.quantityWithdrawn").value(5))
+                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()));
+    }
+
+    @Test
+    @DisplayName("Should fail withdrawal if client not found")
+    void testWithdrawAsset_Controller_ClientNotFound() throws Exception {
+        UUID invalidClientId = UUID.randomUUID();
+
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5)
+                .build();
+
+        mockMvc.perform(post(CLIENT_BASE_URL + "/" + invalidClientId + "/wallet/withdraw/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should fail withdrawal if access code is invalid")
+    void testWithdrawAsset_Controller_InvalidAccessCode() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("000000")
+                .quantityToWithdraw(5)
+                .build();
+
+        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + "/wallet/withdraw/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should fail withdrawal if asset not found")
+    void testWithdrawAsset_Controller_AssetNotFound() throws Exception {
+        UUID invalidAssetId = UUID.randomUUID();
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5)
+                .build();
+
+        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + "/wallet/withdraw/" + invalidAssetId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
 }

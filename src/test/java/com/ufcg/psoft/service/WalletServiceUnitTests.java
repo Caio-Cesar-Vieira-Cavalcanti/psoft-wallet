@@ -25,6 +25,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@DisplayName("Wallet Service Unit Tests")
 class WalletServiceUnitTests {
 
     private WalletRepository walletRepository;

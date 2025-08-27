@@ -4,6 +4,7 @@ import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.HoldingResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
@@ -23,6 +24,7 @@ import com.ufcg.psoft.commerce.service.client.ClientService;
 import com.ufcg.psoft.commerce.service.client.ClientServiceImpl;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 
+import com.ufcg.psoft.commerce.service.wallet.WithdrawServiceImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@DisplayName("Client Service Unit Tests")
 class ClientServiceUnitTests {
 
     private ClientRepository clientRepository;
@@ -384,6 +387,88 @@ class ClientServiceUnitTests {
         HoldingResponseDTO responseHolding = result.getHoldings().get(0);
         assertEquals(0.0, responseHolding.getQuantity());
         assertEquals(0.0, responseHolding.getAcquisitionPrice(), "Acquisition price should be 0.0 when quantity is 0");
+    }
+
+    @Test
+    @DisplayName("Should withdraw client asset successfully")
+    void testWithdrawClientAsset_Success() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+        AssetModel asset = AssetModel.builder().id(assetId).name("Bitcoin").quotation(100000.0).build();
+        when(assetService.getAssetById(assetId)).thenReturn(assetResponseDTO);
+        
+        ReflectionTestUtils.setField(clientService, "assetRepository", mock(com.ufcg.psoft.commerce.repository.asset.AssetRepository.class));
+        com.ufcg.psoft.commerce.repository.asset.AssetRepository assetRepository =
+                (com.ufcg.psoft.commerce.repository.asset.AssetRepository) ReflectionTestUtils.getField(clientService, "assetRepository");
+        assertNotNull(assetRepository);
+        when(assetRepository.findById(assetId)).thenReturn(Optional.of(asset));
+
+        WithdrawResponseDTO mockWithdrawResponse = mock(WithdrawResponseDTO.class);
+        WithdrawServiceImpl withdrawService = mock(WithdrawServiceImpl.class);
+        ReflectionTestUtils.setField(clientService, "withdrawService", withdrawService);
+        when(withdrawService.withdrawAsset(client.getWallet(), asset, 5.0)).thenReturn(mockWithdrawResponse);
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5.0)
+                .build();
+
+        WithdrawResponseDTO result = clientService.withdrawClientAsset(clientId, assetId, dto);
+
+        assertSame(mockWithdrawResponse, result);
+        verify(clientRepository).findById(clientId);
+        verify(withdrawService).withdrawAsset(client.getWallet(), asset, 5.0);
+    }
+
+    @Test
+    @DisplayName("Should throw exception if client not found")
+    void testWithdrawClientAsset_ClientNotFound() {
+        UUID invalidClientId = UUID.randomUUID();
+        when(clientRepository.findById(invalidClientId)).thenReturn(Optional.empty());
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5.0)
+                .build();
+
+        assertThrows(ClientIdNotFoundException.class, () ->
+                clientService.withdrawClientAsset(invalidClientId, assetId, dto)
+        );
+    }
+
+    @Test
+    @DisplayName("Should throw exception if access code is invalid")
+    void testWithdrawClientAsset_InvalidAccessCode() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("000000")
+                .quantityToWithdraw(5.0)
+                .build();
+
+        assertThrows(UnauthorizedUserAccessException.class, () ->
+                clientService.withdrawClientAsset(clientId, assetId, dto)
+        );
+    }
+
+    @Test
+    @DisplayName("Should throw exception if asset not found")
+    void testWithdrawClientAsset_AssetNotFound() {
+        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+
+        ReflectionTestUtils.setField(clientService, "assetRepository", mock(com.ufcg.psoft.commerce.repository.asset.AssetRepository.class));
+        com.ufcg.psoft.commerce.repository.asset.AssetRepository assetRepository =
+                (com.ufcg.psoft.commerce.repository.asset.AssetRepository) ReflectionTestUtils.getField(clientService, "assetRepository");
+        assertNotNull(assetRepository);
+        when(assetRepository.findById(assetId)).thenReturn(Optional.empty());
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5.0)
+                .build();
+
+        assertThrows(com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException.class, () ->
+                clientService.withdrawClientAsset(clientId, assetId, dto)
+        );
     }
 
     private void createAndAddHoldingToClient(String assetName, AssetType type, String typeName, double quotation, double quantity, double accumulatedPrice) {
