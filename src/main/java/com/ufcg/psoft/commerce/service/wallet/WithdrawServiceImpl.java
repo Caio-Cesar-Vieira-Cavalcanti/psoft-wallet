@@ -28,7 +28,7 @@ public class WithdrawServiceImpl implements WithdrawService {
     @Override
     public WithdrawResponseDTO withdrawAsset(WalletModel wallet, AssetModel asset, double quantityToWithdraw) {
         HoldingModel holding = findHolding(wallet, asset);
-        validateQuantity(holding, quantityToWithdraw);
+        holding.validateQuantityToWithdraw(quantityToWithdraw);
 
         double withdrawValue = processWithdraw(wallet, holding, asset, quantityToWithdraw);
 
@@ -48,22 +48,12 @@ public class WithdrawServiceImpl implements WithdrawService {
                 ));
     }
 
-    private void validateQuantity(HoldingModel holding, double quantityToWithdraw) {
-        if (holding.getQuantity() < quantityToWithdraw) {
-            throw new ClientHoldingIsInsufficientException(
-                    "Holding quantity " + holding.getQuantity() +
-                            " is less than requested withdrawal " + quantityToWithdraw
-            );
-        }
-    }
-
     private double processWithdraw(WalletModel wallet, HoldingModel holding, AssetModel asset, double quantityToWithdraw) {
-        holding.setQuantity(holding.getQuantity() - quantityToWithdraw);
-        holding.setAccumulatedPrice(holding.getAccumulatedPrice() - (quantityToWithdraw * asset.getQuotation()));
+        holding.decreaseQuantityAfterWithdraw(quantityToWithdraw);
+        holding.decreaseAccumulatedPriceAfterWithdraw(quantityToWithdraw, asset.getQuotation());
 
         double withdrawValue = quantityToWithdraw * asset.getQuotation();
-
-        wallet.setBudget(wallet.getBudget() + withdrawValue);
+        wallet.increaseBudgetAfterWithdraw(withdrawValue);
 
         if (holding.getQuantity() == EMPTY_HOLDING) {
             wallet.getHoldings().remove(holding.getId());

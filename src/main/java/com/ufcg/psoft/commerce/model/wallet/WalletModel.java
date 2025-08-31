@@ -27,4 +27,8 @@ public class WalletModel {
     public void decreaseBudgetAfterPurchase(double purchaseValue) {
         this.budget -= purchaseValue;
     }
+
+    public void increaseBudgetAfterWithdraw(double withdrawValue) {
+        this.budget += withdrawValue;
+    }
 }

@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.model.wallet;
 
+import com.ufcg.psoft.commerce.exception.user.ClientHoldingIsInsufficientException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,4 +42,22 @@ public class HoldingModel {
     public void increaseAccumulatedPrice(double purchaseAccumulatedPrice) {
         this.accumulatedPrice += purchaseAccumulatedPrice;
     }
+
+    public void validateQuantityToWithdraw(double quantityToWithdraw) {
+        if (this.quantity < quantityToWithdraw) {
+            throw new ClientHoldingIsInsufficientException(
+                    "Holding quantity " + this.quantity +
+                            " is less than requested withdrawal " + quantityToWithdraw
+            );
+        }
+    }
+
+    public void decreaseQuantityAfterWithdraw(double quantityToWithdraw) {
+        this.quantity -= quantityToWithdraw;
+    }
+
+    public void decreaseAccumulatedPriceAfterWithdraw(double quantityToWithdraw, double assetQuotation) {
+        this.accumulatedPrice -= quantityToWithdraw * assetQuotation;
+    }
+
 }
