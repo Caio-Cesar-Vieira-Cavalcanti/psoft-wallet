@@ -165,4 +165,15 @@ public class ClientController {
                 .status(HttpStatus.OK)
                 .body(response);
     }
+
+    @GetMapping("/{clientId}/wallet/withdraw")
+    public ResponseEntity<List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO>> getWithdrawHistory(
+            @PathVariable UUID clientId,
+            @RequestBody @Valid ClientWalletRequestDTO dto
+    ) {
+        List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> withdrawHistory = clientService.getWithdrawHistory(clientId, dto);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(withdrawHistory);
+    }
 }

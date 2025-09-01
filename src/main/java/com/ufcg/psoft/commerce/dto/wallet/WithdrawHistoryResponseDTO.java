@@ -7,19 +7,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WithdrawResponseDTO {
+public class WithdrawHistoryResponseDTO {
 
     @JsonProperty("withdrawId")
     private UUID withdrawId;
 
-    @JsonProperty("walletId")
-    private UUID walletId;
+    @JsonProperty("assetName")
+    private String assetName;
 
     @JsonProperty("assetId")
     private UUID assetId;
@@ -27,12 +28,18 @@ public class WithdrawResponseDTO {
     @JsonProperty("quantityWithdrawn")
     private double quantityWithdrawn;
 
-    @JsonProperty("valueReceived")
-    private double valueReceived;
+    @JsonProperty("sellingPrice")
+    private double sellingPrice;
 
-    @JsonProperty("newWalletBudget")
-    private double newWalletBudget;
-    
+    @JsonProperty("totalValue")
+    private double totalValue;
+
+    @JsonProperty("tax")
+    private double tax;
+
+    @JsonProperty("date")
+    private LocalDate date;
+
     @JsonProperty("state")
     private WithdrawStateEnum state;
 }

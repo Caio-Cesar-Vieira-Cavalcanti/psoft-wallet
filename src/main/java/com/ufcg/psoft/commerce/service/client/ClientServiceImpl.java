@@ -15,7 +15,6 @@ import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
-import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
@@ -52,9 +51,6 @@ public class ClientServiceImpl implements ClientService {
 
     @Autowired
     private WithdrawService withdrawService;
-
-    @Autowired
-    private WalletRepository walletRepository;
 
     @Autowired
     private AssetRepository assetRepository;
@@ -207,6 +203,14 @@ public class ClientServiceImpl implements ClientService {
         AssetModel asset = assetRepository.findById(assetId).orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " +  assetId));
 
         return withdrawService.withdrawAsset(wallet, asset, dto.getQuantityToWithdraw());
+    }
+
+    @Override
+    public List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> getWithdrawHistory(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO) {
+        this.validateClientAccess(clientId, clientWalletRequestDTO.getAccessCode());
+        ClientModel clientModel = getClient(clientId);
+        
+        return withdrawService.getWithdrawHistory(clientModel.getWallet().getId());
     }
 
     private List<HoldingResponseDTO> buildHoldings(WalletModel walletModel) {

@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.service.mapper;
 import com.ufcg.psoft.commerce.dto.asset.AssetTypeResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.*;
+import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
@@ -13,7 +14,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -78,13 +78,42 @@ public class DTOMapperService {
     public WithdrawResponseDTO toWithdrawResponseDTO(WalletModel wallet,
                                                      AssetModel asset,
                                                      double quantityWithdrawn,
-                                                     double valueReceived) {
+                                                     double valueReceived,
+                                                     WithdrawStateEnum state) {
         return WithdrawResponseDTO.builder()
                 .walletId(wallet.getId())
                 .assetId(asset.getId())
                 .quantityWithdrawn(quantityWithdrawn)
                 .valueReceived(valueReceived)
                 .newWalletBudget(wallet.getBudget())
+                .state(state)
+                .build();
+    }
+
+    public WithdrawResponseDTO toWithdrawResponseDTO(com.ufcg.psoft.commerce.model.wallet.WithdrawModel withdrawModel,
+                                                     double valueReceived) {
+        return WithdrawResponseDTO.builder()
+                .withdrawId(withdrawModel.getId())
+                .walletId(withdrawModel.getWallet().getId())
+                .assetId(withdrawModel.getAsset().getId())
+                .quantityWithdrawn(withdrawModel.getQuantity())
+                .valueReceived(valueReceived)
+                .newWalletBudget(withdrawModel.getWallet().getBudget())
+                .state(withdrawModel.getStateEnum())
+                .build();
+    }
+
+    public WithdrawHistoryResponseDTO toWithdrawHistoryResponseDTO(com.ufcg.psoft.commerce.model.wallet.WithdrawModel withdrawModel) {
+        return WithdrawHistoryResponseDTO.builder()
+                .withdrawId(withdrawModel.getId())
+                .assetName(withdrawModel.getAsset().getName())
+                .assetId(withdrawModel.getAsset().getId())
+                .quantityWithdrawn(withdrawModel.getQuantity())
+                .sellingPrice(withdrawModel.getSellingPrice())
+                .totalValue(withdrawModel.getQuantity() * withdrawModel.getSellingPrice())
+                .tax(withdrawModel.getTax())
+                .date(withdrawModel.getDate())
+                .state(withdrawModel.getStateEnum())
                 .build();
     }
 }

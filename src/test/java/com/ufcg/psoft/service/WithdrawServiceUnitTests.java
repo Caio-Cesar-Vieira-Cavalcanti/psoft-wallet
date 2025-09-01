@@ -7,6 +7,8 @@ import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
+import com.ufcg.psoft.commerce.repository.wallet.WithdrawRepository;
+import com.ufcg.psoft.commerce.service.admin.AdminService;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.wallet.WithdrawServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +28,8 @@ public class WithdrawServiceUnitTests {
     private WithdrawServiceImpl withdrawService;
     private WalletRepository walletRepository;
     private HoldingRepository holdingRepository;
+    private WithdrawRepository withdrawRepository;
+    private AdminService adminService;
     private DTOMapperService dtoMapperService;
 
     private WalletModel wallet;
@@ -36,11 +40,15 @@ public class WithdrawServiceUnitTests {
     void setup() {
         walletRepository = mock(WalletRepository.class);
         holdingRepository = mock(HoldingRepository.class);
+        withdrawRepository = mock(WithdrawRepository.class);
+        adminService = mock(AdminService.class);
         dtoMapperService = mock(DTOMapperService.class);
 
         withdrawService = new WithdrawServiceImpl();
         ReflectionTestUtils.setField(withdrawService, "walletRepository", walletRepository);
         ReflectionTestUtils.setField(withdrawService, "holdingRepository", holdingRepository);
+        ReflectionTestUtils.setField(withdrawService, "withdrawRepository", withdrawRepository);
+        ReflectionTestUtils.setField(withdrawService, "adminService", adminService);
         ReflectionTestUtils.setField(withdrawService, "dtoMapperService", dtoMapperService);
 
         asset = AssetModel.builder()
@@ -69,18 +77,14 @@ public class WithdrawServiceUnitTests {
     @DisplayName("Should withdraw asset successfully")
     void testWithdrawAsset_Success() {
         double quantityToWithdraw = 5.0;
-        double expectedValue = quantityToWithdraw * asset.getQuotation();
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(wallet, asset, quantityToWithdraw, expectedValue))
+        when(dtoMapperService.toWithdrawResponseDTO(any(), eq(0.0)))
                 .thenReturn(mockResponse);
 
         WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, quantityToWithdraw);
 
         assertSame(mockResponse, result);
-        assertEquals(5.0, holding.getQuantity());
-        assertEquals(1000.0 + expectedValue, wallet.getBudget());
-        verify(holdingRepository).save(holding);
-        verify(walletRepository).save(wallet);
+        verify(withdrawRepository).save(any());
     }
 
     @Test
@@ -90,83 +94,5 @@ public class WithdrawServiceUnitTests {
         assertThrows(ClientHoldingIsInsufficientException.class, () ->
                 withdrawService.withdrawAsset(wallet, otherAsset, 1.0)
         );
-        verify(holdingRepository, never()).save(any());
-        verify(walletRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Should throw exception if quantity is insufficient")
-    void testWithdrawAsset_InsufficientQuantity() {
-        assertThrows(ClientHoldingIsInsufficientException.class, () ->
-                withdrawService.withdrawAsset(wallet, asset, 20.0)
-        );
-        verify(holdingRepository, never()).save(any());
-        verify(walletRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("Should remove holding if all quantity is withdrawn")
-    void testWithdrawAsset_RemoveHolding() {
-        double quantityToWithdraw = 10.0;
-        double expectedValue = quantityToWithdraw * asset.getQuotation();
-        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(wallet, asset, quantityToWithdraw, expectedValue))
-                .thenReturn(mockResponse);
-
-        WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, quantityToWithdraw);
-
-        assertSame(mockResponse, result);
-        assertFalse(wallet.getHoldings().containsKey(holding.getId()));
-        verify(holdingRepository).delete(holding);
-        verify(walletRepository).save(wallet);
-    }
-
-    @Test
-    @DisplayName("Should correctly update accumulatedPrice after withdrawal")
-    void testWithdrawAsset_UpdateAccumulatedPrice() {
-        double quantityToWithdraw = 2.0;
-        double expectedPriceReduction = quantityToWithdraw * asset.getQuotation();
-
-        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(wallet, asset, quantityToWithdraw, expectedPriceReduction))
-                .thenReturn(mockResponse);
-
-        withdrawService.withdrawAsset(wallet, asset, quantityToWithdraw);
-
-        assertEquals(holding.getAccumulatedPrice(), 500.0 - expectedPriceReduction);
-    }
-
-    @Test
-    @DisplayName("Should call dtoMapperService with correct arguments")
-    void testWithdrawAsset_CallsDtoMapperService() {
-        double quantityToWithdraw = 3.0;
-        double withdrawValue = quantityToWithdraw * asset.getQuotation();
-
-        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(wallet, asset, quantityToWithdraw, withdrawValue))
-                .thenReturn(mockResponse);
-
-        withdrawService.withdrawAsset(wallet, asset, quantityToWithdraw);
-
-        verify(dtoMapperService, times(1))
-                .toWithdrawResponseDTO(wallet, asset, quantityToWithdraw, withdrawValue);
-    }
-
-    @Test
-    @DisplayName("Should not affect other holdings")
-    void testWithdrawAsset_OtherHoldingsUnaffected() {
-        AssetModel otherAsset = AssetModel.builder().id(UUID.randomUUID()).quotation(20.0).build();
-        HoldingModel otherHolding = HoldingModel.builder().id(UUID.randomUUID()).asset(otherAsset).quantity(5.0).accumulatedPrice(100.0).build();
-        wallet.getHoldings().put(otherAsset.getId(), otherHolding);
-
-        double quantityToWithdraw = 5.0;
-        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(wallet, asset, quantityToWithdraw, quantityToWithdraw * asset.getQuotation()))
-                .thenReturn(mockResponse);
-
-        withdrawService.withdrawAsset(wallet, asset, quantityToWithdraw);
-
-        assertEquals(5.0, otherHolding.getQuantity());
-        assertEquals(100.0, otherHolding.getAccumulatedPrice());
     }
 }

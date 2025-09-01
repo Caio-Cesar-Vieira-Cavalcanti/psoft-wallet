@@ -47,4 +47,6 @@ public interface ClientService {
     WalletHoldingResponseDTO getClientWalletHolding(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO);
 
     WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto);
+    
+    List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> getWithdrawHistory(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO);
 }
