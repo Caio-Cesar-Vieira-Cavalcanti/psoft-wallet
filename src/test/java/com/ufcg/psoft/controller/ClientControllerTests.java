@@ -1364,8 +1364,10 @@ class ClientControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.withdrawId").exists())
                 .andExpect(jsonPath("$.quantityWithdrawn").value(5))
-                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()));
+                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
+                .andExpect(jsonPath("$.state").value("REQUESTED"));
     }
 
     @Test

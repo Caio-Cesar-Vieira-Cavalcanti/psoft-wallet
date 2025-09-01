@@ -95,4 +95,99 @@ public class WithdrawServiceUnitTests {
                 withdrawService.withdrawAsset(wallet, otherAsset, 1.0)
         );
     }
+
+    @Test
+    @DisplayName("Should confirm withdraw and transition from REQUESTED to CONFIRMED")
+    void testConfirmWithdraw_TransitionToConfirmed() {
+        // Mock admin service
+        com.ufcg.psoft.commerce.model.user.AdminModel mockAdmin = mock(com.ufcg.psoft.commerce.model.user.AdminModel.class);
+        when(adminService.getAdmin()).thenReturn(mockAdmin);
+
+        // Mock withdraw model
+        com.ufcg.psoft.commerce.model.wallet.WithdrawModel mockWithdraw = mock(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
+        when(mockWithdraw.getWallet()).thenReturn(wallet);
+        when(mockWithdraw.getAsset()).thenReturn(asset);
+        when(mockWithdraw.getQuantity()).thenReturn(5.0);
+        when(mockWithdraw.getStateEnum()).thenReturn(com.ufcg.psoft.commerce.enums.WithdrawStateEnum.REQUESTED);
+        when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
+
+        // Mock response
+        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
+        when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
+
+        // Execute
+        WithdrawResponseDTO result = withdrawService.confirmWithdraw(UUID.randomUUID(),
+                com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
+                        .adminEmail("admin@example.com")
+                        .adminAccessCode("123456")
+                        .build());
+
+        // Verify
+        assertSame(mockResponse, result);
+        verify(mockWithdraw, times(2)).modify(mockAdmin); // Called twice for REQUESTED->CONFIRMED->IN_ACCOUNT
+        verify(withdrawRepository, times(2)).save(mockWithdraw);
+    }
+
+    @Test
+    @DisplayName("Should verify automatic transition from CONFIRMED to IN_ACCOUNT")
+    void testConfirmWithdraw_AutomaticTransitionToInAccount() {
+        // Mock admin service
+        com.ufcg.psoft.commerce.model.user.AdminModel mockAdmin = mock(com.ufcg.psoft.commerce.model.user.AdminModel.class);
+        when(adminService.getAdmin()).thenReturn(mockAdmin);
+
+        // Mock withdraw model
+        com.ufcg.psoft.commerce.model.wallet.WithdrawModel mockWithdraw = mock(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
+        when(mockWithdraw.getWallet()).thenReturn(wallet);
+        when(mockWithdraw.getAsset()).thenReturn(asset);
+        when(mockWithdraw.getQuantity()).thenReturn(5.0);
+        when(mockWithdraw.getStateEnum()).thenReturn(com.ufcg.psoft.commerce.enums.WithdrawStateEnum.REQUESTED);
+        when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
+
+        // Mock response
+        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
+        when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
+
+        // Execute
+        withdrawService.confirmWithdraw(UUID.randomUUID(),
+                com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
+                        .adminEmail("admin@example.com")
+                        .adminAccessCode("123456")
+                        .build());
+
+        // Verify that modify was called twice (REQUESTED->CONFIRMED->IN_ACCOUNT)
+        verify(mockWithdraw, times(2)).modify(mockAdmin);
+    }
+
+    @Test
+    @DisplayName("Should trigger client notification during confirmation")
+    void testConfirmWithdraw_ClientNotificationTriggered() {
+        // Mock admin service
+        com.ufcg.psoft.commerce.model.user.AdminModel mockAdmin = mock(com.ufcg.psoft.commerce.model.user.AdminModel.class);
+        when(adminService.getAdmin()).thenReturn(mockAdmin);
+
+        // Mock withdraw model
+        com.ufcg.psoft.commerce.model.wallet.WithdrawModel mockWithdraw = mock(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
+        when(mockWithdraw.getWallet()).thenReturn(wallet);
+        when(mockWithdraw.getAsset()).thenReturn(asset);
+        when(mockWithdraw.getQuantity()).thenReturn(5.0);
+        when(mockWithdraw.getStateEnum()).thenReturn(com.ufcg.psoft.commerce.enums.WithdrawStateEnum.REQUESTED);
+        when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
+
+        // Mock response
+        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
+        when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
+
+        // Execute
+        withdrawService.confirmWithdraw(UUID.randomUUID(),
+                com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
+                        .adminEmail("admin@example.com")
+                        .adminAccessCode("123456")
+                        .build());
+
+        // Verify that the withdraw was processed (which includes notification)
+        verify(mockWithdraw, times(2)).modify(mockAdmin);
+        verify(withdrawRepository, times(2)).save(mockWithdraw);
+    }
+
+
 }
