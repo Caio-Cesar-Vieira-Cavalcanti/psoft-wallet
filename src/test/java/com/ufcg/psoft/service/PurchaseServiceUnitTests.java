@@ -1,5 +1,6 @@
 package com.ufcg.psoft.service;
 
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
@@ -330,7 +331,9 @@ class PurchaseServiceUnitTests {
         UUID tempWalletId = wallet.getId();
         when(purchaseServiceImpl.getPurchaseHistoryByWalletId(tempWalletId)).thenReturn(Collections.emptyList());
 
-        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(tempWalletId);
+        ClientPurchaseHistoryRequestDTO dto = new ClientPurchaseHistoryRequestDTO();
+
+        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(tempWalletId, dto);
 
         assertTrue(result.isEmpty());
     }

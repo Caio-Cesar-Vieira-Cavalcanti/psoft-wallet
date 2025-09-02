@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @DisplayName("Withdraw Service Unit Tests")
-public class WithdrawServiceUnitTests {
+class WithdrawServiceUnitTests {
 
     private WithdrawServiceImpl withdrawService;
     private WalletRepository walletRepository;

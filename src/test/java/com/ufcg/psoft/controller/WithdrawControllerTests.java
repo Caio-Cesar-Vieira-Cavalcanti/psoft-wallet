@@ -2,7 +2,6 @@ package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO;
-import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;

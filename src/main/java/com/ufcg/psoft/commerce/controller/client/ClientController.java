@@ -172,7 +172,7 @@ public class ClientController {
             @PathVariable UUID clientId,
             @RequestBody @Valid ClientWithdrawHistoryRequestDTO dto
     ) {
-        List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> withdrawHistory = clientService.redirectGetWithdrawHistory(clientId, dto);
+        List<WithdrawHistoryResponseDTO> withdrawHistory = clientService.redirectGetWithdrawHistory(clientId, dto);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(withdrawHistory);

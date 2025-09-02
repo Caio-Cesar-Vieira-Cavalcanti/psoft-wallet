@@ -1,5 +1,6 @@
 package com.ufcg.psoft.service;
 
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
@@ -119,7 +120,9 @@ class WalletServiceUnitTests {
         when(purchaseService.getPurchaseHistoryByWalletId(walletId)).thenReturn(List.of(purchase));
         when(dtoMapperService.toPurchaseResponseDTO(purchase)).thenReturn(purchaseResponse);
 
-        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(walletId);
+        ClientPurchaseHistoryRequestDTO dto = new ClientPurchaseHistoryRequestDTO();
+
+        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(walletId, dto);
 
         assertEquals(1, result.size());
         assertSame(purchaseResponse, result.get(0));
@@ -227,7 +230,9 @@ class WalletServiceUnitTests {
     void testRedirectGetPurchaseHistory_Empty() {
         when(purchaseService.getPurchaseHistoryByWalletId(walletId)).thenReturn(List.of());
 
-        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(walletId);
+        ClientPurchaseHistoryRequestDTO dto = new ClientPurchaseHistoryRequestDTO();
+
+        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(walletId, dto);
 
         assertTrue(result.isEmpty());
         verify(purchaseService).getPurchaseHistoryByWalletId(walletId);

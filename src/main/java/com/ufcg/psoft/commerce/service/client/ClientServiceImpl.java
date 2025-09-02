@@ -145,7 +145,7 @@ public class ClientServiceImpl implements ClientService {
     public List<PurchaseResponseDTO> redirectGetPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
         ClientModel client = this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
 
-        return walletService.redirectGetPurchaseHistory(client.getWallet().getId());
+        return walletService.redirectGetPurchaseHistory(client.getWallet().getId(), clientPurchaseHistoryRequestDTO);
     }
 
     @Override

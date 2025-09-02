@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
@@ -40,8 +41,12 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public List<PurchaseResponseDTO> redirectGetPurchaseHistory(UUID walletId) {
-        return purchaseService.getPurchaseHistoryByWalletId(walletId).stream()
+    public List<PurchaseResponseDTO> redirectGetPurchaseHistory(UUID walletId, ClientPurchaseHistoryRequestDTO dto) {
+        return purchaseService.getPurchaseHistoryByWalletId(walletId)
+                .stream()
+                .filter(w -> dto.getAssetType() == null || w.getAsset().getAssetType().equals(dto.getAssetType()))
+                .filter(w -> dto.getPurchaseState() == null || w.getStateEnum().equals(dto.getPurchaseState()))
+                .filter(w -> dto.getDate() == null || w.getDate().equals(dto.getDate()))
                 .map(dtoMapperService::toPurchaseResponseDTO)
                 .sorted(Comparator.comparing(PurchaseResponseDTO::getDate).reversed())
                 .toList();
