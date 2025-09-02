@@ -22,6 +22,7 @@ public class WalletModel {
     private double budget;
 
     @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, orphanRemoval = true)
+    @MapKeyJoinColumn(name = "asset_id")
     private Map<UUID, HoldingModel> holdings;
 
     public void decreaseBudgetAfterPurchase(double purchaseValue) {

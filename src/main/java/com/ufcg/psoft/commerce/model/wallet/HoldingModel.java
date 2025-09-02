@@ -19,11 +19,11 @@ public class HoldingModel {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assetId", nullable = false)
     private AssetModel asset;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "walletId", nullable = false)
     private WalletModel wallet;
 
