@@ -5,7 +5,8 @@ import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
-import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
+import com.ufcg.psoft.commerce.exception.asset.AssetIsInactiveException;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
@@ -13,7 +14,6 @@ import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
-import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
@@ -51,9 +51,6 @@ public class ClientServiceImpl implements ClientService {
 
     @Autowired
     private WithdrawService withdrawService;
-
-    @Autowired
-    private AssetRepository assetRepository;
 
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
@@ -145,7 +142,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public List<PurchaseResponseDTO> getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
+    public List<PurchaseResponseDTO> redirectGetPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
         ClientModel client = this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
 
         return walletService.redirectGetPurchaseHistory(client.getWallet().getId());
@@ -154,7 +151,12 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto) {
         ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
-        AssetModel asset = assetService.validateAssetPurchase(assetId, dto.getAssetQuantity());
+        AssetModel asset = assetService.fetchAsset(assetId);
+
+        if (!asset.isActive()) {
+            throw new AssetIsInactiveException();
+        }
+
         PurchaseModel purchaseModel = walletService.redirectCreatePurchaseRequest(client.getWallet(), asset, dto.getAssetQuantity());
 
         return dtoMapperService.toPurchaseResponseDTO(purchaseModel);
@@ -170,8 +172,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
-        this.validateClientAccess(clientId, dto.getAccessCode());
-        ClientModel clientModel = getClient(clientId);
+        ClientModel clientModel = this.validateClientAccess(clientId, dto.getAccessCode());
 
         PurchaseModel purchaseModel = purchaseService.confirmationByClient(purchaseId);
 
@@ -182,8 +183,7 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public WalletHoldingResponseDTO getClientWalletHolding(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO) {
-        this.validateClientAccess(clientId, clientWalletRequestDTO.getAccessCode());
-        ClientModel clientModel = getClient(clientId);
+        ClientModel clientModel = this.validateClientAccess(clientId, clientWalletRequestDTO.getAccessCode());
 
         WalletModel walletModel = clientModel.getWallet();
 
@@ -200,17 +200,16 @@ public class ClientServiceImpl implements ClientService {
     public WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto) {
         ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
         WalletModel wallet = client.getWallet();
-        AssetModel asset = assetRepository.findById(assetId).orElseThrow(() -> new AssetNotFoundException("Asset not found with ID " +  assetId));
+        AssetModel asset = assetService.fetchAsset(assetId);
 
         return withdrawService.withdrawAsset(wallet, asset, dto.getQuantityToWithdraw());
     }
 
     @Override
-    public List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> getWithdrawHistory(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO) {
-        this.validateClientAccess(clientId, clientWalletRequestDTO.getAccessCode());
-        ClientModel clientModel = getClient(clientId);
+    public List<WithdrawHistoryResponseDTO> redirectGetWithdrawHistory(UUID clientId, ClientWithdrawHistoryRequestDTO dto) {
+        ClientModel clientModel = this.validateClientAccess(clientId, dto.getAccessCode());
         
-        return withdrawService.getWithdrawHistory(clientModel.getWallet().getId());
+        return withdrawService.getWithdrawHistory(clientModel.getWallet().getId(), dto);
     }
 
     private List<HoldingResponseDTO> buildHoldings(WalletModel walletModel) {

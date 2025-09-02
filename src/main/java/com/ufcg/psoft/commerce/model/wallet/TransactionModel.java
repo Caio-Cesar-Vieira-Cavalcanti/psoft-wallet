@@ -34,4 +34,7 @@ public abstract class TransactionModel {
 
     @Column(name = "date", nullable = false)
     private LocalDate date;
+
+    @PostLoad
+    public abstract void loadState();
 }

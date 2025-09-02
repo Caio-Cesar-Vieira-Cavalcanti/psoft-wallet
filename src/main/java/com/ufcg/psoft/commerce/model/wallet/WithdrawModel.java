@@ -41,6 +41,7 @@ public class WithdrawModel extends TransactionModel {
     @Transient
     private WithdrawState state;
 
+    @Override
     @PostLoad
     public void loadState() {
         this.state = STATE_FACTORIES

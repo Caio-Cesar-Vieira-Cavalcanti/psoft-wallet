@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.client.ClientWithdrawHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
@@ -90,11 +91,14 @@ public class WithdrawServiceImpl implements WithdrawService {
     }
 
     @Override
-    public List<WithdrawHistoryResponseDTO> getWithdrawHistory(UUID walletId) {
+    public List<WithdrawHistoryResponseDTO> getWithdrawHistory(UUID walletId, ClientWithdrawHistoryRequestDTO dto) {
         return withdrawRepository.findByWalletId(walletId)
                 .stream()
+                .filter(w -> dto.getAssetType() == null || w.getAsset().getAssetType().equals(dto.getAssetType()))
+                .filter(w -> dto.getWithdrawState() == null || w.getStateEnum().equals(dto.getWithdrawState()))
+                .filter(w -> dto.getDate() == null || w.getDate().equals(dto.getDate()))
                 .map(dtoMapperService::toWithdrawHistoryResponseDTO)
-                .sorted((w1, w2) -> w2.getDate().compareTo(w1.getDate())) // Ordenar por data decrescente
+                .sorted((w1, w2) -> w2.getDate().compareTo(w1.getDate()))
                 .toList();
     }
 

@@ -12,6 +12,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,7 +39,7 @@ public interface ClientService {
 
     PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto);
 
-    List<PurchaseResponseDTO> getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
+    List<PurchaseResponseDTO> redirectGetPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
 
     ClientModel validateClientAccess(UUID clientId, String accessCode);
 
@@ -48,5 +49,5 @@ public interface ClientService {
 
     WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto);
     
-    List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> getWithdrawHistory(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO);
+    List<WithdrawHistoryResponseDTO> redirectGetWithdrawHistory(UUID clientId, ClientWithdrawHistoryRequestDTO clientWalletRequestDTO);
 }

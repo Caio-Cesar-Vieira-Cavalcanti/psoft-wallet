@@ -6,6 +6,7 @@ import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import org.springframework.http.HttpStatus;
@@ -116,7 +117,7 @@ public class ClientController {
     public ResponseEntity<List<PurchaseResponseDTO>> getPurchaseHistory(@PathVariable("clientId") UUID clientId,
                                                                 @RequestBody @Valid ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
 
-        List<PurchaseResponseDTO> purchases = clientService.getPurchaseHistory(clientId, clientPurchaseHistoryRequestDTO);
+        List<PurchaseResponseDTO> purchases = clientService.redirectGetPurchaseHistory(clientId, clientPurchaseHistoryRequestDTO);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(purchases);
@@ -167,11 +168,11 @@ public class ClientController {
     }
 
     @GetMapping("/{clientId}/wallet/withdraw")
-    public ResponseEntity<List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO>> getWithdrawHistory(
+    public ResponseEntity<List<WithdrawHistoryResponseDTO>> getWithdrawHistory(
             @PathVariable UUID clientId,
-            @RequestBody @Valid ClientWalletRequestDTO dto
+            @RequestBody @Valid ClientWithdrawHistoryRequestDTO dto
     ) {
-        List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> withdrawHistory = clientService.getWithdrawHistory(clientId, dto);
+        List<com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO> withdrawHistory = clientService.redirectGetWithdrawHistory(clientId, dto);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(withdrawHistory);
