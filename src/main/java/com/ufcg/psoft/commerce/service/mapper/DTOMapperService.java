@@ -110,7 +110,7 @@ public class DTOMapperService {
                 .assetId(withdrawModel.getAsset().getId())
                 .quantityWithdrawn(withdrawModel.getQuantity())
                 .sellingPrice(withdrawModel.getSellingPrice())
-                .totalValue(withdrawModel.getQuantity() * withdrawModel.getSellingPrice())
+                .totalValue(withdrawModel.getQuantity() * withdrawModel.getSellingPrice())  // esse valor total é com a taxa inclusa? se sim, é bom passar o valor com a taxa como parametro, e evitar logica de calculo no DTOMapper
                 .tax(withdrawModel.getTax())
                 .date(withdrawModel.getDate())
                 .state(withdrawModel.getStateEnum())

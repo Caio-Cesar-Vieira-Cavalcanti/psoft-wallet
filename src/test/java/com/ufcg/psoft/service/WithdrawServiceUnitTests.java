@@ -3,6 +3,9 @@ package com.ufcg.psoft.service;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.exception.user.ClientHoldingIsInsufficientException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
+import com.ufcg.psoft.commerce.model.asset.types.Crypto;
+import com.ufcg.psoft.commerce.model.asset.types.Stock;
+import com.ufcg.psoft.commerce.model.asset.types.TreasuryBounds;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
@@ -51,26 +54,62 @@ class WithdrawServiceUnitTests {
         ReflectionTestUtils.setField(withdrawService, "adminService", adminService);
         ReflectionTestUtils.setField(withdrawService, "dtoMapperService", dtoMapperService);
 
-        asset = AssetModel.builder()
-                .id(UUID.randomUUID())
-                .name("Mock Asset")
-                .quotation(50.0)
-                .build();
+        asset = newStock();
 
+        seedWalletWith(asset, 10.0,  500.0, 1000.0);
+    }
+
+    private void seedWalletWith(AssetModel assetModel, double qty, double accPrice, double budget) {
         holding = HoldingModel.builder()
                 .id(UUID.randomUUID())
-                .asset(asset)
-                .quantity(10.0)
-                .accumulatedPrice(500.0)
+                .asset(assetModel)
+                .quantity(qty)
+                .accumulatedPrice(accPrice)
                 .build();
 
         wallet = WalletModel.builder()
                 .id(UUID.randomUUID())
-                .budget(1000.0)
+                .budget(budget)
                 .holdings(new HashMap<>())
                 .build();
 
-        wallet.getHoldings().put(asset.getId(), holding);
+        wallet.getHoldings().put(assetModel.getId(), holding);
+    }
+
+    private AssetModel newStock() {
+        return AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Stock Asset")
+                .assetType(new Stock())
+                .description("Mock Stock")
+                .isActive(true)
+                .quotation(100.0)
+                .quotaQuantity(1.0)
+                .build();
+    }
+
+    private AssetModel newCrypto() {
+        return AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Crypto Asset")
+                .assetType(new Crypto())
+                .description("Mock Crypto")
+                .isActive(true)
+                .quotation(200.0)
+                .quotaQuantity(1.0)
+                .build();
+    }
+
+    private AssetModel newTreasury() {
+        return AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Treasury Asset")
+                .assetType(new TreasuryBounds())
+                .description("Mock Treasury")
+                .isActive(true)
+                .quotation(50.0)
+                .quotaQuantity(1.0)
+                .build();
     }
 
     @Test
@@ -78,7 +117,7 @@ class WithdrawServiceUnitTests {
     void testWithdrawAsset_Success() {
         double quantityToWithdraw = 5.0;
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(any(), eq(0.0)))
+        when(dtoMapperService.toWithdrawResponseDTO(any(), eq(462.5)))
                 .thenReturn(mockResponse);
 
         WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, quantityToWithdraw);
@@ -99,11 +138,9 @@ class WithdrawServiceUnitTests {
     @Test
     @DisplayName("Should confirm withdraw and transition from REQUESTED to CONFIRMED")
     void testConfirmWithdraw_TransitionToConfirmed() {
-        // Mock admin service
         com.ufcg.psoft.commerce.model.user.AdminModel mockAdmin = mock(com.ufcg.psoft.commerce.model.user.AdminModel.class);
         when(adminService.getAdmin()).thenReturn(mockAdmin);
 
-        // Mock withdraw model
         com.ufcg.psoft.commerce.model.wallet.WithdrawModel mockWithdraw = mock(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
         when(mockWithdraw.getWallet()).thenReturn(wallet);
         when(mockWithdraw.getAsset()).thenReturn(asset);
@@ -111,18 +148,15 @@ class WithdrawServiceUnitTests {
         when(mockWithdraw.getStateEnum()).thenReturn(com.ufcg.psoft.commerce.enums.WithdrawStateEnum.REQUESTED);
         when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
 
-        // Mock response
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
         when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
 
-        // Execute
         WithdrawResponseDTO result = withdrawService.confirmWithdraw(UUID.randomUUID(),
                 com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
                         .adminEmail("admin@example.com")
                         .adminAccessCode("123456")
                         .build());
 
-        // Verify
         assertSame(mockResponse, result);
         verify(mockWithdraw, times(2)).modify(mockAdmin); // Called twice for REQUESTED->CONFIRMED->IN_ACCOUNT
         verify(withdrawRepository, times(2)).save(mockWithdraw);
@@ -131,11 +165,9 @@ class WithdrawServiceUnitTests {
     @Test
     @DisplayName("Should verify automatic transition from CONFIRMED to IN_ACCOUNT")
     void testConfirmWithdraw_AutomaticTransitionToInAccount() {
-        // Mock admin service
         com.ufcg.psoft.commerce.model.user.AdminModel mockAdmin = mock(com.ufcg.psoft.commerce.model.user.AdminModel.class);
         when(adminService.getAdmin()).thenReturn(mockAdmin);
 
-        // Mock withdraw model
         com.ufcg.psoft.commerce.model.wallet.WithdrawModel mockWithdraw = mock(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
         when(mockWithdraw.getWallet()).thenReturn(wallet);
         when(mockWithdraw.getAsset()).thenReturn(asset);
@@ -143,11 +175,9 @@ class WithdrawServiceUnitTests {
         when(mockWithdraw.getStateEnum()).thenReturn(com.ufcg.psoft.commerce.enums.WithdrawStateEnum.REQUESTED);
         when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
 
-        // Mock response
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
         when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
 
-        // Execute
         withdrawService.confirmWithdraw(UUID.randomUUID(),
                 com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
                         .adminEmail("admin@example.com")
@@ -161,11 +191,9 @@ class WithdrawServiceUnitTests {
     @Test
     @DisplayName("Should trigger client notification during confirmation")
     void testConfirmWithdraw_ClientNotificationTriggered() {
-        // Mock admin service
         com.ufcg.psoft.commerce.model.user.AdminModel mockAdmin = mock(com.ufcg.psoft.commerce.model.user.AdminModel.class);
         when(adminService.getAdmin()).thenReturn(mockAdmin);
 
-        // Mock withdraw model
         com.ufcg.psoft.commerce.model.wallet.WithdrawModel mockWithdraw = mock(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
         when(mockWithdraw.getWallet()).thenReturn(wallet);
         when(mockWithdraw.getAsset()).thenReturn(asset);
@@ -173,11 +201,9 @@ class WithdrawServiceUnitTests {
         when(mockWithdraw.getStateEnum()).thenReturn(com.ufcg.psoft.commerce.enums.WithdrawStateEnum.REQUESTED);
         when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
 
-        // Mock response
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
         when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
 
-        // Execute
         withdrawService.confirmWithdraw(UUID.randomUUID(),
                 com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
                         .adminEmail("admin@example.com")
@@ -188,6 +214,4 @@ class WithdrawServiceUnitTests {
         verify(mockWithdraw, times(2)).modify(mockAdmin);
         verify(withdrawRepository, times(2)).save(mockWithdraw);
     }
-
-
 }

@@ -52,7 +52,9 @@ public class WithdrawServiceImpl implements WithdrawService {
         HoldingModel holding = findHolding(wallet, asset);
         holding.validateQuantityToWithdraw(quantityToWithdraw);
 
-        double tax = 0.0; // Usar lógica para calcular
+        double tax = calculateWithdrawTax(holding, asset, quantityToWithdraw);
+
+        double withdrawValue = calculateWithdrawValue(holding, asset, quantityToWithdraw);
 
         WithdrawModel withdrawModel = WithdrawModel.builder()
                 .asset(asset)
@@ -66,7 +68,7 @@ public class WithdrawServiceImpl implements WithdrawService {
 
         withdrawRepository.save(withdrawModel);
 
-        return dtoMapperService.toWithdrawResponseDTO(withdrawModel, 0.0);
+        return dtoMapperService.toWithdrawResponseDTO(withdrawModel, withdrawValue);
     }
 
     @Override
@@ -115,11 +117,12 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     private double processWithdraw(WalletModel wallet, AssetModel asset, double quantityToWithdraw) {
         HoldingModel holding = findHolding(wallet, asset);
-        
+
+        double withdrawValue = calculateWithdrawValue(holding, asset, quantityToWithdraw);
+
         holding.decreaseQuantityAfterWithdraw(quantityToWithdraw);
         holding.decreaseAccumulatedPriceAfterWithdraw(quantityToWithdraw, asset.getQuotation());
 
-        double withdrawValue = quantityToWithdraw * asset.getQuotation();
         wallet.increaseBudgetAfterWithdraw(withdrawValue);
 
         if (holding.getQuantity() == EMPTY_HOLDING) {
@@ -132,5 +135,24 @@ public class WithdrawServiceImpl implements WithdrawService {
         walletRepository.save(wallet);
         
         return withdrawValue;
+    }
+
+    private double calculateWithdrawTax(HoldingModel holding, AssetModel asset, double quantityToWithdraw) {
+        double avgCost = holding.getAccumulatedPrice() / holding.getQuantity();
+        double costBasis = avgCost * quantityToWithdraw;
+
+        double gross = asset.getQuotation() * quantityToWithdraw;
+        double profit = gross - costBasis;
+
+        // If negative profit, tax will be zero.
+        double taxableProfit = profit > 0 ? profit : 0.0;
+
+        return asset.getAssetType().taxCalculate(taxableProfit);
+    }
+
+    private double calculateWithdrawValue(HoldingModel holding, AssetModel asset, double quantityToWithdraw) {
+        double gross = asset.getQuotation() * quantityToWithdraw;
+        double tax = calculateWithdrawTax(holding, asset, quantityToWithdraw);
+        return gross - tax;
     }
 }
