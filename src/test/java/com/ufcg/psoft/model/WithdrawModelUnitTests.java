@@ -66,6 +66,7 @@ class WithdrawModelUnitTests {
                 .date(LocalDate.now())
                 .sellingPrice(500.0)
                 .tax(50.0)
+                .withdrawValue(950.0)
                 .stateEnum(WithdrawStateEnum.REQUESTED)
                 .build();
     }
@@ -75,6 +76,7 @@ class WithdrawModelUnitTests {
     void testWithdrawModelCreation() {
         assertEquals(500.0, withdraw.getSellingPrice());
         assertEquals(50.0, withdraw.getTax());
+        assertEquals(950.0, withdraw.getWithdrawValue());
         assertEquals(WithdrawStateEnum.REQUESTED, withdraw.getStateEnum());
         assertEquals(asset, withdraw.getAsset());
         assertEquals(wallet, withdraw.getWallet());

@@ -70,6 +70,7 @@ class DTOMapperServiceTests {
                 .date(LocalDate.now())
                 .sellingPrice(100.0)
                 .tax(10.0)
+                .withdrawValue(950.0)
                 .stateEnum(WithdrawStateEnum.REQUESTED)
                 .build();
     }
@@ -79,7 +80,7 @@ class DTOMapperServiceTests {
     void testToWithdrawResponseDTO_WithWithdrawModel() {
         double valueReceived = 950.0;
 
-        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw, valueReceived);
+        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw);
 
         assertNotNull(result);
         assertEquals(withdrawId, result.getWithdrawId());
@@ -94,7 +95,9 @@ class DTOMapperServiceTests {
     @Test
     @DisplayName("Should map withdraw model to response DTO with zero value received")
     void testToWithdrawResponseDTO_WithZeroValueReceived() {
-        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw, 0.0);
+        withdraw.setWithdrawValue(0.0);
+
+        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw);
 
         assertNotNull(result);
         assertEquals(withdrawId, result.getWithdrawId());
@@ -107,7 +110,7 @@ class DTOMapperServiceTests {
     void testToWithdrawResponseDTO_WithDifferentState() {
         withdraw.setStateEnum(WithdrawStateEnum.CONFIRMED);
 
-        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw, 1000.0);
+        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw);
 
         assertNotNull(result);
         assertEquals(WithdrawStateEnum.CONFIRMED, result.getState());
@@ -118,7 +121,7 @@ class DTOMapperServiceTests {
     void testToWithdrawResponseDTO_WithInAccountState() {
         withdraw.setStateEnum(WithdrawStateEnum.IN_ACCOUNT);
 
-        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw, 1000.0);
+        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw);
 
         assertNotNull(result);
         assertEquals(WithdrawStateEnum.IN_ACCOUNT, result.getState());
@@ -128,7 +131,7 @@ class DTOMapperServiceTests {
     @DisplayName("Should handle null withdraw model gracefully")
     void testToWithdrawResponseDTO_WithNullWithdrawModel() {
         assertThrows(NullPointerException.class, () -> {
-            dtoMapperService.toWithdrawResponseDTO(null, 0.0);
+            dtoMapperService.toWithdrawResponseDTO(null);
         });
     }
 
@@ -137,7 +140,7 @@ class DTOMapperServiceTests {
     void testToWithdrawResponseDTO_WithUpdatedWalletBudget() {
         wallet.setBudget(2000.0);
 
-        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw, 1000.0);
+        WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw);
 
         assertNotNull(result);
         assertEquals(2000.0, result.getNewWalletBudget());

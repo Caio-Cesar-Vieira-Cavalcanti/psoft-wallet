@@ -90,14 +90,13 @@ public class DTOMapperService {
                 .build();
     }
 
-    public WithdrawResponseDTO toWithdrawResponseDTO(com.ufcg.psoft.commerce.model.wallet.WithdrawModel withdrawModel,
-                                                     double valueReceived) {
+    public WithdrawResponseDTO toWithdrawResponseDTO(com.ufcg.psoft.commerce.model.wallet.WithdrawModel withdrawModel) {
         return WithdrawResponseDTO.builder()
                 .withdrawId(withdrawModel.getId())
                 .walletId(withdrawModel.getWallet().getId())
                 .assetId(withdrawModel.getAsset().getId())
                 .quantityWithdrawn(withdrawModel.getQuantity())
-                .valueReceived(valueReceived)
+                .valueReceived(withdrawModel.getWithdrawValue())
                 .newWalletBudget(withdrawModel.getWallet().getBudget())
                 .state(withdrawModel.getStateEnum())
                 .build();
@@ -110,7 +109,7 @@ public class DTOMapperService {
                 .assetId(withdrawModel.getAsset().getId())
                 .quantityWithdrawn(withdrawModel.getQuantity())
                 .sellingPrice(withdrawModel.getSellingPrice())
-                .totalValue(withdrawModel.getQuantity() * withdrawModel.getSellingPrice())  // esse valor total é com a taxa inclusa? se sim, é bom passar o valor com a taxa como parametro, e evitar logica de calculo no DTOMapper
+                .totalValue(withdrawModel.getQuantity() * withdrawModel.getSellingPrice())  // esse valor total é com a taxa inclusa? no caso, seria o withdrawValue?
                 .tax(withdrawModel.getTax())
                 .date(withdrawModel.getDate())
                 .state(withdrawModel.getStateEnum())

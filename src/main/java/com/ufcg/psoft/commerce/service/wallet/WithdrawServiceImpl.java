@@ -54,7 +54,7 @@ public class WithdrawServiceImpl implements WithdrawService {
 
         double tax = calculateWithdrawTax(holding, asset, quantityToWithdraw);
 
-        double withdrawValue = calculateWithdrawValue(holding, asset, quantityToWithdraw);
+        double withdrawValue = calculateWithdrawValue(asset, quantityToWithdraw, tax);
 
         WithdrawModel withdrawModel = WithdrawModel.builder()
                 .asset(asset)
@@ -63,12 +63,13 @@ public class WithdrawServiceImpl implements WithdrawService {
                 .date(LocalDate.now())
                 .sellingPrice(asset.getQuotation())
                 .tax(tax)
+                .withdrawValue(withdrawValue)
                 .stateEnum(WithdrawStateEnum.REQUESTED)
                 .build();
 
         withdrawRepository.save(withdrawModel);
 
-        return dtoMapperService.toWithdrawResponseDTO(withdrawModel, withdrawValue);
+        return dtoMapperService.toWithdrawResponseDTO(withdrawModel);
     }
 
     @Override
@@ -87,9 +88,9 @@ public class WithdrawServiceImpl implements WithdrawService {
         withdraw.modify(admin);
         withdrawRepository.save(withdraw);
 
-        double withdrawValue = processWithdraw(withdraw.getWallet(), withdraw.getAsset(), withdraw.getQuantity());
+       processWithdraw(withdraw.getWallet(), withdraw.getAsset(), withdraw.getQuantity(), withdraw.getWithdrawValue());
 
-        return dtoMapperService.toWithdrawResponseDTO(withdraw, withdrawValue);
+        return dtoMapperService.toWithdrawResponseDTO(withdraw);
     }
 
     @Override
@@ -115,10 +116,8 @@ public class WithdrawServiceImpl implements WithdrawService {
                 ));
     }
 
-    private double processWithdraw(WalletModel wallet, AssetModel asset, double quantityToWithdraw) {
+    private void processWithdraw(WalletModel wallet, AssetModel asset, double quantityToWithdraw, double withdrawValue) {
         HoldingModel holding = findHolding(wallet, asset);
-
-        double withdrawValue = calculateWithdrawValue(holding, asset, quantityToWithdraw);
 
         holding.decreaseQuantityAfterWithdraw(quantityToWithdraw);
         holding.decreaseAccumulatedPriceAfterWithdraw(quantityToWithdraw, asset.getQuotation());
@@ -133,8 +132,6 @@ public class WithdrawServiceImpl implements WithdrawService {
         }
 
         walletRepository.save(wallet);
-        
-        return withdrawValue;
     }
 
     private double calculateWithdrawTax(HoldingModel holding, AssetModel asset, double quantityToWithdraw) {
@@ -150,9 +147,8 @@ public class WithdrawServiceImpl implements WithdrawService {
         return asset.getAssetType().taxCalculate(taxableProfit);
     }
 
-    private double calculateWithdrawValue(HoldingModel holding, AssetModel asset, double quantityToWithdraw) {
+    private double calculateWithdrawValue(AssetModel asset, double quantityToWithdraw, double tax) {
         double gross = asset.getQuotation() * quantityToWithdraw;
-        double tax = calculateWithdrawTax(holding, asset, quantityToWithdraw);
         return gross - tax;
     }
 }

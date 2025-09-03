@@ -105,6 +105,7 @@ class WithdrawControllerTests {
                 .date(LocalDate.now())
                 .sellingPrice(100.0)
                 .tax(10.0)
+                .withdrawValue(950.0)
                 .stateEnum(WithdrawStateEnum.REQUESTED)
                 .build();
         withdraw = withdrawRepository.save(withdraw);
@@ -128,8 +129,8 @@ class WithdrawControllerTests {
                 .andExpect(jsonPath("$.assetId").value(assetId.toString()))
                 .andExpect(jsonPath("$.quantityWithdrawn").value(10.0))
                 .andExpect(jsonPath("$.state").value("IN_ACCOUNT"))
-                .andExpect(jsonPath("$.valueReceived").exists())
-                .andExpect(jsonPath("$.newWalletBudget").exists());
+                .andExpect(jsonPath("$.valueReceived").value(950.0))
+                .andExpect(jsonPath("$.newWalletBudget").value(1950.0));
     }
 
     @Test
@@ -226,6 +227,7 @@ class WithdrawControllerTests {
                 .date(LocalDate.now())
                 .sellingPrice(100.0)
                 .tax(10.0)
+                .withdrawValue(950.0)
                 .stateEnum(WithdrawStateEnum.REQUESTED)
                 .build();
         insufficientWithdraw = withdrawRepository.save(insufficientWithdraw);

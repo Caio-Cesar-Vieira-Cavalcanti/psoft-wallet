@@ -34,6 +34,9 @@ public class WithdrawModel extends TransactionModel {
     @Column(name = "tax", nullable = false)
     private double tax;
 
+    @Column(name = "withdrawValue", nullable = false)
+    private double withdrawValue;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false)
     private WithdrawStateEnum stateEnum;

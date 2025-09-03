@@ -117,7 +117,7 @@ class WithdrawServiceUnitTests {
     void testWithdrawAsset_Success() {
         double quantityToWithdraw = 5.0;
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(any(), eq(462.5)))
+        when(dtoMapperService.toWithdrawResponseDTO(any()))
                 .thenReturn(mockResponse);
 
         WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, quantityToWithdraw);
@@ -149,7 +149,7 @@ class WithdrawServiceUnitTests {
         when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
 
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
+        when(dtoMapperService.toWithdrawResponseDTO(any())).thenReturn(mockResponse);
 
         WithdrawResponseDTO result = withdrawService.confirmWithdraw(UUID.randomUUID(),
                 com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
@@ -176,7 +176,7 @@ class WithdrawServiceUnitTests {
         when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
 
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
+        when(dtoMapperService.toWithdrawResponseDTO(any())).thenReturn(mockResponse);
 
         withdrawService.confirmWithdraw(UUID.randomUUID(),
                 com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
@@ -202,7 +202,7 @@ class WithdrawServiceUnitTests {
         when(withdrawRepository.findById(any())).thenReturn(java.util.Optional.of(mockWithdraw));
 
         WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
-        when(dtoMapperService.toWithdrawResponseDTO(any(), anyDouble())).thenReturn(mockResponse);
+        when(dtoMapperService.toWithdrawResponseDTO(any())).thenReturn(mockResponse);
 
         withdrawService.confirmWithdraw(UUID.randomUUID(),
                 com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO.builder()
