@@ -8,6 +8,7 @@ import com.ufcg.psoft.commerce.model.asset.types.Stock;
 import com.ufcg.psoft.commerce.model.asset.types.TreasuryBounds;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
+import com.ufcg.psoft.commerce.model.wallet.WithdrawModel;
 import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WithdrawRepository;
@@ -17,6 +18,7 @@ import com.ufcg.psoft.commerce.service.wallet.WithdrawServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
@@ -213,5 +215,149 @@ class WithdrawServiceUnitTests {
         // Verify that the withdraw was processed (which includes notification)
         verify(mockWithdraw, times(2)).modify(mockAdmin);
         verify(withdrawRepository, times(2)).save(mockWithdraw);
+    }
+
+    @Test
+    @DisplayName("Should withdraw Stock asset and apply 15% tax over profit")
+    void withdraw_stock_success() {
+        double qty = 5.0;
+
+        double gross = 100.0 * qty;
+        double avgCost = 500.0 / 10.0;
+        double costBasis = avgCost * qty;
+        double profit = gross - costBasis;
+        double taxable = Math.max(0.0, profit);
+        double expectedTax = 0.15 * taxable;
+        double expectedNet = gross - expectedTax;
+
+        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
+        when(dtoMapperService.toWithdrawResponseDTO(any())).thenReturn(mockResponse);
+
+        WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, qty);
+        assertSame(mockResponse, result);
+        verify(withdrawRepository).save(any());
+
+        ArgumentCaptor<WithdrawModel> cap =
+                ArgumentCaptor.forClass(WithdrawModel.class);
+        verify(dtoMapperService).toWithdrawResponseDTO(cap.capture());
+
+        double actualWithdrawValue = cap.getValue().getWithdrawValue();
+        assertEquals(expectedNet, actualWithdrawValue, 1e-6);
+    }
+
+    @Test
+    @DisplayName("Should withdraw Crypto asset (profit ≤ 5000) and apply 15% tax over profit")
+    void withdraw_crypto_low_success() {
+        asset = newCrypto();
+        asset.setQuotation(200.0);
+        seedWalletWith(asset, 50.0, 5000.0, 1000.0);
+
+        double qty = 10.0;
+
+        double gross = 200.0 * qty;
+        double avgCost = 5000.0 / 50.0;
+        double costBasis = avgCost * qty;
+        double profit = gross - costBasis;
+        double taxable = Math.max(0.0, profit);
+        double expectedTax = 0.15 * taxable;
+        double expectedNet = gross - expectedTax;
+
+        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
+        when(dtoMapperService.toWithdrawResponseDTO(any())).thenReturn(mockResponse);
+
+        WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, qty);
+        assertSame(mockResponse, result);
+        verify(withdrawRepository).save(any());
+
+        ArgumentCaptor<WithdrawModel> cap =
+                ArgumentCaptor.forClass(WithdrawModel.class);
+        verify(dtoMapperService).toWithdrawResponseDTO(cap.capture());
+
+        double actualWithdrawValue = cap.getValue().getWithdrawValue();
+        assertEquals(expectedNet, actualWithdrawValue, 1e-6);
+    }
+
+    @Test
+    @DisplayName("Should withdraw Crypto asset (profit > 5000) and apply 22.5% tax over profit")
+    void withdraw_crypto_high_success() {
+        asset = newCrypto();
+        asset.setQuotation(300.0);
+        seedWalletWith(asset, 100.0, 10000.0, 2000.0);
+
+        double qty = 40.0;
+
+        double gross = 300.0 * qty;
+        double avgCost = 10000.0 / 100.0;
+        double costBasis = avgCost * qty;
+        double profit = gross - costBasis;
+        double taxable = Math.max(0.0, profit);
+        double expectedTax = 0.225 * taxable;
+        double expectedNet = gross - expectedTax;
+
+        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
+        when(dtoMapperService.toWithdrawResponseDTO(any())).thenReturn(mockResponse);
+
+        WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, qty);
+        assertSame(mockResponse, result);
+        verify(withdrawRepository).save(any());
+
+        ArgumentCaptor<com.ufcg.psoft.commerce.model.wallet.WithdrawModel> cap =
+                ArgumentCaptor.forClass(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
+        verify(dtoMapperService).toWithdrawResponseDTO(cap.capture());
+
+        double actualWithdrawValue = cap.getValue().getWithdrawValue();
+        assertEquals(expectedNet, actualWithdrawValue, 1e-6);
+    }
+
+    @Test
+    @DisplayName("Should withdraw Treasury asset and apply 10% tax over profit")
+    void withdraw_treasury_success() {
+        asset = newTreasury();
+        asset.setQuotation(100.0);
+        seedWalletWith(asset, 10.0, 500.0, 1000.0);
+
+        double qty = 10.0;
+
+        double gross = 100.0 * qty;
+        double avgCost = 500.0 / 10.0;
+        double costBasis = avgCost * qty;
+        double profit = gross - costBasis;
+        double taxable = Math.max(0.0, profit);
+        double expectedTax = 0.10 * taxable;
+        double expectedNet = gross - expectedTax;
+
+        WithdrawResponseDTO mockResponse = mock(WithdrawResponseDTO.class);
+        when(dtoMapperService.toWithdrawResponseDTO(any())).thenReturn(mockResponse);
+
+        WithdrawResponseDTO result = withdrawService.withdrawAsset(wallet, asset, qty);
+        assertSame(mockResponse, result);
+        verify(withdrawRepository).save(any());
+
+        ArgumentCaptor<com.ufcg.psoft.commerce.model.wallet.WithdrawModel> cap =
+                ArgumentCaptor.forClass(com.ufcg.psoft.commerce.model.wallet.WithdrawModel.class);
+        verify(dtoMapperService).toWithdrawResponseDTO(cap.capture());
+
+        double actualWithdrawValue = cap.getValue().getWithdrawValue();
+        assertEquals(expectedNet, actualWithdrawValue, 1e-6);
+    }
+
+    @Test
+    @DisplayName("Should throw exception if holding does not exist for given asset")
+    void withdraw_holding_not_found_failure() {
+        AssetModel other = AssetModel.builder()
+                .id(UUID.randomUUID())
+                .name("Other")
+                .assetType(new Stock())
+                .description("Other")
+                .isActive(true)
+                .quotation(1.0)
+                .quotaQuantity(1.0)
+                .build();
+
+        assertThrows(ClientHoldingIsInsufficientException.class, () ->
+                withdrawService.withdrawAsset(wallet, other, 1.0)
+        );
+        verify(withdrawRepository, never()).save(any());
+        verify(dtoMapperService, never()).toWithdrawResponseDTO(any());
     }
 }
