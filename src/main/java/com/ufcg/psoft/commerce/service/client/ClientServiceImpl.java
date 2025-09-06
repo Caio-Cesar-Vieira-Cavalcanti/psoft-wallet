@@ -196,22 +196,6 @@ public class ClientServiceImpl implements ClientService {
         return dtoMapperService.toWalletHoldingResponseDTO(walletModel, holdings, totalCurrent, totalInvested, totalPerformance);
     }
 
-    @Override
-    public WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto) {
-        ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
-        WalletModel wallet = client.getWallet();
-        AssetModel asset = assetService.fetchAsset(assetId);
-
-        return withdrawService.withdrawAsset(wallet, asset, dto.getQuantityToWithdraw());
-    }
-
-    @Override
-    public List<WithdrawHistoryResponseDTO> redirectGetWithdrawHistory(UUID clientId, ClientWithdrawHistoryRequestDTO dto) {
-        ClientModel clientModel = this.validateClientAccess(clientId, dto.getAccessCode());
-        
-        return withdrawService.getWithdrawHistory(clientModel.getWallet().getId(), dto);
-    }
-
     private List<HoldingResponseDTO> buildHoldings(WalletModel walletModel) {
         if (walletModel.getHoldings() == null) {
             return List.of();

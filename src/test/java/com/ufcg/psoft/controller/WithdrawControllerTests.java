@@ -1,14 +1,22 @@
 package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ufcg.psoft.commerce.dto.client.ClientWithdrawAssetRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
+import com.ufcg.psoft.commerce.model.asset.types.Stock;
+import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
+import com.ufcg.psoft.commerce.model.user.EmailModel;
+import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.model.wallet.WithdrawModel;
 import com.ufcg.psoft.commerce.repository.asset.AssetRepository;
 import com.ufcg.psoft.commerce.repository.asset.AssetTypeRepository;
+import com.ufcg.psoft.commerce.repository.client.ClientRepository;
+import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WithdrawRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +64,12 @@ class WithdrawControllerTests {
 
     @Autowired
     private AssetTypeRepository assetTypeRepository;
+
+    @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
+    private HoldingRepository holdingRepository;
 
     private UUID withdrawId;
     private UUID walletId;
@@ -241,5 +255,148 @@ class WithdrawControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest()); // Should fail due to insufficient holdings
+    }
+
+    @Test
+    @DisplayName("Should withdraw asset via controller successfully")
+    public void testWithdrawAsset_Controller_Success() throws Exception {
+        AssetType stock = assetTypeRepository.findByName("STOCK")
+                .orElseGet(() -> assetTypeRepository.save(new Stock()));
+
+        assetTypeRepository.save(stock);
+
+        AssetModel asset = AssetModel.builder()
+                .name("Test Asset")
+                .description("Test Description")
+                .assetType(stockType)
+                .isActive(true)
+                .quotaQuantity(100)
+                .quotation(100.0)
+                .build();
+        asset = assetRepository.save(asset);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+        wallet = walletRepository.save(wallet);
+
+        ClientModel client = ClientModel.builder()
+                .wallet(wallet)
+                .accessCode(new AccessCodeModel("123456"))
+                .build();
+        client = clientRepository.save(client);
+
+        HoldingModel holding = HoldingModel.builder()
+                .asset(asset)
+                .wallet(wallet)
+                .quantity(10)
+                .accumulatedPrice(1000.0)
+                .build();
+        wallet.getHoldings().put(asset.getId(), holding);
+        holdingRepository.save(holding);
+        walletRepository.save(wallet);
+
+        ClientWithdrawAssetRequestDTO requestDTO = new ClientWithdrawAssetRequestDTO();
+        requestDTO.setAccessCode("123456");
+        requestDTO.setQuantityToWithdraw(5.0);
+
+        mockMvc.perform(post("/withdraws/" + client.getId() + "/wallet/withdraw/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.walletId").value(wallet.getId().toString()))
+                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
+                .andExpect(jsonPath("$.quantityWithdrawn").value(5.0));
+    }
+
+    @Test
+    @DisplayName("Should fail withdrawal if client not found")
+    void testWithdrawAsset_Controller_ClientNotFound() throws Exception {
+        UUID invalidClientId = UUID.randomUUID();
+
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5)
+                .build();
+
+        mockMvc.perform(post(WITHDRAW_BASE_URL + "/" + invalidClientId + "/wallet/withdraw/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should fail withdrawal if access code is invalid")
+    void testWithdrawAsset_Controller_InvalidAccessCode() throws Exception {
+        ClientModel client = clientRepository.save(
+                ClientModel.builder()
+                        .fullName("Test Client")
+                        .email(new EmailModel("test@test.com"))
+                        .accessCode(new AccessCodeModel("111111"))
+                        .wallet(new WalletModel())
+                        .build()
+        );
+
+        UUID clientId = client.getId();
+
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("000000")
+                .quantityToWithdraw(5)
+                .build();
+
+        mockMvc.perform(post(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should fail withdrawal if asset not found")
+    void testWithdrawAsset_Controller_AssetNotFound() throws Exception {
+        ClientModel client = clientRepository.save(
+                ClientModel.builder()
+                        .fullName("Test Client")
+                        .email(new EmailModel("test@test.com"))
+                        .accessCode(new AccessCodeModel("123456"))
+                        .wallet(new WalletModel())
+                        .build()
+        );
+
+        UUID clientId = client.getId();
+
+        UUID invalidAssetId = UUID.randomUUID();
+
+        ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
+                .accessCode("123456")
+                .quantityToWithdraw(5)
+                .build();
+
+        mockMvc.perform(post(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw/" + invalidAssetId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    private AssetModel createAndSaveAsset(AssetType type) {
+        if (type == null) {
+            throw new IllegalArgumentException("AssetType cannot be null when creating an AssetModel.");
+        }
+        AssetModel assetModel = AssetModel.builder()
+                .name("Default Asset Test")
+                .isActive(false)
+                .assetType(type)
+                .description("Default asset for tests")
+                .quotation(100.0)
+                .quotaQuantity(1000.0)
+                .build();
+
+        assetRepository.save(assetModel);
+
+        return assetModel;
     }
 }

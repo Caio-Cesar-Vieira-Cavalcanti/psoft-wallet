@@ -1,21 +1,28 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.client.ClientWithdrawAssetRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientWithdrawHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.exception.user.ClientHoldingIsInsufficientException;
+import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.exception.withdraw.WithdrawNotFoundException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.AdminModel;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.model.wallet.WithdrawModel;
+import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WithdrawRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
+import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.service.client.ClientService;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +37,7 @@ import java.util.UUID;
 public class WithdrawServiceImpl implements WithdrawService {
 
     private static final double EMPTY_HOLDING = 0.0;
-    private static final Logger LOGGER = LoggerFactory.getLogger(WithdrawServiceImpl.class);
+    private static final double MIN_TAXABLE_PROFIT = 0.0;
 
     @Autowired
     private HoldingRepository holdingRepository;
@@ -42,7 +49,13 @@ public class WithdrawServiceImpl implements WithdrawService {
     private WithdrawRepository withdrawRepository;
 
     @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
     private AdminService adminService;
+
+    @Autowired
+    private AssetService assetService;
 
     @Autowired
     private DTOMapperService dtoMapperService;
@@ -80,11 +93,11 @@ public class WithdrawServiceImpl implements WithdrawService {
         AdminModel admin = adminService.getAdmin();
         admin.validateAccess(withdrawConfirmationRequestDTO.getAdminEmail(), withdrawConfirmationRequestDTO.getAdminAccessCode());
 
-        // Primeira modificação: REQUESTED -> CONFIRMED
+        // First modification: REQUESTED -> CONFIRMED
         withdraw.modify(admin);
         withdrawRepository.save(withdraw);
 
-        // Segunda modificação: CONFIRMED -> IN_ACCOUNT (automática)
+        // Second modification: CONFIRMED -> IN_ACCOUNT (auto)
         withdraw.modify(admin);
         withdrawRepository.save(withdraw);
 
@@ -103,6 +116,22 @@ public class WithdrawServiceImpl implements WithdrawService {
                 .map(dtoMapperService::toWithdrawHistoryResponseDTO)
                 .sorted((w1, w2) -> w2.getDate().compareTo(w1.getDate()))
                 .toList();
+    }
+
+    @Override
+    public WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto) {
+        ClientModel client = validateWithdrawClientAccess(clientId, dto.getAccessCode());
+
+        WalletModel wallet = client.getWallet();
+        AssetModel asset = assetService.fetchAsset(assetId);
+
+        return this.withdrawAsset(wallet, asset, dto.getQuantityToWithdraw());
+    }
+
+    @Override
+    public List<WithdrawHistoryResponseDTO> redirectGetWithdrawHistory(UUID clientId, ClientWithdrawHistoryRequestDTO dto) {
+        ClientModel client = validateWithdrawClientAccess(clientId, dto.getAccessCode());
+        return this.getWithdrawHistory(client.getWallet().getId(), dto);
     }
 
     private HoldingModel findHolding(WalletModel wallet, AssetModel asset) {
@@ -142,7 +171,7 @@ public class WithdrawServiceImpl implements WithdrawService {
         double profit = gross - costBasis;
 
         // If negative profit, tax will be zero.
-        double taxableProfit = profit > 0 ? profit : 0.0;
+        double taxableProfit = Math.max(MIN_TAXABLE_PROFIT, profit);
 
         return asset.getAssetType().taxCalculate(taxableProfit);
     }
@@ -150,5 +179,14 @@ public class WithdrawServiceImpl implements WithdrawService {
     private double calculateWithdrawValue(AssetModel asset, double quantityToWithdraw, double tax) {
         double gross = asset.getQuotation() * quantityToWithdraw;
         return gross - tax;
+    }
+
+    private ClientModel validateWithdrawClientAccess(UUID clientId, String accessCode) {
+        ClientModel client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
+
+        if (!client.getAccessCode().getAccessCode().equals(accessCode)) throw new UnauthorizedUserAccessException();
+
+        return client;
     }
 }

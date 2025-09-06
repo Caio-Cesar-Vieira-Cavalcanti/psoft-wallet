@@ -154,27 +154,4 @@ public class ClientController {
                 .status(HttpStatus.OK)
                 .body(walletHolding);
     }
-
-    @PostMapping("/{clientId}/wallet/withdraw/{assetId}")
-    public ResponseEntity<WithdrawResponseDTO> withdrawAsset(
-            @PathVariable UUID clientId,
-            @PathVariable UUID assetId,
-            @RequestBody @Valid ClientWithdrawAssetRequestDTO dto
-    ) {
-        WithdrawResponseDTO response = clientService.withdrawClientAsset(clientId, assetId, dto);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(response);
-    }
-
-    @GetMapping("/{clientId}/wallet/withdraw")
-    public ResponseEntity<List<WithdrawHistoryResponseDTO>> getWithdrawHistory(
-            @PathVariable UUID clientId,
-            @RequestBody @Valid ClientWithdrawHistoryRequestDTO dto
-    ) {
-        List<WithdrawHistoryResponseDTO> withdrawHistory = clientService.redirectGetWithdrawHistory(clientId, dto);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(withdrawHistory);
-    }
 }
