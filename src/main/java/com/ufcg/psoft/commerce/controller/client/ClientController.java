@@ -6,8 +6,6 @@ import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.service.client.ClientService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
