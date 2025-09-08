@@ -808,6 +808,46 @@ class ClientControllerTests {
     }
 
     @Test
+    @DisplayName("Should return 409 Conflict when trying to delete asset referenced in purchases")
+    void testDeleteAsset_WhenReferencedInPurchases_ReturnsConflict() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Test User",
+                new EmailModel("testuser@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        clientRepository.save(client);
+        walletRepository.save(wallet);
+
+        AssetDeleteRequestDTO deleteRequestDTO = AssetDeleteRequestDTO.builder()
+                .adminEmail("admin@example.com")
+                .adminAccessCode("123456")
+                .build();
+
+        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
+        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), wallet);
+
+        purchaseRepository.saveAll(List.of(purchase1, purchase2));
+
+        mockMvc.perform(delete(ASSETS_ENDPOINT + "/" + asset.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(deleteRequestDTO)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Cannot delete asset: it is referenced in purchases"))
+                .andExpect(jsonPath("$.errors").isEmpty());
+    }
+
+    @Test
     @DisplayName("Should return 401 Unauthorized when access code is invalid")
     void testGetPurchaseHistory_WhenAccessCodeIsInvalid() throws Exception {
         ClientPurchaseHistoryRequestDTO requestDTO = new ClientPurchaseHistoryRequestDTO();
@@ -899,46 +939,6 @@ class ClientControllerTests {
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].quantity").value(5.0))
                 .andExpect(jsonPath("$[1].quantity").value(3.0));
-    }
-
-    @Test
-    @DisplayName("Should return 409 Conflict when trying to delete asset referenced in purchases")
-    void testDeleteAsset_WhenReferencedInPurchases_ReturnsConflict() throws Exception {
-        AssetModel asset = createAndSaveAsset(stockType);
-
-        WalletModel wallet = WalletModel.builder()
-                .budget(1000.0)
-                .holdings(new HashMap<>())
-                .build();
-
-        ClientModel client = createClient(
-                UUID.randomUUID(),
-                "Test User",
-                new EmailModel("testuser@email.com"),
-                new AccessCodeModel("123456"),
-                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
-                PlanTypeEnum.PREMIUM,
-                wallet
-        );
-        clientRepository.save(client);
-        walletRepository.save(wallet);
-
-        AssetDeleteRequestDTO deleteRequestDTO = AssetDeleteRequestDTO.builder()
-                .adminEmail("admin@example.com")
-                .adminAccessCode("123456")
-                .build();
-
-        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
-        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), wallet);
-
-        purchaseRepository.saveAll(List.of(purchase1, purchase2));
-
-        mockMvc.perform(delete(ASSETS_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(deleteRequestDTO)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Cannot delete asset: it is referenced in purchases"))
-                .andExpect(jsonPath("$.errors").isEmpty());
     }
 
     @Test

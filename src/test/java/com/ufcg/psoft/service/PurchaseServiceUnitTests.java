@@ -1,9 +1,12 @@
 package com.ufcg.psoft.service;
 
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseAssetRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
+import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetIsInactiveException;
 import com.ufcg.psoft.commerce.exception.asset.AssetQuantityAvailableIsInsufficientException;
@@ -11,16 +14,19 @@ import com.ufcg.psoft.commerce.exception.purchase.PurchaseNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
-import com.ufcg.psoft.commerce.model.user.AdminModel;
+import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.repository.wallet.PurchaseRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
+import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.service.client.ClientService;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
 import com.ufcg.psoft.commerce.service.wallet.PurchaseServiceImpl;
+import com.ufcg.psoft.commerce.service.wallet.WalletService;
 import com.ufcg.psoft.commerce.service.wallet.WalletServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -54,6 +61,15 @@ class PurchaseServiceUnitTests {
     private AdminService adminService;
 
     @Mock
+    private ClientService clientService;
+
+    @Mock
+    private AssetService assetService;
+
+    @Mock
+    private WalletService walletService;
+
+    @Mock
     private PurchaseService purchaseService;
 
     @Mock
@@ -63,11 +79,14 @@ class PurchaseServiceUnitTests {
     private PurchaseServiceImpl purchaseServiceImpl;
 
     @InjectMocks
-    private WalletServiceImpl walletService;
+    private WalletServiceImpl walletServiceImpl;
 
+    private UUID clientId;
     private UUID purchaseId;
     private UUID walletId;
     private UUID assetId;
+    
+    private ClientModel client;
     private PurchaseModel purchase;
     private WalletModel wallet;
     private AssetModel asset;
@@ -79,12 +98,24 @@ class PurchaseServiceUnitTests {
         purchaseId = UUID.randomUUID();
         walletId = UUID.randomUUID();
         assetId = UUID.randomUUID();
+        clientId = UUID.randomUUID();
 
         wallet = WalletModel.builder()
                 .id(walletId)
                 .budget(10000.0)
                 .holdings(new HashMap<>())
                 .build();
+
+        client = new ClientModel(
+                clientId,
+                "Rafael Barreto",
+                new EmailModel("rafael@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        when(clientService.validateClientAccess(clientId, "123456")).thenReturn(client);
 
         asset = AssetModel.builder()
                 .id(assetId)
@@ -94,6 +125,7 @@ class PurchaseServiceUnitTests {
                 .quotaQuantity(1000.0)
                 .isActive(true)
                 .build();
+        when(assetService.fetchAsset(assetId)).thenReturn(asset);
 
         admin = mock(AdminModel.class);
         when(admin.isAdmin()).thenReturn(true);
@@ -114,7 +146,6 @@ class PurchaseServiceUnitTests {
                 .adminEmail("admin@example.com")
                 .adminAccessCode("123456")
                 .build();
-
 
         dtoMapperService = mock(DTOMapperService.class);
     }
@@ -212,17 +243,16 @@ class PurchaseServiceUnitTests {
     void testShouldCreatePurchaseRequestSuccessfully() {
         when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
 
-        PurchaseModel result = purchaseServiceImpl.createPurchaseRequest(wallet, asset, 100.0, 10);
+        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 10);
+        PurchaseResponseDTO result = purchaseServiceImpl.createPurchaseRequest(clientId, assetId, dto);
 
         assertNotNull(result);
         assertEquals(purchaseId, result.getId());
-        assertEquals(wallet, result.getWallet());
-        assertEquals(asset, result.getAsset());
+        assertEquals(wallet.getId(), result.getWalletId());
+        assertEquals(asset.getId(), result.getAssetId());
         assertEquals(10, result.getQuantity());
-        assertEquals(100.0, result.getAcquisitionPrice());
         assertEquals(LocalDate.now(), result.getDate());
-        assertEquals(PurchaseStateEnum.REQUESTED, result.getStateEnum());
-
+        assertEquals(PurchaseStateEnum.REQUESTED, result.getPurchaseState());
         verify(purchaseRepository).save(any(PurchaseModel.class));
     }
 
@@ -231,11 +261,12 @@ class PurchaseServiceUnitTests {
     void testShouldGetPurchaseHistoryByWalletId() {
         when(purchaseRepository.findByWalletId(walletId)).thenReturn(java.util.List.of(purchase));
 
-        var result = purchaseServiceImpl.getPurchaseHistoryByWalletId(walletId);
+        ClientPurchaseHistoryRequestDTO dto = new ClientPurchaseHistoryRequestDTO("123456", null, null, null);
+
+        List<PurchaseResponseDTO> result = purchaseServiceImpl.getPurchaseHistory(clientId, dto);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(purchase, result.get(0));
 
         verify(purchaseRepository).findByWalletId(walletId);
     }
@@ -307,33 +338,37 @@ class PurchaseServiceUnitTests {
     @Test
     @DisplayName("Should create purchase request when wallet has enough budget")
     void testRedirectCreatePurchaseRequest_Success() {
-        PurchaseModel newPurchase = PurchaseModel.builder().id(UUID.randomUUID()).build();
-        when(purchaseService.createPurchaseRequest(wallet, asset, 200.0, 2)).thenReturn(newPurchase);
+        PurchaseResponseDTO newPurchase = new PurchaseResponseDTO(UUID.randomUUID(), walletId, assetId, 2.0, PurchaseStateEnum.REQUESTED, LocalDate.now());
 
-        PurchaseModel result = walletService.redirectCreatePurchaseRequest(wallet, asset, 2);
+        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 2);
 
+        when(purchaseService.createPurchaseRequest(clientId, assetId, dto)).thenReturn(newPurchase);
+
+        PurchaseResponseDTO result = purchaseService.createPurchaseRequest(clientId, assetId, dto);
+
+        assertInstanceOf(PurchaseResponseDTO.class, result);
         assertEquals(newPurchase, result);
-        verify(purchaseService).createPurchaseRequest(wallet, asset, 200.0, 2);
+        verify(purchaseService).createPurchaseRequest(clientId, assetId, dto);
     }
 
     @Test
     @DisplayName("Should throw exception when wallet budget is insufficient")
     void testRedirectCreatePurchaseRequest_InsufficientBudget() {
         wallet.setBudget(50.0);
+        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 999999);
 
         assertThrows(ClientBudgetIsInsufficientException.class,
-                () -> walletService.redirectCreatePurchaseRequest(wallet, asset, 2));
+                () -> purchaseServiceImpl.createPurchaseRequest(clientId, assetId, dto));
     }
 
     @Test
     @DisplayName("Should return empty list if no purchase history exists")
     void testRedirectGetPurchaseHistory_Empty() {
-        UUID tempWalletId = wallet.getId();
-        when(purchaseServiceImpl.getPurchaseHistoryByWalletId(tempWalletId)).thenReturn(Collections.emptyList());
+        ClientPurchaseHistoryRequestDTO dto = new ClientPurchaseHistoryRequestDTO("123456", null, null, null);
 
-        ClientPurchaseHistoryRequestDTO dto = new ClientPurchaseHistoryRequestDTO();
+        when(purchaseServiceImpl.getPurchaseHistory(clientId, dto)).thenReturn(Collections.emptyList());
 
-        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(tempWalletId, dto);
+        List<PurchaseResponseDTO> result = purchaseServiceImpl.getPurchaseHistory(clientId, dto);
 
         assertTrue(result.isEmpty());
     }
@@ -343,7 +378,7 @@ class PurchaseServiceUnitTests {
     void testFindHoldingByAsset_NullHoldings() {
         wallet.setHoldings(null);
 
-        HoldingModel result = walletService.findHoldingByAsset(wallet, asset);
+        HoldingModel result = walletServiceImpl.findHoldingByAsset(wallet, asset);
 
         assertNull(result);
     }
@@ -353,7 +388,7 @@ class PurchaseServiceUnitTests {
     void testFindHoldingByAsset_EmptyHoldings() {
         wallet.setHoldings(new HashMap<>());
 
-        HoldingModel result = walletService.findHoldingByAsset(wallet, asset);
+        HoldingModel result = walletServiceImpl.findHoldingByAsset(wallet, asset);
 
         assertNull(result);
     }
@@ -364,7 +399,7 @@ class PurchaseServiceUnitTests {
         HoldingModel holding = HoldingModel.builder().asset(asset).build();
         wallet.getHoldings().put(asset.getId(), holding);
 
-        HoldingModel result = walletService.findHoldingByAsset(wallet, asset);
+        HoldingModel result = walletServiceImpl.findHoldingByAsset(wallet, asset);
 
         assertEquals(holding, result);
     }
@@ -376,7 +411,7 @@ class PurchaseServiceUnitTests {
         HoldingModel holding = HoldingModel.builder().asset(otherAsset).build();
         wallet.getHoldings().put(otherAsset.getId(), holding);
 
-        HoldingModel result = walletService.findHoldingByAsset(wallet, asset);
+        HoldingModel result = walletServiceImpl.findHoldingByAsset(wallet, asset);
 
         assertNull(result);
     }
@@ -398,33 +433,39 @@ class PurchaseServiceUnitTests {
         PurchaseResponseAfterAddedInWalletDTO dto =
                 new PurchaseResponseAfterAddedInWalletDTO(newPurchase, holding);
 
-        when(purchaseService.addedInWallet(newPurchase, holding)).thenReturn(dto);
+        when(walletServiceImpl.addedInWallet(newPurchase, holding)).thenReturn(dto);
 
-        PurchaseResponseDTO result = walletService.addPurchase(newPurchase);
+        PurchaseResponseDTO result = walletServiceImpl.addPurchase(newPurchase);
 
         assertSame(dto.getPurchaseState(), result.getPurchaseState());
         assertSame(dto.getQuantity(), result.getQuantity());
         assertSame(dto.getDate(), result.getDate());
         assertSame(dto.getWalletId(), result.getWalletId());
         assertSame(dto.getAssetId(), result.getAssetId());
-        verify(purchaseService).addedInWallet(newPurchase, holding);
+        verify(walletServiceImpl).addedInWallet(newPurchase, holding);
         verify(adminService).getAdmin();
     }
 
     @Test
     @DisplayName("Should confirm purchase by client successfully")
-    void testConfirmationByClient() {
+    void testConfirmPurchase() {
         when(adminService.getAdmin()).thenReturn(admin);
         when(purchaseRepository.findById(purchaseId)).thenReturn(Optional.of(purchase));
         when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
 
+        HoldingModel holding = new HoldingModel(UUID.randomUUID(), asset, wallet, 2, 200);
+
+        when(walletService.findHoldingByAsset(wallet, asset)).thenReturn(holding);
+
         purchase.modify(adminService.getAdmin());
 
-        PurchaseModel result = purchaseServiceImpl.confirmationByClient(purchaseId);
+        PurchaseConfirmationByClientDTO dto = new PurchaseConfirmationByClientDTO("123456");
+
+        PurchaseResponseDTO result = purchaseServiceImpl.confirmPurchase(purchaseId, clientId, dto);
 
         assertNotNull(result);
-        assertEquals(purchase, result);
-        assertEquals(PurchaseStateEnum.PURCHASED, result.getStateEnum());
+        assertInstanceOf(PurchaseResponseDTO.class, result);
+        assertEquals(PurchaseStateEnum.PURCHASED, result.getPurchaseState());
 
         verify(purchaseRepository).findById(purchaseId);
         verify(purchaseRepository).save(purchase);
@@ -432,11 +473,13 @@ class PurchaseServiceUnitTests {
 
     @Test
     @DisplayName("Should throw PurchaseNotFoundException when confirming by client with invalid ID")
-    void testConfirmationByClient_NotFound() {
+    void testConfirmPurchase_NotFound() {
         when(purchaseRepository.findById(purchaseId)).thenReturn(Optional.empty());
 
+        PurchaseConfirmationByClientDTO dto = new PurchaseConfirmationByClientDTO("654321");
+
         assertThrows(PurchaseNotFoundException.class, () -> {
-            purchaseServiceImpl.confirmationByClient(purchaseId);
+            purchaseServiceImpl.confirmPurchase(purchaseId, clientId, dto);
         });
 
         verify(purchaseRepository).findById(purchaseId);
@@ -454,7 +497,7 @@ class PurchaseServiceUnitTests {
 
         purchase.modify(adminService.getAdmin());
 
-        PurchaseResponseAfterAddedInWalletDTO result = purchaseServiceImpl.addedInWallet(purchase, holdingModel);
+        PurchaseResponseAfterAddedInWalletDTO result = walletServiceImpl.addedInWallet(purchase, holdingModel);
 
         assertNotNull(result);
         verify(holdingModel).increaseQuantityAfterPurchase(purchase.getQuantity());

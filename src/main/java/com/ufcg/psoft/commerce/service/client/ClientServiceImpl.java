@@ -5,21 +5,15 @@ import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
-import com.ufcg.psoft.commerce.exception.asset.AssetIsInactiveException;
-import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
-import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
-import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
-import com.ufcg.psoft.commerce.service.wallet.WalletService;
-import com.ufcg.psoft.commerce.service.wallet.WithdrawService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,19 +32,10 @@ public class ClientServiceImpl implements ClientService {
     AssetService assetService;
 
     @Autowired
-    WalletService walletService;
-
-    @Autowired
-    PurchaseService purchaseService;
-
-    @Autowired
     ModelMapper modelMapper;
 
     @Autowired
     DTOMapperService dtoMapperService;
-
-    @Autowired
-    private WithdrawService withdrawService;
 
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
@@ -142,43 +127,11 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public List<PurchaseResponseDTO> redirectGetPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
-        ClientModel client = this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
-
-        return walletService.redirectGetPurchaseHistory(client.getWallet().getId(), clientPurchaseHistoryRequestDTO);
-    }
-
-    @Override
-    public PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto) {
-        ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
-        AssetModel asset = assetService.fetchAsset(assetId);
-
-        if (!asset.isActive()) {
-            throw new AssetIsInactiveException();
-        }
-
-        PurchaseModel purchaseModel = walletService.redirectCreatePurchaseRequest(client.getWallet(), asset, dto.getAssetQuantity());
-
-        return dtoMapperService.toPurchaseResponseDTO(purchaseModel);
-    }
-
-    @Override
     public ClientModel validateClientAccess(UUID clientId, String accessCode) {
         ClientModel client = this.getClient(clientId);
         client.validateAccess(accessCode);
 
         return client;
-    }
-
-    @Override
-    public PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
-        ClientModel clientModel = this.validateClientAccess(clientId, dto.getAccessCode());
-
-        PurchaseModel purchaseModel = purchaseService.confirmationByClient(purchaseId);
-
-        clientModel.getWallet().decreaseBudgetAfterPurchase(purchaseModel.getAcquisitionPrice() * purchaseModel.getQuantity());
-
-        return walletService.addPurchase(purchaseModel);
     }
 
     @Override

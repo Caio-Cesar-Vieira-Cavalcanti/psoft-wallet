@@ -36,26 +36,22 @@ import java.util.UUID;
 @Service
 public class WithdrawServiceImpl implements WithdrawService {
 
-    private static final double EMPTY_HOLDING = 0.0;
     private static final double MIN_TAXABLE_PROFIT = 0.0;
 
     @Autowired
-    private HoldingRepository holdingRepository;
-
-    @Autowired
-    private WalletRepository walletRepository;
-
-    @Autowired
-    private WithdrawRepository withdrawRepository;
-
-    @Autowired
-    private ClientRepository clientRepository;
+    private ClientService clientService;
 
     @Autowired
     private AdminService adminService;
 
     @Autowired
     private AssetService assetService;
+
+    @Autowired
+    private WalletService walletService;
+
+    @Autowired
+    private WithdrawRepository withdrawRepository;
 
     @Autowired
     private DTOMapperService dtoMapperService;
@@ -101,7 +97,8 @@ public class WithdrawServiceImpl implements WithdrawService {
         withdraw.modify(admin);
         withdrawRepository.save(withdraw);
 
-       processWithdraw(withdraw.getWallet(), withdraw.getAsset(), withdraw.getQuantity(), withdraw.getWithdrawValue());
+        HoldingModel holding = findHolding(withdraw.getWallet(), withdraw.getAsset());
+        walletService.processWithdrawInWallet(holding, withdraw.getWallet(), withdraw.getAsset(), withdraw.getQuantity(), withdraw.getWithdrawValue());
 
         return dtoMapperService.toWithdrawResponseDTO(withdraw);
     }
@@ -120,7 +117,7 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     public WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto) {
-        ClientModel client = validateWithdrawClientAccess(clientId, dto.getAccessCode());
+        ClientModel client = clientService.validateClientAccess(clientId, dto.getAccessCode());
 
         WalletModel wallet = client.getWallet();
         AssetModel asset = assetService.fetchAsset(assetId);
@@ -130,7 +127,8 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     public List<WithdrawHistoryResponseDTO> redirectGetWithdrawHistory(UUID clientId, ClientWithdrawHistoryRequestDTO dto) {
-        ClientModel client = validateWithdrawClientAccess(clientId, dto.getAccessCode());
+        ClientModel client = clientService.validateClientAccess(clientId, dto.getAccessCode());
+
         return this.getWithdrawHistory(client.getWallet().getId(), dto);
     }
 
@@ -143,24 +141,6 @@ public class WithdrawServiceImpl implements WithdrawService {
                 .orElseThrow(() -> new ClientHoldingIsInsufficientException(
                         "Client does not own asset " + asset.getName()
                 ));
-    }
-
-    private void processWithdraw(WalletModel wallet, AssetModel asset, double quantityToWithdraw, double withdrawValue) {
-        HoldingModel holding = findHolding(wallet, asset);
-
-        holding.decreaseQuantityAfterWithdraw(quantityToWithdraw);
-        holding.decreaseAccumulatedPriceAfterWithdraw(quantityToWithdraw, asset.getQuotation());
-
-        wallet.increaseBudgetAfterWithdraw(withdrawValue);
-
-        if (holding.getQuantity() == EMPTY_HOLDING) {
-            wallet.getHoldings().remove(holding.getId());
-            holdingRepository.delete(holding);
-        } else {
-            holdingRepository.save(holding);
-        }
-
-        walletRepository.save(wallet);
     }
 
     private double calculateWithdrawTax(HoldingModel holding, AssetModel asset, double quantityToWithdraw) {
@@ -179,14 +159,5 @@ public class WithdrawServiceImpl implements WithdrawService {
     private double calculateWithdrawValue(AssetModel asset, double quantityToWithdraw, double tax) {
         double gross = asset.getQuotation() * quantityToWithdraw;
         return gross - tax;
-    }
-
-    private ClientModel validateWithdrawClientAccess(UUID clientId, String accessCode) {
-        ClientModel client = clientRepository.findById(clientId)
-                .orElseThrow(() -> new ClientIdNotFoundException(clientId));
-
-        if (!client.getAccessCode().getAccessCode().equals(accessCode)) throw new UnauthorizedUserAccessException();
-
-        return client;
     }
 }
