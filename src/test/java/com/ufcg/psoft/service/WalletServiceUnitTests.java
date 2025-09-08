@@ -1,6 +1,5 @@
 package com.ufcg.psoft.service;
 
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -35,10 +34,6 @@ class WalletServiceUnitTests {
     private WalletModel wallet;
     private AssetModel asset;
     private PurchaseModel purchase;
-    private PurchaseResponseDTO purchaseResponse;
-    private PurchaseResponseAfterAddedInWalletDTO walletPurchaseResponse;
-
-    private UUID walletId;
 
     @BeforeEach
     void setup() {
@@ -52,10 +47,8 @@ class WalletServiceUnitTests {
         ReflectionTestUtils.setField(walletService, "purchaseRepository", purchaseRepository);
         ReflectionTestUtils.setField(walletService, "holdingRepository", holdingRepository);
 
-        walletId = UUID.randomUUID();
-
         wallet = WalletModel.builder()
-                .id(walletId)
+                .id(UUID.randomUUID())
                 .budget(1000.0)
                 .holdings(new HashMap<>())
                 .build();
@@ -66,29 +59,15 @@ class WalletServiceUnitTests {
                 .quotation(100.0)
                 .build();
 
-        purchase = mock(PurchaseModel.class);
-        when(purchase.getWallet()).thenReturn(wallet);
-        when(purchase.getAsset()).thenReturn(asset);
-        when(purchase.getQuantity()).thenReturn(5.0);
-        when(purchase.getStateEnum()).thenReturn(PurchaseStateEnum.REQUESTED);
-        when(purchase.getDate()).thenReturn(LocalDate.now());
-        when(purchase.getId()).thenReturn(UUID.randomUUID());
-
-        purchaseResponse = PurchaseResponseDTO.builder()
-                .walletId(wallet.getId())
-                .assetId(asset.getId())
+        purchase = PurchaseModel.builder()
+                .id(UUID.randomUUID())
+                .wallet(wallet)
+                .asset(asset)
                 .quantity(5.0)
-                .purchaseState(PurchaseStateEnum.REQUESTED)
+                .acquisitionPrice(100.0)
+                .stateEnum(PurchaseStateEnum.PURCHASED)
                 .date(LocalDate.now())
                 .build();
-
-        HoldingModel holding = HoldingModel.builder()
-                .id(UUID.randomUUID())
-                .asset(asset)
-                .quantity(purchase.getQuantity())
-                .build();
-
-        walletPurchaseResponse = new PurchaseResponseAfterAddedInWalletDTO(purchase, holding);
     }
 
     @Test
@@ -126,36 +105,63 @@ class WalletServiceUnitTests {
     @Test
     @DisplayName("Should add purchase when holding does not exist")
     void testAddPurchase_NewHolding() {
-        when(walletService.addedInWallet(purchase, null)).thenReturn(walletPurchaseResponse);
+        HoldingModel newHolding = HoldingModel.builder()
+                .id(UUID.randomUUID())
+                .asset(asset)
+                .wallet(wallet)
+                .quantity(purchase.getQuantity())
+                .accumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice())
+                .build();
+
+        when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
+        when(holdingRepository.save(any(HoldingModel.class))).thenReturn(newHolding);
+        when(walletRepository.save(any(WalletModel.class))).thenReturn(wallet);
 
         PurchaseResponseDTO result = walletService.addPurchase(purchase);
 
-        assertEquals(purchaseResponse.getQuantity(), result.getQuantity());
-        assertEquals(purchaseResponse.getPurchaseState(), result.getPurchaseState());
-        assertEquals(purchaseResponse.getDate(), result.getDate());
-        assertEquals(purchaseResponse.getWalletId(), result.getWalletId());
-        assertEquals(purchaseResponse.getAssetId(), result.getAssetId());
-        verify(walletService).addedInWallet(purchase, null);
+        assertNotNull(result);
+        assertEquals(purchase.getQuantity(), result.getQuantity());
+        assertEquals(purchase.getStateEnum(), result.getPurchaseState());
+        assertEquals(purchase.getDate(), result.getDate());
+        assertEquals(wallet.getId(), result.getWalletId());
+        assertEquals(asset.getId(), result.getAssetId());
+
+        verify(purchaseRepository).save(any(PurchaseModel.class));
+        verify(holdingRepository).save(any(HoldingModel.class));
+        verify(walletRepository).save(any(WalletModel.class));
     }
 
     @Test
     @DisplayName("Should add purchase when holding exists")
     void testAddPurchase_ExistingHolding() {
-        HoldingModel holding = mock(HoldingModel.class);
-        when(holding.getAsset()).thenReturn(asset);
-        wallet.getHoldings().put(asset.getId(), holding);
+        HoldingModel existingHolding = HoldingModel.builder()
+                .id(UUID.randomUUID())
+                .asset(asset)
+                .wallet(wallet)
+                .quantity(5.0)
+                .accumulatedPrice(500.0)
+                .build();
 
-        when(walletService.addedInWallet(purchase, holding)).thenReturn(walletPurchaseResponse);
+        wallet.getHoldings().put(asset.getId(), existingHolding);
+
+        when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
+        when(walletRepository.save(any(WalletModel.class))).thenReturn(wallet);
 
         PurchaseResponseDTO result = walletService.addPurchase(purchase);
 
-        assertEquals(purchaseResponse.getQuantity(), result.getQuantity());
-        assertEquals(purchaseResponse.getPurchaseState(), result.getPurchaseState());
-        assertEquals(purchaseResponse.getDate(), result.getDate());
-        assertEquals(purchaseResponse.getWalletId(), result.getWalletId());
-        assertEquals(purchaseResponse.getAssetId(), result.getAssetId());
+        assertNotNull(result);
+        assertEquals(purchase.getQuantity(), result.getQuantity());
+        assertEquals(purchase.getStateEnum(), result.getPurchaseState());
+        assertEquals(purchase.getDate(), result.getDate());
+        assertEquals(wallet.getId(), result.getWalletId());
+        assertEquals(asset.getId(), result.getAssetId());
 
-        verify(walletService).addedInWallet(purchase, holding);
+        assertEquals(10.0, existingHolding.getQuantity());
+        assertEquals(1000.0, existingHolding.getAccumulatedPrice());
+
+        verify(purchaseRepository).save(any(PurchaseModel.class));
+        verify(walletRepository).save(any(WalletModel.class));
+        verify(holdingRepository, never()).save(any(HoldingModel.class));
     }
 
     @Test

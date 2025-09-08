@@ -488,7 +488,7 @@ class WithdrawControllerTests {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
     }
-    /*
+
     @Test
     @DisplayName("Should return withdraw history with three filters")
     void testGetWithdrawHistory_WithThreeFilters() throws Exception {
@@ -496,7 +496,7 @@ class WithdrawControllerTests {
 
         ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
                 .accessCode("123456")
-                .assetType(new Stock())
+                //.assetType(stockType)
                 .withdrawState(WithdrawStateEnum.REQUESTED)
                 .date(LocalDate.now())
                 .build();
@@ -505,7 +505,7 @@ class WithdrawControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
-    } */
+    }
 
     private void createTestWithdraws() {
         WalletModel wallet = walletRepository.findById(walletId).orElseThrow();

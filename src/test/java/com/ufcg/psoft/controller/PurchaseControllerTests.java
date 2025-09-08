@@ -591,6 +591,192 @@ class PurchaseControllerTests {
 
     @Test
     @Transactional
+    @DisplayName("Should return purchases filtered by asset type")
+    void testGetPurchaseHistory_WithAssetTypeFilter() throws Exception {
+        AssetModel stockAsset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Filter Test Client",
+                new EmailModel("filter@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        client = clientRepository.save(client);
+
+        PurchaseModel stockPurchase = createPurchase(UUID.randomUUID(), stockAsset, 5.0, LocalDate.now(), client.getWallet());
+        PurchaseModel fundPurchase = createPurchase(UUID.randomUUID(), stockAsset, 3.0, LocalDate.now(), client.getWallet());
+
+        purchaseRepository.saveAll(List.of(stockPurchase, fundPurchase));
+
+        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .purchaseState(PurchaseStateEnum.PURCHASED)
+                .build();
+
+        mockMvc.perform(get(PURCHASE_BASE_URL + "/" + client.getId() + WALLET + PURCHASES_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("Should return purchases filtered by asset type and purchase state")
+    void testGetPurchaseHistory_WithTwoFilters() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Two Filters Client",
+                new EmailModel("twofilters@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        client = clientRepository.save(client);
+
+        PurchaseModel requestedPurchase = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now(), client.getWallet());
+        requestedPurchase.setStateEnum(PurchaseStateEnum.REQUESTED);
+
+        PurchaseModel confirmedPurchase = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now(), client.getWallet());
+        confirmedPurchase.setStateEnum(PurchaseStateEnum.PURCHASED);
+
+        purchaseRepository.saveAll(List.of(requestedPurchase, confirmedPurchase));
+
+        // Two filters: assetType + purchaseState
+        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .date(LocalDate.now())
+                .purchaseState(PurchaseStateEnum.REQUESTED)
+                .build();
+
+        mockMvc.perform(get(PURCHASE_BASE_URL + "/" + client.getId() + WALLET + PURCHASES_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].quantity").value(5.0))
+                .andExpect(jsonPath("$[0].state").value("REQUESTED"));
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("Should return purchases filtered by asset type, purchase state and date")
+    void testGetPurchaseHistory_WithThreeFilters() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "Three Filters Client",
+                new EmailModel("threefilters@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        client = clientRepository.save(client);
+
+        LocalDate targetDate = LocalDate.of(2023, 12, 25);
+        LocalDate otherDate = LocalDate.of(2023, 12, 24);
+
+        PurchaseModel matchingPurchase = createPurchase(UUID.randomUUID(), asset, 5.0, targetDate, client.getWallet());
+        matchingPurchase.setStateEnum(PurchaseStateEnum.REQUESTED);
+
+        PurchaseModel nonMatchingPurchase1 = createPurchase(UUID.randomUUID(), asset, 3.0, targetDate, client.getWallet());
+        nonMatchingPurchase1.setStateEnum(PurchaseStateEnum.PURCHASED);
+
+        PurchaseModel nonMatchingPurchase2 = createPurchase(UUID.randomUUID(), asset, 2.0, otherDate, client.getWallet());
+        nonMatchingPurchase2.setStateEnum(PurchaseStateEnum.REQUESTED);
+
+        purchaseRepository.saveAll(List.of(matchingPurchase, nonMatchingPurchase1, nonMatchingPurchase2));
+
+        // Three filters: assetType + purchaseState + date
+        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
+                .accessCode("123456")
+                //.assetType(stockType)
+                .purchaseState(PurchaseStateEnum.REQUESTED)
+                .date(targetDate)
+                .build();
+
+        mockMvc.perform(get(PURCHASE_BASE_URL + "/" + client.getId() + WALLET + PURCHASES_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].quantity").value(5.0))
+                .andExpect(jsonPath("$[0].state").value("REQUESTED"))
+                .andExpect(jsonPath("$[0].date").value(targetDate.toString()));
+    }
+
+    @Test
+    @Transactional
+    @DisplayName("Should return empty list when no purchases match all three filters")
+    void testGetPurchaseHistory_WithThreeFilters_NoMatches() throws Exception {
+        AssetModel asset = createAndSaveAsset(stockType);
+
+        WalletModel wallet = WalletModel.builder()
+                .budget(1000.0)
+                .holdings(new HashMap<>())
+                .build();
+
+        ClientModel client = createClient(
+                UUID.randomUUID(),
+                "No Match Client",
+                new EmailModel("nomatch@email.com"),
+                new AccessCodeModel("123456"),
+                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
+                PlanTypeEnum.PREMIUM,
+                wallet
+        );
+        client = clientRepository.save(client);
+
+        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now(), client.getWallet());
+        purchase1.setStateEnum(PurchaseStateEnum.AVAILABLE);
+
+        purchaseRepository.save(purchase1);
+
+        // Three filters que não combinam com nenhuma compra
+        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
+                .accessCode("123456")
+                //.assetType(stockType)
+                .purchaseState(PurchaseStateEnum.REQUESTED)
+                .date(LocalDate.of(2023, 1, 1))
+                .build();
+
+        mockMvc.perform(get(PURCHASE_BASE_URL + "/" + client.getId() + WALLET + PURCHASES_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @Transactional
     void confirmationByClient_createsNewHolding_ShouldReturn200() throws Exception {
         AssetModel asset = createAndSaveAsset(stockType);
 

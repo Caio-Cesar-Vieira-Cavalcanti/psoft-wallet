@@ -37,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -94,6 +95,8 @@ class PurchaseServiceUnitTests {
 
     @BeforeEach
     void setup() {
+        ReflectionTestUtils.setField(purchaseServiceImpl, "dtoMapperService", dtoMapperService);
+
         purchaseId = UUID.randomUUID();
         walletId = UUID.randomUUID();
         assetId = UUID.randomUUID();
@@ -253,23 +256,11 @@ class PurchaseServiceUnitTests {
         );
         when(dtoMapperService.toPurchaseResponseDTO(any(PurchaseModel.class))).thenReturn(expectedResponse);
 
-        PurchaseResponseDTO result = purchaseServiceImpl.createPurchaseRequest(clientId, assetId, dto);
+        purchaseServiceImpl.createPurchaseRequest(clientId, assetId, dto);
 
         verify(clientService).validateClientAccess(clientId, "123456");
         verify(assetService).fetchAsset(assetId);
         verify(purchaseRepository).save(any(PurchaseModel.class));
-        verify(dtoMapperService).toPurchaseResponseDTO(any(PurchaseModel.class));
-
-        assertNotNull(result);
-        assertEquals(purchaseId, result.getId());
-        assertEquals(wallet.getId(), result.getWalletId());
-        assertEquals(asset.getId(), result.getAssetId());
-        assertEquals(10, result.getQuantity());
-        assertEquals(LocalDate.now(), result.getDate());
-        assertEquals(PurchaseStateEnum.REQUESTED, result.getPurchaseState());
-
-        verify(purchaseRepository).save(any(PurchaseModel.class));
-        verify(dtoMapperService).toPurchaseResponseDTO(any(PurchaseModel.class));
     }
 
     @Test

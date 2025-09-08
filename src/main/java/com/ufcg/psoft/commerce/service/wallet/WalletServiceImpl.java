@@ -44,7 +44,7 @@ public class WalletServiceImpl implements WalletService {
     public PurchaseResponseDTO addPurchase(PurchaseModel purchase) {
         HoldingModel holdingModel = this.findHoldingByAsset(purchase.getWallet(), purchase.getAsset());
         PurchaseResponseAfterAddedInWalletDTO dto = this.addedInWallet(purchase, holdingModel);
-        purchase.getWallet().getHoldings().put(holdingModel.getId(), holdingModel);
+        purchase.getWallet().getHoldings().put(dto.getHolding().getId(), dto.getHolding());
         this.walletRepository.save(purchase.getWallet());
         return new PurchaseResponseDTO(dto);
     }
