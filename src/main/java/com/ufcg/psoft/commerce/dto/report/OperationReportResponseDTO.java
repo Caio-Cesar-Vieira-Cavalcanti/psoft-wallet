@@ -18,39 +18,39 @@ import java.util.UUID;
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class OperationReportResponseDTO {
-    @JsonProperty("operation_id")
+    @JsonProperty("operationId")
     private UUID operationId;
 
-    @JsonProperty("operation_type")
+    @JsonProperty("operationType")
     private OperationTypeEnum operationType;
 
-    @JsonProperty("client_id")
+    @JsonProperty("clientId")
     private UUID clientId;
 
-    @JsonProperty("client_name")
+    @JsonProperty("clientName")
     private String clientName;
 
-    @JsonProperty("asset_id")
+    @JsonProperty("assetId")
     private UUID assetId;
 
-    @JsonProperty("asset_name")
+    @JsonProperty("assetName")
     private String assetName;
 
-    @JsonProperty("asset_type")
+    @JsonProperty("assetType")
     private AssetTypeEnum assetType;
 
     @JsonProperty("quantity")
     private double quantity;
 
-    @JsonProperty("gross_value")
+    @JsonProperty("grossValue")
     private double gross;
 
     @JsonProperty("tax")
     private Double tax;
 
-    @JsonProperty("net_value")
+    @JsonProperty("netValue")
     private Double net;
 
-    @JsonProperty("occurred_at")
+    @JsonProperty("occurredAt")
     private LocalDateTime occurredAt;
 }

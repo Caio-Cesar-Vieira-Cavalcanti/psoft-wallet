@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.service.report;
 
 import com.ufcg.psoft.commerce.dto.report.OperationReportRequestDTO;
 import com.ufcg.psoft.commerce.dto.report.OperationReportResponseDTO;
+import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
 import com.ufcg.psoft.commerce.service.report.fetchers.OperationFetcher;
 
@@ -19,12 +20,19 @@ public class ReportServiceImpl implements ReportService {
     AdminService adminService;
 
     @Autowired
+    ClientRepository clientRepository;
+
+    @Autowired
     List<OperationFetcher<?>> fetchers;
 
     @Override
     @Transactional(readOnly = true)
     public List<OperationReportResponseDTO> listOperations(OperationReportRequestDTO opRequestDTO) {
         adminService.validateAdmin(opRequestDTO.getAdminEmail(), opRequestDTO.getAdminAccessCode());
+
+        if (opRequestDTO.getClientId() != null && clientRepository.findById(opRequestDTO.getClientId()).isEmpty()) {
+            return List.of();
+        }
 
         return fetchers.stream()
                 .flatMap(fetcher -> fetcher.fetch(opRequestDTO).stream())
