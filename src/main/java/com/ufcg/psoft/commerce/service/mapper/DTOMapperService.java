@@ -6,7 +6,6 @@ import com.ufcg.psoft.commerce.dto.report.OperationReportResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.*;
 import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.OperationTypeEnum;
-import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;

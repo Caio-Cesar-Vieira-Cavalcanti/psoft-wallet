@@ -5,6 +5,6 @@ import com.ufcg.psoft.commerce.dto.report.OperationReportResponseDTO;
 
 import java.util.List;
 
-public interface OperationFetcher<T> {
+public interface OperationFetcher {
     List<OperationReportResponseDTO> fetch(OperationReportRequestDTO opRequestDTO);
 }

@@ -17,7 +17,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class OperationFetcherTemplate<T extends TransactionModel> implements OperationFetcher<T> {
+public abstract class OperationFetcherTemplate<T extends TransactionModel> implements OperationFetcher {
 
     @Autowired
     ClientRepository clientRepository;

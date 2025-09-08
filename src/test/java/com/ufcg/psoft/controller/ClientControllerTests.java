@@ -78,7 +78,6 @@ class ClientControllerTests {
 
     private AssetType stockType;
     private UUID clientId;
-    private UUID walletId;
 
     @BeforeEach
     void setup() {
@@ -97,7 +96,7 @@ class ClientControllerTests {
                 tempWallet
         );
         clientId = clientRepository.save(client).getId();
-        walletId = walletRepository.save(tempWallet).getId();
+        walletRepository.save(tempWallet).getId();
 
         stockType = assetTypeRepository.findByName(STOCK_ASSET_TYPE_NAME)
                 .orElseThrow(() -> new RuntimeException("No STOCK asset found. Please ensure it's pre-populated for tests."));

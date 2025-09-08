@@ -23,7 +23,7 @@ public class ReportServiceImpl implements ReportService {
     ClientRepository clientRepository;
 
     @Autowired
-    List<OperationFetcher<?>> fetchers;
+    List<OperationFetcher> fetchers;
 
     @Override
     @Transactional(readOnly = true)
