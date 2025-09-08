@@ -1,17 +1,16 @@
 package com.ufcg.psoft.service;
 
-import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
-import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
+import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
+import com.ufcg.psoft.commerce.repository.wallet.PurchaseRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
-import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
-import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
+import com.ufcg.psoft.commerce.service.wallet.WalletService;
 import com.ufcg.psoft.commerce.service.wallet.WalletServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +19,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,8 +28,9 @@ import static org.mockito.Mockito.*;
 class WalletServiceUnitTests {
 
     private WalletRepository walletRepository;
-    private WalletServiceImpl walletService;
-    private PurchaseService purchaseService;
+    private HoldingRepository holdingRepository;
+    private PurchaseRepository purchaseRepository;
+    private WalletService walletService;
 
     private WalletModel wallet;
     private AssetModel asset;
@@ -43,12 +42,15 @@ class WalletServiceUnitTests {
 
     @BeforeEach
     void setup() {
-        purchaseService = mock(PurchaseService.class);
         walletRepository = mock(WalletRepository.class);
+        purchaseRepository = mock(PurchaseRepository.class);
+        holdingRepository = mock(HoldingRepository.class);
 
         walletService = new WalletServiceImpl();
-        ReflectionTestUtils.setField(walletService, "purchaseService", purchaseService);
+
         ReflectionTestUtils.setField(walletService, "walletRepository", walletRepository);
+        ReflectionTestUtils.setField(walletService, "purchaseRepository", purchaseRepository);
+        ReflectionTestUtils.setField(walletService, "holdingRepository", holdingRepository);
 
         walletId = UUID.randomUUID();
 
@@ -72,12 +74,13 @@ class WalletServiceUnitTests {
         when(purchase.getDate()).thenReturn(LocalDate.now());
         when(purchase.getId()).thenReturn(UUID.randomUUID());
 
-        purchaseResponse = mock(PurchaseResponseDTO.class);
-        when(purchaseResponse.getWalletId()).thenReturn(wallet.getId());
-        when(purchaseResponse.getAssetId()).thenReturn(asset.getId());
-        when(purchaseResponse.getQuantity()).thenReturn(5.0);
-        when(purchaseResponse.getPurchaseState()).thenReturn(PurchaseStateEnum.REQUESTED);
-        when(purchaseResponse.getDate()).thenReturn(LocalDate.now());
+        purchaseResponse = PurchaseResponseDTO.builder()
+                .walletId(wallet.getId())
+                .assetId(asset.getId())
+                .quantity(5.0)
+                .purchaseState(PurchaseStateEnum.REQUESTED)
+                .date(LocalDate.now())
+                .build();
 
         HoldingModel holding = HoldingModel.builder()
                 .id(UUID.randomUUID())
@@ -151,6 +154,7 @@ class WalletServiceUnitTests {
         assertEquals(purchaseResponse.getDate(), result.getDate());
         assertEquals(purchaseResponse.getWalletId(), result.getWalletId());
         assertEquals(purchaseResponse.getAssetId(), result.getAssetId());
+
         verify(walletService).addedInWallet(purchase, holding);
     }
 

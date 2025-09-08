@@ -37,7 +37,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -241,10 +240,25 @@ class PurchaseServiceUnitTests {
     @Test
     @DisplayName("Should create purchase request successfully")
     void testShouldCreatePurchaseRequestSuccessfully() {
+        when(clientService.validateClientAccess(clientId, "123456")).thenReturn(client);
+        when(assetService.fetchAsset(assetId)).thenReturn(asset);
+
         when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
 
         ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 10);
+
+        PurchaseResponseDTO expectedResponse = new PurchaseResponseDTO(
+                purchase.getId(), wallet.getId(), asset.getId(),
+                10.0, PurchaseStateEnum.REQUESTED, LocalDate.now()
+        );
+        when(dtoMapperService.toPurchaseResponseDTO(any(PurchaseModel.class))).thenReturn(expectedResponse);
+
         PurchaseResponseDTO result = purchaseServiceImpl.createPurchaseRequest(clientId, assetId, dto);
+
+        verify(clientService).validateClientAccess(clientId, "123456");
+        verify(assetService).fetchAsset(assetId);
+        verify(purchaseRepository).save(any(PurchaseModel.class));
+        verify(dtoMapperService).toPurchaseResponseDTO(any(PurchaseModel.class));
 
         assertNotNull(result);
         assertEquals(purchaseId, result.getId());
@@ -253,7 +267,9 @@ class PurchaseServiceUnitTests {
         assertEquals(10, result.getQuantity());
         assertEquals(LocalDate.now(), result.getDate());
         assertEquals(PurchaseStateEnum.REQUESTED, result.getPurchaseState());
+
         verify(purchaseRepository).save(any(PurchaseModel.class));
+        verify(dtoMapperService).toPurchaseResponseDTO(any(PurchaseModel.class));
     }
 
     @Test
@@ -433,16 +449,17 @@ class PurchaseServiceUnitTests {
         PurchaseResponseAfterAddedInWalletDTO dto =
                 new PurchaseResponseAfterAddedInWalletDTO(newPurchase, holding);
 
-        when(walletServiceImpl.addedInWallet(newPurchase, holding)).thenReturn(dto);
+        when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(newPurchase);
+        when(walletService.addedInWallet(newPurchase, holding)).thenReturn(dto);
+        when(walletService.findHoldingByAsset(wallet, asset)).thenReturn(holding);
 
         PurchaseResponseDTO result = walletServiceImpl.addPurchase(newPurchase);
 
-        assertSame(dto.getPurchaseState(), result.getPurchaseState());
-        assertSame(dto.getQuantity(), result.getQuantity());
-        assertSame(dto.getDate(), result.getDate());
-        assertSame(dto.getWalletId(), result.getWalletId());
-        assertSame(dto.getAssetId(), result.getAssetId());
-        verify(walletServiceImpl).addedInWallet(newPurchase, holding);
+        assertEquals(PurchaseStateEnum.PURCHASED, result.getPurchaseState());
+        assertEquals(dto.getQuantity(), result.getQuantity());
+        assertEquals(dto.getDate(), result.getDate());
+        assertEquals(dto.getWalletId(), result.getWalletId());
+        assertEquals(dto.getAssetId(), result.getAssetId());
         verify(adminService).getAdmin();
     }
 
@@ -453,11 +470,18 @@ class PurchaseServiceUnitTests {
         when(purchaseRepository.findById(purchaseId)).thenReturn(Optional.of(purchase));
         when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
 
-        HoldingModel holding = new HoldingModel(UUID.randomUUID(), asset, wallet, 2, 200);
+        when(clientService.validateClientAccess(clientId, "123456")).thenReturn(client);
 
+        HoldingModel holding = new HoldingModel(UUID.randomUUID(), asset, wallet, 2, 200);
         when(walletService.findHoldingByAsset(wallet, asset)).thenReturn(holding);
 
         purchase.modify(adminService.getAdmin());
+
+        PurchaseResponseDTO expectedResponse = new PurchaseResponseDTO(
+                purchase.getId(), wallet.getId(), asset.getId(),
+                10.0, PurchaseStateEnum.PURCHASED, LocalDate.now() // ← Mude para PURCHASED
+        );
+        when(walletService.addPurchase(any(PurchaseModel.class))).thenReturn(expectedResponse);
 
         PurchaseConfirmationByClientDTO dto = new PurchaseConfirmationByClientDTO("123456");
 
@@ -469,6 +493,7 @@ class PurchaseServiceUnitTests {
 
         verify(purchaseRepository).findById(purchaseId);
         verify(purchaseRepository).save(purchase);
+        verify(walletService).addPurchase(any(PurchaseModel.class));
     }
 
     @Test

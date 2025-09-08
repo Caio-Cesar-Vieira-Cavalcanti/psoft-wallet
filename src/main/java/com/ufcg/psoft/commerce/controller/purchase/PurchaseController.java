@@ -27,6 +27,16 @@ public class PurchaseController {
     @Autowired
     PurchaseService purchaseService;
 
+    @GetMapping({"/{clientId}/wallet/purchase"})
+    public ResponseEntity<List<PurchaseResponseDTO>> getPurchaseHistory(@PathVariable("clientId") UUID clientId,
+                                                                        @RequestBody @Valid ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
+
+        List<PurchaseResponseDTO> purchases = purchaseService.getPurchaseHistory(clientId, clientPurchaseHistoryRequestDTO);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(purchases);
+    }
+
     @PostMapping("/{purchaseId}/availability-confirmation")
     public ResponseEntity<PurchaseResponseDTO> confirmAvailability(
             @PathVariable UUID purchaseId,
@@ -46,16 +56,6 @@ public class PurchaseController {
     ) {
         PurchaseResponseDTO updated = purchaseService.confirmPurchase(purchaseId, clientId, dto);
         return ResponseEntity.ok(updated);
-    }
-
-    @GetMapping({"/{clientId}/wallet/purchase"})
-    public ResponseEntity<List<PurchaseResponseDTO>> getPurchaseHistory(@PathVariable("clientId") UUID clientId,
-                                                                        @RequestBody @Valid ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
-
-        List<PurchaseResponseDTO> purchases = purchaseService.getPurchaseHistory(clientId, clientPurchaseHistoryRequestDTO);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(purchases);
     }
 
     @PostMapping("/{clientId}/wallet/purchase/{assetId}")

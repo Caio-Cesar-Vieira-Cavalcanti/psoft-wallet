@@ -1,5 +1,6 @@
 package com.ufcg.psoft.service;
 
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -144,5 +145,22 @@ class DTOMapperServiceTests {
 
         assertNotNull(result);
         assertEquals(2000.0, result.getNewWalletBudget());
+    }
+
+    @Test
+    @DisplayName("Should map withdraw model to history response DTO with correct values")
+    void testToWithdrawHistoryResponseDTO_WithCorrectValues() {
+        WithdrawHistoryResponseDTO result = dtoMapperService.toWithdrawHistoryResponseDTO(withdraw);
+
+        assertNotNull(result);
+        assertEquals(withdrawId, result.getWithdrawId());
+        assertEquals("Test Asset", result.getAssetName());
+        assertEquals(assetId, result.getAssetId());
+        assertEquals(10.0, result.getQuantityWithdrawn());
+        assertEquals(100.0, result.getSellingPrice());
+        assertEquals(1000.0, result.getTotalValue()); // 10.0 * 100.0
+        assertEquals(10.0, result.getTax());
+        assertEquals(LocalDate.now(), result.getDate());
+        assertEquals(WithdrawStateEnum.REQUESTED, result.getState());
     }
 }

@@ -2,12 +2,15 @@ package com.ufcg.psoft.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.client.ClientWithdrawAssetRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientWithdrawHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO;
+import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.model.asset.types.Stock;
 import com.ufcg.psoft.commerce.model.user.AccessCodeModel;
+import com.ufcg.psoft.commerce.model.user.AddressModel;
 import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
@@ -28,6 +31,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
@@ -74,11 +78,11 @@ class WithdrawControllerTests {
     private UUID withdrawId;
     private UUID walletId;
     private UUID assetId;
+    private UUID clientId;
     private AssetType stockType;
 
     @BeforeEach
     void setup() {
-
         stockType = assetTypeRepository.findByName("STOCK")
                 .orElseThrow(() -> new RuntimeException("STOCK asset type not found"));
 
@@ -99,10 +103,23 @@ class WithdrawControllerTests {
                 .budget(1000.0)
                 .holdings(new HashMap<>())
                 .build();
+
+        ClientModel client = ClientModel.builder()
+                .id(UUID.randomUUID())
+                .fullName("Test Client")
+                .planType(PlanTypeEnum.PREMIUM)
+                .email(new EmailModel("joao@email.com"))
+                .address(new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"))
+                .accessCode(new AccessCodeModel("123456"))
+                .wallet(wallet)
+                .build();
+        client = clientRepository.save(client);
+        clientId = client.getId();
+
         wallet = walletRepository.save(wallet);
         walletId = wallet.getId();
 
-        com.ufcg.psoft.commerce.model.wallet.HoldingModel holding = com.ufcg.psoft.commerce.model.wallet.HoldingModel.builder()
+        HoldingModel holding = HoldingModel.builder()
                 .asset(asset)
                 .wallet(wallet)
                 .quantity(20.0)
@@ -380,6 +397,146 @@ class WithdrawControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should fail when client ID is invalid")
+    void testGetWithdrawHistory_InvalidClientId() throws Exception {
+        UUID invalidClientId = UUID.randomUUID();
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + invalidClientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("Should fail when access code is invalid")
+    void testGetWithdrawHistory_InvalidAccessCode() throws Exception {
+        String invalidAccessCode = "wrong-code";
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode(invalidAccessCode)
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no withdraws exist")
+    void testGetWithdrawHistory_NoWithdraws() throws Exception {
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return withdraw history without filters")
+    void testGetWithdrawHistory_NoFilters() throws Exception {
+        // Criar alguns withdraws de teste
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return withdraw history with withdraw state filter")
+    void testGetWithdrawHistory_WithWithdrawOneFilter() throws Exception {
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .withdrawState(WithdrawStateEnum.REQUESTED) // Filtro por estado
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return withdraw history with two filters")
+    void testGetWithdrawHistory_WithTwoFilters() throws Exception {
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .date(LocalDate.now())
+                .withdrawState(WithdrawStateEnum.REQUESTED) // Dois filtros
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+    /*
+    @Test
+    @DisplayName("Should return withdraw history with three filters")
+    void testGetWithdrawHistory_WithThreeFilters() throws Exception {
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .assetType(new Stock())
+                .withdrawState(WithdrawStateEnum.REQUESTED)
+                .date(LocalDate.now())
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    } */
+
+    private void createTestWithdraws() {
+        WalletModel wallet = walletRepository.findById(walletId).orElseThrow();
+        AssetModel asset = assetRepository.findById(assetId).orElseThrow();
+
+        WithdrawModel withdraw1 = WithdrawModel.builder()
+                .id(UUID.randomUUID())
+                .wallet(wallet)
+                .asset(asset)
+                .quantity(10.0)
+                .date(LocalDate.now())
+                .sellingPrice(100.0)
+                .tax(10.0)
+                .withdrawValue(950.0)
+                .stateEnum(WithdrawStateEnum.REQUESTED)
+                .build();
+
+        WithdrawModel withdraw2 = WithdrawModel.builder()
+                .id(UUID.randomUUID())
+                .wallet(wallet)
+                .asset(asset)
+                .quantity(5.0)
+                .date(LocalDate.now().minusDays(1))
+                .sellingPrice(50.0)
+                .tax(5.0)
+                .withdrawValue(475.0)
+                .stateEnum(WithdrawStateEnum.CONFIRMED)
+                .build();
+
+        withdrawRepository.save(withdraw1);
+        withdrawRepository.save(withdraw2);
     }
 
     private AssetModel createAndSaveAsset(AssetType type) {

@@ -80,22 +80,7 @@ public class DTOMapperService {
                 .build();
     }
 
-    public WithdrawResponseDTO toWithdrawResponseDTO(WalletModel wallet,
-                                                     AssetModel asset,
-                                                     double quantityWithdrawn,
-                                                     double valueReceived,
-                                                     WithdrawStateEnum state) {
-        return WithdrawResponseDTO.builder()
-                .walletId(wallet.getId())
-                .assetId(asset.getId())
-                .quantityWithdrawn(quantityWithdrawn)
-                .valueReceived(valueReceived)
-                .newWalletBudget(wallet.getBudget())
-                .state(state)
-                .build();
-    }
-
-    public WithdrawResponseDTO toWithdrawResponseDTO(com.ufcg.psoft.commerce.model.wallet.WithdrawModel withdrawModel) {
+    public WithdrawResponseDTO toWithdrawResponseDTO(WithdrawModel withdrawModel) {
         return WithdrawResponseDTO.builder()
                 .withdrawId(withdrawModel.getId())
                 .walletId(withdrawModel.getWallet().getId())

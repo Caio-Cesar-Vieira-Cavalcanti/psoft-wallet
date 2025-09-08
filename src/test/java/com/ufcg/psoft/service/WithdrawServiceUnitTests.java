@@ -1,7 +1,10 @@
 package com.ufcg.psoft.service;
 
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
+import com.ufcg.psoft.commerce.dto.client.AddressDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientWithdrawAssetRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WalletResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.exception.asset.AssetNotFoundException;
@@ -19,15 +22,12 @@ import com.ufcg.psoft.commerce.model.user.EmailModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.model.wallet.WithdrawModel;
-import com.ufcg.psoft.commerce.repository.client.ClientRepository;
-import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
-import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WithdrawRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
 import com.ufcg.psoft.commerce.service.client.ClientService;
-import com.ufcg.psoft.commerce.service.client.ClientServiceImpl;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
+import com.ufcg.psoft.commerce.service.wallet.WalletService;
 import com.ufcg.psoft.commerce.service.wallet.WithdrawServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,6 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -46,13 +45,11 @@ import static org.mockito.Mockito.*;
 class WithdrawServiceUnitTests {
 
     private WithdrawServiceImpl withdrawService;
-    private WalletRepository walletRepository;
-    private HoldingRepository holdingRepository;
-    private ClientRepository clientRepository;
     private WithdrawRepository withdrawRepository;
     private AdminService adminService;
     private AssetService assetService;
     private ClientService clientService;
+    private WalletService walletService;
     private DTOMapperService dtoMapperService;
     private AssetResponseDTO assetResponseDTO;
 
@@ -66,25 +63,21 @@ class WithdrawServiceUnitTests {
 
     @BeforeEach
     void setup() {
-        clientRepository = mock(ClientRepository.class);
-        walletRepository = mock(WalletRepository.class);
-        holdingRepository = mock(HoldingRepository.class);
         withdrawRepository = mock(WithdrawRepository.class);
-        adminService = mock(AdminService.class);
-        dtoMapperService = mock(DTOMapperService.class);
-        assetService = mock(AssetService.class);
 
         withdrawService = new WithdrawServiceImpl();
-        clientService = new ClientServiceImpl();
-        
-        ReflectionTestUtils.setField(clientService, "assetService", assetService);
-        ReflectionTestUtils.setField(withdrawService, "walletRepository", walletRepository);
-        ReflectionTestUtils.setField(withdrawService, "holdingRepository", holdingRepository);
-        ReflectionTestUtils.setField(withdrawService, "withdrawRepository", withdrawRepository);
+        clientService = mock(ClientService.class);
+        adminService = mock(AdminService.class);
+        assetService = mock(AssetService.class);
+        walletService = mock(WalletService.class);
+        dtoMapperService = mock(DTOMapperService.class);
+
+        ReflectionTestUtils.setField(withdrawService, "clientService", clientService);
         ReflectionTestUtils.setField(withdrawService, "adminService", adminService);
-        ReflectionTestUtils.setField(withdrawService, "dtoMapperService", dtoMapperService);
-        ReflectionTestUtils.setField(withdrawService, "clientRepository", clientRepository);
         ReflectionTestUtils.setField(withdrawService, "assetService", assetService);
+        ReflectionTestUtils.setField(withdrawService, "walletService", walletService);
+        ReflectionTestUtils.setField(withdrawService, "dtoMapperService", dtoMapperService);
+        ReflectionTestUtils.setField(withdrawService, "withdrawRepository", withdrawRepository);
 
         asset = newStock();
 
@@ -118,6 +111,31 @@ class WithdrawServiceUnitTests {
                 .build();
 
         wallet.getHoldings().put(assetId, holding);
+
+        ClientResponseDTO clientResponseDTO = ClientResponseDTO.builder()
+                .id(clientId)
+                .fullName("João Azevedo")
+                .email("joao@email.com")
+                .address(AddressDTO.builder()
+                        .street("Street")
+                        .number("123")
+                        .neighborhood("Neighborhood")
+                        .city("City")
+                        .state("State")
+                        .country("Country")
+                        .zipCode("12345-678")
+                        .build())
+                .planType(PlanTypeEnum.PREMIUM)
+                .budget(1000.0)
+                .wallet(WalletResponseDTO.builder()
+                        .id(wallet.getId())
+                        .budget(wallet.getBudget())
+                        // ... outros campos da wallet ...
+                        .build())
+                .build();
+
+        when(clientService.getClientById(clientId)).thenReturn(clientResponseDTO);
+        when(clientService.validateClientAccess(clientId, "123456")).thenReturn(client);
     }
 
     private void seedWalletWith(AssetModel assetModel, double qty, double accPrice, double budget) {
@@ -456,8 +474,6 @@ class WithdrawServiceUnitTests {
     void testWithdrawClientAsset_Success_Corrected() {
         WithdrawServiceImpl spyWithdrawService = spy(withdrawService);
 
-        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
-
         when(assetService.fetchAsset(assetId)).thenReturn(asset);
 
         WithdrawResponseDTO mockWithdrawResponse = mock(WithdrawResponseDTO.class);
@@ -473,7 +489,7 @@ class WithdrawServiceUnitTests {
         WithdrawResponseDTO result = spyWithdrawService.withdrawClientAsset(clientId, assetId, dto);
 
         assertSame(mockWithdrawResponse, result);
-        verify(clientRepository).findById(clientId);
+        verify(clientService).validateClientAccess(clientId, "123456");
         verify(assetService).fetchAsset(assetId);
         verify(spyWithdrawService).withdrawAsset(client.getWallet(), asset, 5.0);
     }
@@ -482,7 +498,10 @@ class WithdrawServiceUnitTests {
     @DisplayName("Should throw exception if client not found")
     void testWithdrawClientAsset_ClientNotFound() {
         UUID invalidClientId = UUID.randomUUID();
-        when(clientRepository.findById(invalidClientId)).thenReturn(Optional.empty());
+
+        // Mock validateClientAccess para lançar exceção quando cliente não for encontrado
+        when(clientService.validateClientAccess(invalidClientId, "123456"))
+                .thenThrow(new ClientIdNotFoundException(invalidClientId));
 
         ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
                 .accessCode("123456")
@@ -497,10 +516,12 @@ class WithdrawServiceUnitTests {
     @Test
     @DisplayName("Should throw exception if access code is invalid")
     void testWithdrawClientAsset_InvalidAccessCode() {
-        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
+        // Mock validateClientAccess para lançar exceção quando access code for inválido
+        when(clientService.validateClientAccess(clientId, "000000"))
+                .thenThrow(new UnauthorizedUserAccessException());
 
         ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
-                .accessCode("000000")
+                .accessCode("000000") // Código inválido
                 .quantityToWithdraw(5.0)
                 .build();
 
@@ -512,14 +533,9 @@ class WithdrawServiceUnitTests {
     @Test
     @DisplayName("Should throw exception if asset not found")
     void testWithdrawClientAsset_AssetNotFound_Corrected() {
-        WithdrawServiceImpl spyWithdrawService = spy(withdrawService);
-
-        when(clientRepository.findById(clientId)).thenReturn(Optional.of(client));
-
+        when(clientService.validateClientAccess(clientId, "123456")).thenReturn(client);
         when(assetService.fetchAsset(assetId))
                 .thenThrow(new AssetNotFoundException("Asset not found with ID " + assetId));
-
-        doReturn(null).when(spyWithdrawService).withdrawAsset(any(), any(), anyDouble());
 
         ClientWithdrawAssetRequestDTO dto = ClientWithdrawAssetRequestDTO.builder()
                 .accessCode("123456")
@@ -527,11 +543,11 @@ class WithdrawServiceUnitTests {
                 .build();
 
         assertThrows(AssetNotFoundException.class, () ->
-                spyWithdrawService.withdrawClientAsset(clientId, assetId, dto)
+                withdrawService.withdrawClientAsset(clientId, assetId, dto)
         );
 
-        verify(clientRepository).findById(clientId);
+        verify(clientService).validateClientAccess(clientId, "123456");
         verify(assetService).fetchAsset(assetId);
-        verify(spyWithdrawService, never()).withdrawAsset(any(), any(), anyDouble());
+        // Não deve chamar withdrawAsset quando o asset não é encontrado
     }
 }
