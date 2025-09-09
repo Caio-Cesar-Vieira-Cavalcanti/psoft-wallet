@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.client.ClientWithdrawAssetRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientWithdrawHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -458,7 +459,7 @@ class WithdrawControllerTests {
 
     @Test
     @DisplayName("Should return withdraw history with withdraw state filter")
-    void testGetWithdrawHistory_WithWithdrawOneFilter() throws Exception {
+    void testGetWithdrawHistory_WithStateFilter() throws Exception {
         createTestWithdraws();
 
         ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
@@ -473,14 +474,80 @@ class WithdrawControllerTests {
     }
 
     @Test
-    @DisplayName("Should return withdraw history with two filters")
-    void testGetWithdrawHistory_WithTwoFilters() throws Exception {
+    @DisplayName("Should return withdraw history with withdraw date filter")
+    void testGetWithdrawHistory_WithDateFilter() throws Exception {
         createTestWithdraws();
 
         ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
                 .accessCode("123456")
                 .date(LocalDate.now())
-                .withdrawState(WithdrawStateEnum.REQUESTED) // Dois filtros
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return withdraw history with withdraw asset type filter")
+    void testGetWithdrawHistory_WithAssetTypeFilter() throws Exception {
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .assetType(AssetTypeEnum.STOCK)
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return withdraw history with two filters")
+    void testGetWithdrawHistory_WithTwoFiltersDateAndState() throws Exception {
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .date(LocalDate.now())
+                .withdrawState(WithdrawStateEnum.REQUESTED)
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return withdraw history with two filters")
+    void testGetWithdrawHistory_WithTwoFiltersStateAndType() throws Exception {
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .assetType(AssetTypeEnum.STOCK)
+                .withdrawState(WithdrawStateEnum.REQUESTED)
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("Should return withdraw history with two filters")
+    void testGetWithdrawHistory_WithTwoFiltersDateAndType() throws Exception {
+        createTestWithdraws();
+
+        ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
+                .accessCode("123456")
+                .date(LocalDate.now())
+                .assetType(AssetTypeEnum.STOCK)
                 .build();
 
         mockMvc.perform(MockMvcRequestBuilders.get(WITHDRAW_BASE_URL + "/" + clientId + "/wallet/withdraw")
@@ -496,7 +563,7 @@ class WithdrawControllerTests {
 
         ClientWithdrawHistoryRequestDTO dto = ClientWithdrawHistoryRequestDTO.builder()
                 .accessCode("123456")
-                //.assetType(stockType)
+                .assetType(AssetTypeEnum.STOCK)
                 .withdrawState(WithdrawStateEnum.REQUESTED)
                 .date(LocalDate.now())
                 .build();

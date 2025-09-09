@@ -53,7 +53,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         return purchaseRepository.findByWalletId(walletId)
                 .stream()
-                .filter(filter1 -> dto.getAssetType() == null || filter1.getAsset().getAssetType().getName().equals(dto.getAssetType().getName()))
+                .filter(filter1 -> dto.getAssetType() == null || filter1.getAsset().getAssetType().getName().equals(dto.getAssetType().name()))
                 .filter(filter2 -> dto.getPurchaseState() == null || filter2.getStateEnum().equals(dto.getPurchaseState()))
                 .filter(filter3 -> dto.getDate() == null || filter3.getDate().equals(dto.getDate()))
                 .map(dtoMapperService::toPurchaseResponseDTO)

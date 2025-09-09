@@ -6,6 +6,7 @@ import com.ufcg.psoft.commerce.dto.client.ClientPurchaseAssetRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
@@ -716,7 +717,7 @@ class PurchaseControllerTests {
         // Three filters: assetType + purchaseState + date
         ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
                 .accessCode("123456")
-                //.assetType(stockType)
+                .assetType(AssetTypeEnum.STOCK)
                 .purchaseState(PurchaseStateEnum.REQUESTED)
                 .date(targetDate)
                 .build();
@@ -762,7 +763,7 @@ class PurchaseControllerTests {
         // Three filters que não combinam com nenhuma compra
         ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
                 .accessCode("123456")
-                //.assetType(stockType)
+                .assetType(AssetTypeEnum.STOCK)
                 .purchaseState(PurchaseStateEnum.REQUESTED)
                 .date(LocalDate.of(2023, 1, 1))
                 .build();
