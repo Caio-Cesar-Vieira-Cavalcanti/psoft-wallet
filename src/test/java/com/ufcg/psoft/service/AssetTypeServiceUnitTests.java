@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
+@DisplayName("AssetType Service Unit Tests")
 class AssetTypeServiceUnitTests {
 
     private AssetTypeRepository assetTypeRepository;

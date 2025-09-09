@@ -9,14 +9,11 @@ import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.*;
 import com.ufcg.psoft.commerce.model.asset.AssetType;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
-import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
-import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
-import com.ufcg.psoft.commerce.service.wallet.WalletService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,12 +30,6 @@ public class ClientServiceImpl implements ClientService {
 
     @Autowired
     AssetService assetService;
-
-    @Autowired
-    WalletService walletService;
-
-    @Autowired
-    PurchaseService purchaseService;
 
     @Autowired
     ModelMapper modelMapper;
@@ -136,22 +127,6 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public List<PurchaseResponseDTO> getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO) {
-        ClientModel client = this.validateClientAccess(clientId, clientPurchaseHistoryRequestDTO.getAccessCode());
-
-        return walletService.redirectGetPurchaseHistory(client.getWallet().getId());
-    }
-
-    @Override
-    public PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto) {
-        ClientModel client = this.validateClientAccess(clientId, dto.getAccessCode());
-        AssetModel asset = assetService.validateAssetPurchase(assetId, dto.getAssetQuantity());
-        PurchaseModel purchaseModel = walletService.redirectCreatePurchaseRequest(client.getWallet(), asset, dto.getAssetQuantity());
-
-        return dtoMapperService.toPurchaseResponseDTO(purchaseModel);
-    }
-
-    @Override
     public ClientModel validateClientAccess(UUID clientId, String accessCode) {
         ClientModel client = this.getClient(clientId);
         client.validateAccess(accessCode);
@@ -160,21 +135,8 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    public PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
-        this.validateClientAccess(clientId, dto.getAccessCode());
-        ClientModel clientModel = getClient(clientId);
-
-        PurchaseModel purchaseModel = purchaseService.confirmationByClient(purchaseId);
-
-        clientModel.getWallet().decreaseBudgetAfterPurchase(purchaseModel.getAcquisitionPrice() * purchaseModel.getQuantity());
-
-        return walletService.addPurchase(purchaseModel);
-    }
-
-    @Override
     public WalletHoldingResponseDTO getClientWalletHolding(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO) {
-        this.validateClientAccess(clientId, clientWalletRequestDTO.getAccessCode());
-        ClientModel clientModel = getClient(clientId);
+        ClientModel clientModel = this.validateClientAccess(clientId, clientWalletRequestDTO.getAccessCode());
 
         WalletModel walletModel = clientModel.getWallet();
 
@@ -225,5 +187,4 @@ public class ClientServiceImpl implements ClientService {
         return clientRepository.findById(clientId)
                 .orElseThrow(() -> new ClientIdNotFoundException(clientId));
     }
-
 }

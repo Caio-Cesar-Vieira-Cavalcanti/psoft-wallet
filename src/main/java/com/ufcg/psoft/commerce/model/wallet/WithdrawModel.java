@@ -5,6 +5,7 @@ import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawConfirmedSta
 import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawInAccountState;
 import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawRequestedState;
 import com.ufcg.psoft.commerce.model.wallet.states.withdraw.WithdrawState;
+import com.ufcg.psoft.commerce.model.user.UserModel;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -30,6 +31,12 @@ public class WithdrawModel extends TransactionModel {
     @Column(name = "sellingPrice", nullable = false)
     private double sellingPrice;
 
+    @Column(name = "tax", nullable = false)
+    private double tax;
+
+    @Column(name = "withdrawValue", nullable = false)
+    private double withdrawValue;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false)
     private WithdrawStateEnum stateEnum;
@@ -37,11 +44,19 @@ public class WithdrawModel extends TransactionModel {
     @Transient
     private WithdrawState state;
 
+    @Override
     @PostLoad
     public void loadState() {
         this.state = STATE_FACTORIES
                 .getOrDefault(stateEnum, WithdrawRequestedState::new)
                 .apply(this);
+    }
+
+    public void modify(UserModel user) {
+        if (this.state == null) {
+            this.loadState();
+        }
+        this.state.modify(user);
     }
 
     public void setState(WithdrawState newState, WithdrawStateEnum type) {

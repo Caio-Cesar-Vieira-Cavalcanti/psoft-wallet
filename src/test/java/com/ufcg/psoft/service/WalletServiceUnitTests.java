@@ -1,16 +1,15 @@
 package com.ufcg.psoft.service;
 
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.enums.PurchaseStateEnum;
-import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
+import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
+import com.ufcg.psoft.commerce.repository.wallet.PurchaseRepository;
 import com.ufcg.psoft.commerce.repository.wallet.WalletRepository;
-import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
-import com.ufcg.psoft.commerce.service.wallet.PurchaseService;
+import com.ufcg.psoft.commerce.service.wallet.WalletService;
 import com.ufcg.psoft.commerce.service.wallet.WalletServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,43 +18,37 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@DisplayName("Wallet Service Unit Tests")
 class WalletServiceUnitTests {
 
     private WalletRepository walletRepository;
-    private WalletServiceImpl walletService;
-
-    private PurchaseService purchaseService;
-    private DTOMapperService dtoMapperService;
+    private HoldingRepository holdingRepository;
+    private PurchaseRepository purchaseRepository;
+    private WalletService walletService;
 
     private WalletModel wallet;
     private AssetModel asset;
     private PurchaseModel purchase;
-    private PurchaseResponseDTO purchaseResponse;
-    private PurchaseResponseAfterAddedInWalletDTO walletPurchaseResponse;
-
-    private UUID walletId;
 
     @BeforeEach
     void setup() {
-        purchaseService = mock(PurchaseService.class);
-        dtoMapperService = mock(DTOMapperService.class);
         walletRepository = mock(WalletRepository.class);
+        purchaseRepository = mock(PurchaseRepository.class);
+        holdingRepository = mock(HoldingRepository.class);
 
         walletService = new WalletServiceImpl();
-        ReflectionTestUtils.setField(walletService, "purchaseService", purchaseService);
-        ReflectionTestUtils.setField(walletService, "dtoMapperService", dtoMapperService);
-        ReflectionTestUtils.setField(walletService, "walletRepository", walletRepository);
 
-        walletId = UUID.randomUUID();
+        ReflectionTestUtils.setField(walletService, "walletRepository", walletRepository);
+        ReflectionTestUtils.setField(walletService, "purchaseRepository", purchaseRepository);
+        ReflectionTestUtils.setField(walletService, "holdingRepository", holdingRepository);
 
         wallet = WalletModel.builder()
-                .id(walletId)
+                .id(UUID.randomUUID())
                 .budget(1000.0)
                 .holdings(new HashMap<>())
                 .build();
@@ -66,64 +59,15 @@ class WalletServiceUnitTests {
                 .quotation(100.0)
                 .build();
 
-        purchase = mock(PurchaseModel.class);
-        when(purchase.getWallet()).thenReturn(wallet);
-        when(purchase.getAsset()).thenReturn(asset);
-        when(purchase.getQuantity()).thenReturn(5.0);
-        when(purchase.getStateEnum()).thenReturn(PurchaseStateEnum.REQUESTED);
-        when(purchase.getDate()).thenReturn(LocalDate.now());
-        when(purchase.getId()).thenReturn(UUID.randomUUID());
-
-        purchaseResponse = mock(PurchaseResponseDTO.class);
-        when(purchaseResponse.getWalletId()).thenReturn(wallet.getId());
-        when(purchaseResponse.getAssetId()).thenReturn(asset.getId());
-        when(purchaseResponse.getQuantity()).thenReturn(5.0);
-        when(purchaseResponse.getPurchaseState()).thenReturn(PurchaseStateEnum.REQUESTED);
-        when(purchaseResponse.getDate()).thenReturn(LocalDate.now());
-
-        HoldingModel holding = HoldingModel.builder()
+        purchase = PurchaseModel.builder()
                 .id(UUID.randomUUID())
+                .wallet(wallet)
                 .asset(asset)
-                .quantity(purchase.getQuantity())
+                .quantity(5.0)
+                .acquisitionPrice(100.0)
+                .stateEnum(PurchaseStateEnum.PURCHASED)
+                .date(LocalDate.now())
                 .build();
-
-        walletPurchaseResponse = new PurchaseResponseAfterAddedInWalletDTO(purchase, holding);
-    }
-
-    @Test
-    @DisplayName("Should create purchase request when budget is sufficient")
-    void testRedirectCreatePurchaseRequest_Success() {
-        double expectedPrice = asset.getQuotation() * 5;
-        when(purchaseService.createPurchaseRequest(wallet, asset, expectedPrice, 5)).thenReturn(purchase);
-
-        PurchaseModel result = walletService.redirectCreatePurchaseRequest(wallet, asset, 5);
-
-        assertSame(purchase, result);
-        verify(purchaseService).createPurchaseRequest(wallet, asset, expectedPrice, 5);
-    }
-
-    @Test
-    @DisplayName("Should throw exception when wallet budget is insufficient")
-    void testRedirectCreatePurchaseRequest_BudgetInsufficient() {
-        wallet.setBudget(100.0);
-        assertThrows(ClientBudgetIsInsufficientException.class, () ->
-                walletService.redirectCreatePurchaseRequest(wallet, asset, 5)
-        );
-        verify(purchaseService, never()).createPurchaseRequest(any(), any(), anyDouble(), anyInt());
-    }
-
-    @Test
-    @DisplayName("Should redirect and get purchase history sorted by date descending")
-    void testRedirectGetPurchaseHistory_Success() {
-        when(purchaseService.getPurchaseHistoryByWalletId(walletId)).thenReturn(List.of(purchase));
-        when(dtoMapperService.toPurchaseResponseDTO(purchase)).thenReturn(purchaseResponse);
-
-        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(walletId);
-
-        assertEquals(1, result.size());
-        assertSame(purchaseResponse, result.get(0));
-        verify(purchaseService).getPurchaseHistoryByWalletId(walletId);
-        verify(dtoMapperService).toPurchaseResponseDTO(purchase);
     }
 
     @Test
@@ -161,35 +105,63 @@ class WalletServiceUnitTests {
     @Test
     @DisplayName("Should add purchase when holding does not exist")
     void testAddPurchase_NewHolding() {
-        when(purchaseService.addedInWallet(purchase, null)).thenReturn(walletPurchaseResponse);
+        HoldingModel newHolding = HoldingModel.builder()
+                .id(UUID.randomUUID())
+                .asset(asset)
+                .wallet(wallet)
+                .quantity(purchase.getQuantity())
+                .accumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice())
+                .build();
+
+        when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
+        when(holdingRepository.save(any(HoldingModel.class))).thenReturn(newHolding);
+        when(walletRepository.save(any(WalletModel.class))).thenReturn(wallet);
 
         PurchaseResponseDTO result = walletService.addPurchase(purchase);
 
-        assertEquals(purchaseResponse.getQuantity(), result.getQuantity());
-        assertEquals(purchaseResponse.getPurchaseState(), result.getPurchaseState());
-        assertEquals(purchaseResponse.getDate(), result.getDate());
-        assertEquals(purchaseResponse.getWalletId(), result.getWalletId());
-        assertEquals(purchaseResponse.getAssetId(), result.getAssetId());
-        verify(purchaseService).addedInWallet(purchase, null);
+        assertNotNull(result);
+        assertEquals(purchase.getQuantity(), result.getQuantity());
+        assertEquals(purchase.getStateEnum(), result.getPurchaseState());
+        assertEquals(purchase.getDate(), result.getDate());
+        assertEquals(wallet.getId(), result.getWalletId());
+        assertEquals(asset.getId(), result.getAssetId());
+
+        verify(purchaseRepository).save(any(PurchaseModel.class));
+        verify(holdingRepository).save(any(HoldingModel.class));
+        verify(walletRepository).save(any(WalletModel.class));
     }
 
     @Test
     @DisplayName("Should add purchase when holding exists")
     void testAddPurchase_ExistingHolding() {
-        HoldingModel holding = mock(HoldingModel.class);
-        when(holding.getAsset()).thenReturn(asset);
-        wallet.getHoldings().put(asset.getId(), holding);
+        HoldingModel existingHolding = HoldingModel.builder()
+                .id(UUID.randomUUID())
+                .asset(asset)
+                .wallet(wallet)
+                .quantity(5.0)
+                .accumulatedPrice(500.0)
+                .build();
 
-        when(purchaseService.addedInWallet(purchase, holding)).thenReturn(walletPurchaseResponse);
+        wallet.getHoldings().put(asset.getId(), existingHolding);
+
+        when(purchaseRepository.save(any(PurchaseModel.class))).thenReturn(purchase);
+        when(walletRepository.save(any(WalletModel.class))).thenReturn(wallet);
 
         PurchaseResponseDTO result = walletService.addPurchase(purchase);
 
-        assertEquals(purchaseResponse.getQuantity(), result.getQuantity());
-        assertEquals(purchaseResponse.getPurchaseState(), result.getPurchaseState());
-        assertEquals(purchaseResponse.getDate(), result.getDate());
-        assertEquals(purchaseResponse.getWalletId(), result.getWalletId());
-        assertEquals(purchaseResponse.getAssetId(), result.getAssetId());
-        verify(purchaseService).addedInWallet(purchase, holding);
+        assertNotNull(result);
+        assertEquals(purchase.getQuantity(), result.getQuantity());
+        assertEquals(purchase.getStateEnum(), result.getPurchaseState());
+        assertEquals(purchase.getDate(), result.getDate());
+        assertEquals(wallet.getId(), result.getWalletId());
+        assertEquals(asset.getId(), result.getAssetId());
+
+        assertEquals(10.0, existingHolding.getQuantity());
+        assertEquals(1000.0, existingHolding.getAccumulatedPrice());
+
+        verify(purchaseRepository).save(any(PurchaseModel.class));
+        verify(walletRepository).save(any(WalletModel.class));
+        verify(holdingRepository, never()).save(any(HoldingModel.class));
     }
 
     @Test
@@ -219,17 +191,5 @@ class WalletServiceUnitTests {
         HoldingModel result = walletService.findHoldingByAsset(wallet, asset);
 
         assertNull(result);
-    }
-
-    @Test
-    @DisplayName("Should return empty list if no purchase history exists")
-    void testRedirectGetPurchaseHistory_Empty() {
-        when(purchaseService.getPurchaseHistoryByWalletId(walletId)).thenReturn(List.of());
-
-        List<PurchaseResponseDTO> result = walletService.redirectGetPurchaseHistory(walletId);
-
-        assertTrue(result.isEmpty());
-        verify(purchaseService).getPurchaseHistoryByWalletId(walletId);
-        verify(dtoMapperService, never()).toPurchaseResponseDTO(any());
     }
 }

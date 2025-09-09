@@ -43,7 +43,5 @@ public abstract class UserModel {
         throw new UnsupportedOperationException("Access validation not supported for this user type");
     }
 
-    public boolean isAdmin() {
-        return false;
-    }
+    public abstract boolean isAdmin();
 }

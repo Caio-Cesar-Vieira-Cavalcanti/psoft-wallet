@@ -3,7 +3,6 @@ package com.ufcg.psoft.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ufcg.psoft.commerce.dto.asset.AssetDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.HoldingResponseDTO;
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WalletHoldingResponseDTO;
 import com.ufcg.psoft.commerce.enums.PlanTypeEnum;
 import com.ufcg.psoft.commerce.dto.client.*;
@@ -35,7 +34,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import java.time.LocalDate;
 import java.util.*;
 
-import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -72,9 +70,7 @@ class ClientControllerTests {
 
     private static final String CLIENT_BASE_URL = "/clients";
     private static final String ASSETS_ENDPOINT = "/assets";
-    private static final String WALLET = "/wallet";
     private static final String WALLET_HOLDING = "/wallet-holding";
-    private static final String PURCHASES_ENDPOINT = "/purchase";
     private static final String STOCK_ASSET_TYPE_NAME = "STOCK";
     private static final String INTEREST = "/interest";
     private static final String PRICE_VARIATION = "/price-variation";
@@ -82,7 +78,6 @@ class ClientControllerTests {
 
     private AssetType stockType;
     private UUID clientId;
-    private UUID walletId;
 
     @BeforeEach
     void setup() {
@@ -101,7 +96,7 @@ class ClientControllerTests {
                 tempWallet
         );
         clientId = clientRepository.save(client).getId();
-        walletId = walletRepository.save(tempWallet).getId();
+        walletRepository.save(tempWallet).getId();
 
         stockType = assetTypeRepository.findByName(STOCK_ASSET_TYPE_NAME)
                 .orElseThrow(() -> new RuntimeException("No STOCK asset found. Please ensure it's pre-populated for tests."));
@@ -794,114 +789,6 @@ class ClientControllerTests {
     }
 
     @Test
-    @DisplayName("Should return 404 Not Found when client ID is invalid")
-    void testGetPurchaseHistory_WhenClientIdIsInvalid() throws Exception {
-        UUID randomClientId = UUID.randomUUID();
-
-        ClientPurchaseHistoryRequestDTO requestDTO = new ClientPurchaseHistoryRequestDTO();
-        requestDTO.setAccessCode("789032");
-
-        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + randomClientId + PURCHASES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("Should return 401 Unauthorized when access code is invalid")
-    void testGetPurchaseHistory_WhenAccessCodeIsInvalid() throws Exception {
-        ClientPurchaseHistoryRequestDTO requestDTO = new ClientPurchaseHistoryRequestDTO();
-        requestDTO.setAccessCode("invalid_code");
-
-        mockMvc.perform(MockMvcRequestBuilders.get(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDTO)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    @DisplayName("Should return 400 Bad Request when access code is missing")
-    void testGetPurchaseHistory_Fail_MissingAccessCode() throws Exception {
-        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
-                // no accessCode
-                .build();
-
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("Should return 400 Bad Request when access code is empty")
-    void testGetPurchaseHistory_Fail_EmptyAccessCode() throws Exception {
-        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
-                .accessCode("")
-                .build();
-
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    @DisplayName("Should return wallet with empty purchase list")
-    void testGetPurchaseHistorySuccessfully_NoPurchases() throws Exception {
-        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
-                .accessCode("123456")
-                .build();
-
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$", hasSize(0)));
-    }
-
-    @Test
-    @DisplayName("Should return purchases for a client wallet")
-    void testGetPurchaseHistorySuccessfully_WithPurchases() throws Exception {
-        AssetModel asset = createAndSaveAsset(stockType);
-
-        WalletModel wallet = WalletModel.builder()
-                .budget(1000.0)
-                .holdings(new HashMap<>())
-                .build();
-
-        ClientModel client = createClient(
-                UUID.randomUUID(),
-                "Walber Araújo",
-                new EmailModel("walber@email.com"),
-                new AccessCodeModel("123456"),
-                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
-                PlanTypeEnum.PREMIUM,
-                wallet
-        );
-        client = clientRepository.save(client);
-
-        ClientPurchaseHistoryRequestDTO dto = ClientPurchaseHistoryRequestDTO.builder()
-                .accessCode("123456")
-                .build();
-
-        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), client.getWallet());
-        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(2), client.getWallet());
-
-        purchaseRepository.saveAll(List.of(purchase1, purchase2));
-
-        mockMvc.perform(get(CLIENT_BASE_URL + "/" + client.getId() + WALLET + PURCHASES_ENDPOINT)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].quantity").value(5.0))
-                .andExpect(jsonPath("$[1].quantity").value(3.0));
-    }
-
-    @Test
     @DisplayName("Should return 409 Conflict when trying to delete asset referenced in purchases")
     void testDeleteAsset_WhenReferencedInPurchases_ReturnsConflict() throws Exception {
         AssetModel asset = createAndSaveAsset(stockType);
@@ -939,107 +826,6 @@ class ClientControllerTests {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message").value("Cannot delete asset: it is referenced in purchases"))
                 .andExpect(jsonPath("$.errors").isEmpty());
-    }
-
-    @Test
-    @Transactional
-    void confirmationByClient_createsNewHolding_ShouldReturn200() throws Exception {
-        AssetModel asset = createAndSaveAsset(stockType);
-
-        WalletModel wallet = WalletModel.builder()
-                .budget(1000.0)
-                .holdings(new HashMap<>())
-                .build();
-
-        ClientModel client = createClient(
-                null, // deixa null se o ID for @GeneratedValue
-                "Test User",
-                new EmailModel("testuser@email.com"),
-                new AccessCodeModel("123456"),
-                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
-                PlanTypeEnum.PREMIUM,
-                wallet
-        );
-        client = clientRepository.save(client);
-
-        PurchaseModel purchase = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
-        purchase = purchaseRepository.save(purchase);
-
-        PurchaseConfirmationByClientDTO requestDto = PurchaseConfirmationByClientDTO.builder()
-                .accessCode(client.getAccessCode().getAccessCode())
-                .build();
-
-        mockMvc.perform(post("/clients/{clientId}/wallet/purchase/{purchaseId}/confirmation-by-client",
-                        client.getId(), purchase.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(purchase.getId().toString()))
-                .andExpect(jsonPath("$.walletId").value(wallet.getId().toString()))
-                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
-                .andExpect(jsonPath("$.quantity").value(5.0))
-                .andExpect(jsonPath("$.state").value("IN_WALLET"))
-                .andExpect(jsonPath("$.date").value(purchase.getDate().toString()));
-
-        WalletModel updatedWallet = walletRepository.findById(wallet.getId()).orElseThrow();
-        assertEquals(500, updatedWallet.getBudget());
-
-        assertEquals(1, updatedWallet.getHoldings().size());
-    }
-
-    @Test
-    @Transactional
-    void confirmationByClient_alreadyExistsAHolding_ShouldReturn200() throws Exception {
-        AssetModel asset = createAndSaveAsset(stockType);
-
-        WalletModel wallet = WalletModel.builder()
-                .budget(1000.0)
-                .holdings(new HashMap<>())
-                .build();
-
-        ClientModel client = createClient(
-                null, // deixa null se o ID for @GeneratedValue
-                "Test User",
-                new EmailModel("testuser@email.com"),
-                new AccessCodeModel("123456"),
-                new AddressModel("Street", "123", "Neighborhood", "City", "State", "Country", "12345-678"),
-                PlanTypeEnum.PREMIUM,
-                wallet
-        );
-        client = clientRepository.save(client);
-
-        PurchaseModel purchase1 = createPurchase(UUID.randomUUID(), asset, 5.0, LocalDate.now().minusDays(1), wallet);
-        purchase1 = purchaseRepository.save(purchase1);
-
-        PurchaseModel purchase2 = createPurchase(UUID.randomUUID(), asset, 3.0, LocalDate.now().minusDays(1), wallet);
-        purchase2 = purchaseRepository.save(purchase2);
-
-        PurchaseConfirmationByClientDTO requestDto = PurchaseConfirmationByClientDTO.builder()
-                .accessCode(client.getAccessCode().getAccessCode())
-                .build();
-
-        mockMvc.perform(post("/clients/{clientId}/wallet/purchase/{purchaseId}/confirmation-by-client",
-                        client.getId(), purchase1.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/clients/{clientId}/wallet/purchase/{purchaseId}/confirmation-by-client",
-                        client.getId(), purchase2.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(purchase2.getId().toString()))
-                .andExpect(jsonPath("$.walletId").value(wallet.getId().toString()))
-                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
-                .andExpect(jsonPath("$.quantity").value(3.0))
-                .andExpect(jsonPath("$.state").value("IN_WALLET"))
-                .andExpect(jsonPath("$.date").value(purchase2.getDate().toString()));
-
-        WalletModel updatedWallet = walletRepository.findById(wallet.getId()).orElseThrow();
-        assertEquals(200, updatedWallet.getBudget());
-
-        assertEquals(1, updatedWallet.getHoldings().size());
     }
 
     @Test
@@ -1146,193 +932,5 @@ class ClientControllerTests {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonWithoutAccessCode))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_NullClientId() throws Exception {
-        UUID nullClientId = null;
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + nullClientId + WALLET + PURCHASES_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_InvalidClientId() throws Exception {
-        UUID invalidClientId = UUID.randomUUID();
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + invalidClientId + WALLET + PURCHASES_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_NullAssetId() throws Exception {
-        UUID nullAssetId = null;
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT + "/" + nullAssetId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_InvalidAssetId() throws Exception {
-        UUID invalidAssetId = UUID.randomUUID();
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT + "/" + invalidAssetId)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_InvalidAccessCode() throws Exception {
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("654321", 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_NullAccessCode() throws Exception {
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO(null, 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_InsufficientBudget() throws Exception {
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 1002);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_InactiveAsset() throws Exception {
-        AssetModel asset = createAndSaveAsset(stockType);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void purchaseRequestForAvailableAsset_Success() throws Exception {
-        AssetModel asset = AssetModel.builder()
-                .name("Default Asset Test 2")
-                .isActive(true)
-                .assetType(stockType)
-                .description("Default asset for this test")
-                .quotation(100.0)
-                .quotaQuantity(100.0)
-                .build();
-
-        assetRepository.save(asset);
-
-        ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 5);
-
-        mockMvc.perform(post(CLIENT_BASE_URL + "/" + clientId + WALLET + PURCHASES_ENDPOINT + "/" + asset.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.walletId").value(walletId.toString()))
-                .andExpect(jsonPath("$.assetId").value(asset.getId().toString()))
-                .andExpect(jsonPath("$.quantity").value(5))
-                .andExpect(jsonPath("$.state").value("REQUESTED"));
     }
 }

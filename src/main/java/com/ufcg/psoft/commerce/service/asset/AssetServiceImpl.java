@@ -129,14 +129,8 @@ public class AssetServiceImpl implements AssetService {
     }
 
     @Override
-    public AssetModel validateAssetPurchase(UUID assetId, Integer assetQuantity) {
-        AssetModel asset = this.getAsset(assetId);
-
-        if (!asset.isActive()) {
-            throw new AssetIsInactiveException();
-        }
-
-        return asset;
+    public AssetModel fetchAsset(UUID assetId) {
+        return getAsset(assetId);
     }
 
     @Override

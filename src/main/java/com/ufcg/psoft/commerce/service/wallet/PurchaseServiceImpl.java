@@ -1,21 +1,27 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseAssetRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.exception.purchase.PurchaseNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientException;
 import com.ufcg.psoft.commerce.model.asset.AssetModel;
 import com.ufcg.psoft.commerce.model.user.AdminModel;
-import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
 import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
 import com.ufcg.psoft.commerce.model.wallet.WalletModel;
-import com.ufcg.psoft.commerce.repository.wallet.HoldingRepository;
 import com.ufcg.psoft.commerce.repository.wallet.PurchaseRepository;
 import com.ufcg.psoft.commerce.service.admin.AdminService;
+import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.service.client.ClientService;
+import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,31 +29,59 @@ import java.util.UUID;
 public class PurchaseServiceImpl implements PurchaseService {
 
     @Autowired
-    PurchaseRepository purchaseRepository;
+    ClientService clientService;
 
     @Autowired
     AdminService adminService;
 
     @Autowired
-    HoldingRepository holdingRepository;
+    AssetService assetService;
+
+    @Autowired
+    WalletService walletService;
+
+    @Autowired
+    PurchaseRepository purchaseRepository;
+
+    @Autowired
+    private DTOMapperService dtoMapperService;
 
     @Override
-    public List<PurchaseModel> getPurchaseHistoryByWalletId(UUID walletId) {
-        return purchaseRepository.findByWalletId(walletId);
+    public List<PurchaseResponseDTO> getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO dto) {
+        ClientModel client = clientService.validateClientAccess(clientId, dto.getAccessCode());
+        UUID walletId = client.getWallet().getId();
+
+        return purchaseRepository.findByWalletId(walletId)
+                .stream()
+                .filter(filter1 -> dto.getAssetType() == null || filter1.getAsset().getAssetType().getName().equals(dto.getAssetType().name()))
+                .filter(filter2 -> dto.getPurchaseState() == null || filter2.getStateEnum().equals(dto.getPurchaseState()))
+                .filter(filter3 -> dto.getDate() == null || filter3.getDate().equals(dto.getDate()))
+                .map(dtoMapperService::toPurchaseResponseDTO)
+                .sorted(Comparator.comparing(PurchaseResponseDTO::getDate).reversed())
+                .toList();
     }
 
     @Override
-    public PurchaseModel createPurchaseRequest(WalletModel wallet, AssetModel asset, double purchasePrice, Integer assetQuantity) {
+    public PurchaseResponseDTO createPurchaseRequest(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto) {
+        ClientModel client = clientService.validateClientAccess(clientId, dto.getAccessCode());
+        AssetModel asset = assetService.fetchAsset(assetId);
+        asset.validateAssetIsActive();
+
+        double purchasePrice = asset.getQuotation() * dto.getAssetQuantity();
+
+        this.validateBudget(client.getWallet(), purchasePrice);
 
         PurchaseModel purchaseModel = PurchaseModel.builder()
                 .asset(asset)
-                .wallet(wallet)
-                .quantity(assetQuantity)
+                .wallet(client.getWallet())
+                .quantity(dto.getAssetQuantity())
                 .date(LocalDate.now())
                 .acquisitionPrice(purchasePrice)
                 .build();
 
-        return purchaseRepository.save(purchaseModel);
+        purchaseRepository.save(purchaseModel);
+
+        return dtoMapperService.toPurchaseResponseDTO(purchaseModel);
     }
 
     @Override
@@ -66,7 +100,9 @@ public class PurchaseServiceImpl implements PurchaseService {
     }
 
     @Override
-    public PurchaseModel confirmationByClient(UUID purchaseId) {
+    public PurchaseResponseDTO confirmPurchase(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto) {
+        ClientModel clientModel = clientService.validateClientAccess(clientId, dto.getAccessCode());
+
         PurchaseModel purchase = purchaseRepository.findById(purchaseId)
                 .orElseThrow(() -> new PurchaseNotFoundException(purchaseId));
 
@@ -74,28 +110,18 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         this.purchaseRepository.save(purchase);
 
-        return purchase;
+        clientModel.getWallet().decreaseBudgetAfterPurchase(purchase.getAcquisitionPrice() * purchase.getQuantity());
+
+        return walletService.addPurchase(purchase);
     }
 
-    @Override
-    public PurchaseResponseAfterAddedInWalletDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel) {
-        purchase.modify(null);
-        this.purchaseRepository.save(purchase);
-
-        if (holdingModel == null) {
-            HoldingModel newHoldingModel = HoldingModel.builder()
-                    .asset(purchase.getAsset())
-                    .wallet(purchase.getWallet())
-                    .quantity(purchase.getQuantity())
-                    .accumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice())
-                    .build();
-            this.holdingRepository.save(newHoldingModel);
-            return new PurchaseResponseAfterAddedInWalletDTO(purchase, newHoldingModel);
-        } else {
-            holdingModel.increaseQuantityAfterPurchase(purchase.getQuantity());
-            holdingModel.increaseAccumulatedPrice(purchase.getQuantity() * purchase.getAcquisitionPrice());
+    private void validateBudget(WalletModel wallet, double purchasePrice) {
+        if (wallet.getBudget() < purchasePrice) {
+            throw new ClientBudgetIsInsufficientException(
+                    "Client budget is " + wallet.getBudget() +
+                            ", while the purchase price is " + purchasePrice +
+                            ". Therefore, the budget is insufficient."
+            );
         }
-        return new PurchaseResponseAfterAddedInWalletDTO(purchase, holdingModel);
     }
-
 }

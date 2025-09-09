@@ -11,7 +11,7 @@ public class Crypto extends AssetType {
 
     private static final double LOW_PROFIT_TAX = 0.15;
     private static final double HIGH_PROFIT_TAX = 0.225;
-    private static final Integer TAX_PROFIT_THRESHOLD = 5000;
+    private static final double TAX_PROFIT_THRESHOLD = 5000;
 
     public Crypto() {
         super(AssetTypeEnum.CRYPTO.name());
