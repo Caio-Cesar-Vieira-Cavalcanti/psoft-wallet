@@ -1,8 +1,8 @@
 package com.ufcg.psoft.commerce.dto.client;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ufcg.psoft.commerce.enums.AssetTypeEnum;
 import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
-import com.ufcg.psoft.commerce.model.asset.AssetType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -24,7 +24,7 @@ public class ClientWithdrawHistoryRequestDTO {
     private String accessCode;
 
     @JsonProperty("assetType")
-    private AssetType assetType;
+    private AssetTypeEnum assetType;
 
     @JsonProperty("withdrawPeriod")
     private LocalDate date;

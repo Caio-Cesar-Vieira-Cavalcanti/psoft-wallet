@@ -100,7 +100,7 @@ public class WithdrawServiceImpl implements WithdrawService {
     public List<WithdrawHistoryResponseDTO> getWithdrawHistory(UUID walletId, ClientWithdrawHistoryRequestDTO dto) {
         return withdrawRepository.findByWalletId(walletId)
                 .stream()
-                .filter(filter1 -> dto.getAssetType() == null || filter1.getAsset().getAssetType().getName().equals(dto.getAssetType().getName()))
+                .filter(filter1 -> dto.getAssetType() == null || filter1.getAsset().getAssetType().getName().equals(dto.getAssetType().name()))
                 .filter(filter2 -> dto.getWithdrawState() == null || filter2.getStateEnum().equals(dto.getWithdrawState()))
                 .filter(filter3 -> dto.getDate() == null || filter3.getDate().equals(dto.getDate()))
                 .map(dtoMapperService::toWithdrawHistoryResponseDTO)
