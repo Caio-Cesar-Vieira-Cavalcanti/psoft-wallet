@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
-import com.ufcg.psoft.commerce.dto.client.ClientExportTransactionsRequest;
-import com.ufcg.psoft.commerce.dto.client.ClientExportTransactionsResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.ExportTransactionsRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.ExportTransactionsResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientWithdrawHistoryRequestDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
@@ -24,7 +24,8 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     WithdrawService withdrawService;
 
-    public ClientExportTransactionsResponseDTO exportClientTransactionsCSV(UUID clientId, ClientExportTransactionsRequest dto) {
+    @Override
+    public ExportTransactionsResponseDTO exportClientTransactionsCSV(UUID clientId, ExportTransactionsRequestDTO dto) {
         ClientPurchaseHistoryRequestDTO purchaseHistoryRequestDTO = new ClientPurchaseHistoryRequestDTO();
         purchaseHistoryRequestDTO.setAccessCode(dto.getAccessCode());
         List<PurchaseResponseDTO> purchases = purchaseService.getPurchaseHistory(clientId, purchaseHistoryRequestDTO);
@@ -32,7 +33,6 @@ public class TransactionServiceImpl implements TransactionService {
         ClientWithdrawHistoryRequestDTO withdrawHistoryRequestDTO = new ClientWithdrawHistoryRequestDTO();
         withdrawHistoryRequestDTO.setAccessCode(dto.getAccessCode());
         List<WithdrawHistoryResponseDTO> withdraws = withdrawService.redirectGetWithdrawHistory(clientId, withdrawHistoryRequestDTO);
-        System.out.println("Withdraws encontrados: " + withdraws.size());
 
         List<TransactionExportDTO> transactions = new ArrayList<>(mapperPurchasesToTransactionExportDTO(purchases));
         transactions.addAll(mapperWithdrawsToTransactionExportDTO(withdraws));
@@ -76,7 +76,7 @@ public class TransactionServiceImpl implements TransactionService {
         return transactions;
     }
 
-    private ClientExportTransactionsResponseDTO buildCSV(List<TransactionExportDTO> transactions) {
+    private ExportTransactionsResponseDTO buildCSV(List<TransactionExportDTO> transactions) {
         StringBuilder csvBuilder = new StringBuilder();
         csvBuilder.append("type,asset,quantity,total-value,tax,date,state\n");
         for (TransactionExportDTO t : transactions) {
@@ -89,7 +89,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .append(t.getState()).append("\n");
         }
 
-        ClientExportTransactionsResponseDTO response = new ClientExportTransactionsResponseDTO();
+        ExportTransactionsResponseDTO response = new ExportTransactionsResponseDTO();
         response.setFileName("transactions.csv");
         response.setContent(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
 

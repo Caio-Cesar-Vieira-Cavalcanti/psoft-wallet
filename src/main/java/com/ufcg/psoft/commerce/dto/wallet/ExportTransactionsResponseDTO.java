@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.dto.client;
+package com.ufcg.psoft.commerce.dto.wallet;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ClientExportTransactionsResponseDTO {
+public class ExportTransactionsResponseDTO {
 
     @NotNull
     @NotBlank
