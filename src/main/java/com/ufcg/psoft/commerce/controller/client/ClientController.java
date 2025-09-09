@@ -120,15 +120,4 @@ public class ClientController {
                 .status(HttpStatus.OK)
                 .body(walletHolding);
     }
-
-    @GetMapping("/{clientId}/export-transactions")
-    public ResponseEntity<ClientExportTransactionsResponseDTO> exportClientTransactionsCSV(
-            @PathVariable UUID clientId,
-            @RequestBody @Valid ClientExportTransactionsRequest dto
-    ) {
-        ClientExportTransactionsResponseDTO responseDTO = clientService.exportClientTransactionsCSV(clientId, dto);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(responseDTO);
-    }
 }

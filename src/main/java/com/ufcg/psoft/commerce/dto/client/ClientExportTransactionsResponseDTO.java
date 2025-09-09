@@ -18,7 +18,6 @@ public class ClientExportTransactionsResponseDTO {
     private String fileName;
 
     @NotNull
-    @NotBlank
     private byte[] content;
 
 }

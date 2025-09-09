@@ -38,9 +38,6 @@ public class ClientServiceImpl implements ClientService {
     @Autowired
     DTOMapperService dtoMapperService;
 
-    @Autowired
-    TransactionService transactionService;
-
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
         AddressModel addressModel = modelMapper.map(clientPostRequestDTO.getAddress(), AddressModel.class);
@@ -151,11 +148,6 @@ public class ClientServiceImpl implements ClientService {
         double totalPerformance = totalCurrent - totalInvested;
 
         return dtoMapperService.toWalletHoldingResponseDTO(walletModel, holdings, totalCurrent, totalInvested, totalPerformance);
-    }
-
-    @Override
-    public ClientExportTransactionsResponseDTO exportClientTransactionsCSV(UUID clientId, ClientExportTransactionsRequest dto) {
-        return new ClientExportTransactionsResponseDTO();
     }
 
     private List<HoldingResponseDTO> buildHoldings(WalletModel walletModel) {

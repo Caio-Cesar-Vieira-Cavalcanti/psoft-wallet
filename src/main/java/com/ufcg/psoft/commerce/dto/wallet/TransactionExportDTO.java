@@ -21,21 +21,15 @@ public class TransactionExportDTO {
     private String type;
 
     @NotNull
-    @NotBlank
     private UUID assetId;
 
-    @NotNull
-    @NotBlank
     private double quantity;
 
-    @NotNull
-    @NotBlank
     private double totalValue;
 
     private double tax;
 
     @NotNull
-    @NotBlank
     private LocalDate date;
 
     @NotNull

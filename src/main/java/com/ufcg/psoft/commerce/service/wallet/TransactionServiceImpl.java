@@ -8,12 +8,14 @@ import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.wallet.TransactionExportDTO;
 import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class TransactionServiceImpl implements TransactionService {
 
     @Autowired
@@ -29,7 +31,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         ClientWithdrawHistoryRequestDTO withdrawHistoryRequestDTO = new ClientWithdrawHistoryRequestDTO();
         withdrawHistoryRequestDTO.setAccessCode(dto.getAccessCode());
-        List<WithdrawHistoryResponseDTO> withdraws = withdrawService.getWithdrawHistory(clientId, withdrawHistoryRequestDTO);
+        List<WithdrawHistoryResponseDTO> withdraws = withdrawService.redirectGetWithdrawHistory(clientId, withdrawHistoryRequestDTO);
+        System.out.println("Withdraws encontrados: " + withdraws.size());
 
         List<TransactionExportDTO> transactions = new ArrayList<>(mapperPurchasesToTransactionExportDTO(purchases));
         transactions.addAll(mapperWithdrawsToTransactionExportDTO(withdraws));
@@ -74,21 +77,21 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private ClientExportTransactionsResponseDTO buildCSV(List<TransactionExportDTO> transactions) {
-//        StringBuilder csvBuilder = new StringBuilder();
-//        csvBuilder.append("type,asset,quantity,total-value,tax,date,state\n");
-//        for (TransactionExportDTO t : transactions) {
-//            csvBuilder.append(t.getType()).append(",")
-//                    .append(t.getAssetId()).append(",")
-//                    .append(t.getQuantity()).append(",")
-//                    .append(t.getTotalValue()).append(",")
-//                    .append(t.getTax()).append(",")
-//                    .append(t.getDate()).append(",")
-//                    .append(t.getState()).append("\n");
-//        }
+        StringBuilder csvBuilder = new StringBuilder();
+        csvBuilder.append("type,asset,quantity,total-value,tax,date,state\n");
+        for (TransactionExportDTO t : transactions) {
+            csvBuilder.append(t.getType()).append(",")
+                    .append(t.getAssetId()).append(",")
+                    .append(t.getQuantity()).append(",")
+                    .append(t.getTotalValue()).append(",")
+                    .append(t.getTax()).append(",")
+                    .append(t.getDate()).append(",")
+                    .append(t.getState()).append("\n");
+        }
 
         ClientExportTransactionsResponseDTO response = new ClientExportTransactionsResponseDTO();
-//        response.setFileName("transactions.csv");
-//        response.setContent(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
+        response.setFileName("transactions.csv");
+        response.setContent(csvBuilder.toString().getBytes(StandardCharsets.UTF_8));
 
         return response;
     }
