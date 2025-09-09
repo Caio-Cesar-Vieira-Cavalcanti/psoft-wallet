@@ -71,7 +71,7 @@ class DTOMapperServiceTests {
                 .date(LocalDate.now())
                 .sellingPrice(100.0)
                 .tax(10.0)
-                .withdrawValue(950.0)
+                .withdrawValue(990.0)
                 .stateEnum(WithdrawStateEnum.REQUESTED)
                 .build();
     }
@@ -79,7 +79,7 @@ class DTOMapperServiceTests {
     @Test
     @DisplayName("Should map withdraw model to response DTO with withdrawId")
     void testToWithdrawResponseDTO_WithWithdrawModel() {
-        double valueReceived = 950.0;
+        double valueReceived = 990.0;
 
         WithdrawResponseDTO result = dtoMapperService.toWithdrawResponseDTO(withdraw);
 
@@ -158,7 +158,7 @@ class DTOMapperServiceTests {
         assertEquals(assetId, result.getAssetId());
         assertEquals(10.0, result.getQuantityWithdrawn());
         assertEquals(100.0, result.getSellingPrice());
-        assertEquals(1000.0, result.getTotalValue()); // 10.0 * 100.0
+        assertEquals(990.0, result.getTotalValue());
         assertEquals(10.0, result.getTax());
         assertEquals(LocalDate.now(), result.getDate());
         assertEquals(WithdrawStateEnum.REQUESTED, result.getState());
