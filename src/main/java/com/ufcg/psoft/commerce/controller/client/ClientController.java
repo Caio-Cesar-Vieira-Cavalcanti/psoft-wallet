@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -118,5 +119,16 @@ public class ClientController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(walletHolding);
+    }
+
+    @GetMapping("/{clientId}/export-transactions")
+    public ResponseEntity<ClientExportTransactionsResponseDTO> exportClientTransactionsCSV(
+            @PathVariable UUID clientId,
+            @RequestBody @Valid ClientExportTransactionsRequest dto
+    ) {
+        ClientExportTransactionsResponseDTO responseDTO = clientService.exportClientTransactionsCSV(clientId, dto);
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(responseDTO);
     }
 }

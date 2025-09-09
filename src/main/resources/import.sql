@@ -12,7 +12,7 @@ INSERT INTO wallet_model (id, budget) VALUES ('1afcd28d-967e-4dd5-be8a-d692d15ac
 INSERT INTO user_model (user_type, id, access_code, email, full_name, city, country, neighborhood, number, state, street, zip_code, plan_type, wallet_id) VALUES ('C', '8e83cd10-520a-49f4-9b65-7c3e963e2968', '789032', 'walber@gmail.com', 'Walber Wesley', 'Campina Grande', 'Brasil', 'Centro', '123', 'PB', 'Rua Projetada', '58400-000', 0, '1afcd28d-967e-4dd5-be8a-d692d15ac32d');
 
 -- Ativo
-INSERT INTO asset (id, name, asset_type_id, description, is_active, quotation, quota_quantity) VALUES ('22222222-2222-2222-2222-222222222222', 'Tesla Stock', 2, 'Ações da Tesla', true, 850.0, 1);
+INSERT INTO asset (id, name, asset_type_id, description, is_active, quotation, quota_quantity) VALUES ('22222222-2222-2222-2222-222222222222', 'Tesla Stock', 2, 'Ações da Tesla', true, 850.0, 1000);
 
 -- Transações
 INSERT INTO transaction_model (id, date, quantity, asset_id, wallet_id) VALUES ('44444444-4444-4444-4444-444444444444', '2025-07-20', 10, '22222222-2222-2222-2222-222222222222', '1afcd28d-967e-4dd5-be8a-d692d15ac32d');

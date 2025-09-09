@@ -252,7 +252,7 @@ class PurchaseServiceUnitTests {
 
         PurchaseResponseDTO expectedResponse = new PurchaseResponseDTO(
                 purchase.getId(), wallet.getId(), asset.getId(),
-                10.0, PurchaseStateEnum.REQUESTED, LocalDate.now()
+                10.0, purchase.getAcquisitionPrice(), PurchaseStateEnum.REQUESTED, LocalDate.now()
         );
         when(dtoMapperService.toPurchaseResponseDTO(any(PurchaseModel.class))).thenReturn(expectedResponse);
 
@@ -345,7 +345,7 @@ class PurchaseServiceUnitTests {
     @Test
     @DisplayName("Should create purchase request when wallet has enough budget")
     void testRedirectCreatePurchaseRequest_Success() {
-        PurchaseResponseDTO newPurchase = new PurchaseResponseDTO(UUID.randomUUID(), walletId, assetId, 2.0, PurchaseStateEnum.REQUESTED, LocalDate.now());
+        PurchaseResponseDTO newPurchase = new PurchaseResponseDTO(UUID.randomUUID(), walletId, assetId, 2.0, purchase.getAcquisitionPrice(), PurchaseStateEnum.REQUESTED, LocalDate.now());
 
         ClientPurchaseAssetRequestDTO dto = new ClientPurchaseAssetRequestDTO("123456", 2);
 
@@ -470,7 +470,7 @@ class PurchaseServiceUnitTests {
 
         PurchaseResponseDTO expectedResponse = new PurchaseResponseDTO(
                 purchase.getId(), wallet.getId(), asset.getId(),
-                10.0, PurchaseStateEnum.PURCHASED, LocalDate.now() // ← Mude para PURCHASED
+                10.0, purchase.getAcquisitionPrice(), PurchaseStateEnum.PURCHASED, LocalDate.now() // ← Mude para PURCHASED
         );
         when(walletService.addPurchase(any(PurchaseModel.class))).thenReturn(expectedResponse);
 

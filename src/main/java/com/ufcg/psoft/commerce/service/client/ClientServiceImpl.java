@@ -14,6 +14,7 @@ import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.repository.client.ClientRepository;
 import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
 import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.service.wallet.TransactionService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,9 @@ public class ClientServiceImpl implements ClientService {
 
     @Autowired
     DTOMapperService dtoMapperService;
+
+    @Autowired
+    TransactionService transactionService;
 
     @Override
     public ClientResponseDTO create(ClientPostRequestDTO clientPostRequestDTO) {
@@ -147,6 +151,11 @@ public class ClientServiceImpl implements ClientService {
         double totalPerformance = totalCurrent - totalInvested;
 
         return dtoMapperService.toWalletHoldingResponseDTO(walletModel, holdings, totalCurrent, totalInvested, totalPerformance);
+    }
+
+    @Override
+    public ClientExportTransactionsResponseDTO exportClientTransactionsCSV(UUID clientId, ClientExportTransactionsRequest dto) {
+        return new ClientExportTransactionsResponseDTO();
     }
 
     private List<HoldingResponseDTO> buildHoldings(WalletModel walletModel) {

@@ -36,4 +36,6 @@ public interface ClientService {
     ClientModel validateClientAccess(UUID clientId, String accessCode);
 
     WalletHoldingResponseDTO getClientWalletHolding(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO);
+
+    ClientExportTransactionsResponseDTO exportClientTransactionsCSV(UUID clientId, ClientExportTransactionsRequest dto);
 }
