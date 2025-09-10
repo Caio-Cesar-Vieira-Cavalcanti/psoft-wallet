@@ -1,24 +1,21 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseAssetRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientPurchaseHistoryRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationRequestDTO;
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseAfterAddedInWalletDTO;
 import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
-import com.ufcg.psoft.commerce.model.asset.AssetModel;
-import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
-import com.ufcg.psoft.commerce.model.wallet.PurchaseModel;
-import com.ufcg.psoft.commerce.model.wallet.WalletModel;
 
 import java.util.UUID;
 import java.util.List;
 
 public interface PurchaseService {
-    List<PurchaseModel> getPurchaseHistoryByWalletId(UUID walletId);
+    List<PurchaseResponseDTO> getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO dto);
 
-    PurchaseModel createPurchaseRequest(WalletModel wallet, AssetModel asset, double purchasePrice, Integer assetQuantity);
+    PurchaseResponseDTO createPurchaseRequest(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto);
 
     PurchaseResponseDTO confirmAvailability(UUID purchaseId, PurchaseConfirmationRequestDTO purchaseConfirmationRequestDTO);
 
-    PurchaseModel confirmationByClient(UUID purchaseId);
+    PurchaseResponseDTO confirmPurchase(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto);
 
-    PurchaseResponseAfterAddedInWalletDTO addedInWallet(PurchaseModel purchase, HoldingModel holdingModel);
 }

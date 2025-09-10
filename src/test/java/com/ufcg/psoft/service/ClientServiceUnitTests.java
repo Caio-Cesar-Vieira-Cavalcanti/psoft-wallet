@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@DisplayName("Client Service Unit Tests")
 class ClientServiceUnitTests {
 
     private ClientRepository clientRepository;

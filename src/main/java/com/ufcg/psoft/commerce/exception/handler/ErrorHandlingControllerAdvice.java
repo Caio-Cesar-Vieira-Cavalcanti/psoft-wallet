@@ -8,6 +8,8 @@ import com.ufcg.psoft.commerce.exception.user.ClientBudgetIsInsufficientExceptio
 import com.ufcg.psoft.commerce.exception.user.ClientIdNotFoundException;
 import com.ufcg.psoft.commerce.exception.user.ClientIsNotPremiumException;
 import com.ufcg.psoft.commerce.exception.user.UnauthorizedUserAccessException;
+import com.ufcg.psoft.commerce.exception.withdraw.WithdrawNotFoundException;
+import com.ufcg.psoft.commerce.exception.user.ClientHoldingIsInsufficientException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
@@ -194,7 +196,23 @@ public class ErrorHandlingControllerAdvice {
         );
     }
 
+    @ExceptionHandler(WithdrawNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType handleWithdrawNotFoundException(WithdrawNotFoundException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
 
+    @ExceptionHandler(ClientHoldingIsInsufficientException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType handleClientHoldingIsInsufficientException(ClientHoldingIsInsufficientException e) {
+        return defaultCustomErrorTypeConstruct(
+                e.getMessage()
+        );
+    }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

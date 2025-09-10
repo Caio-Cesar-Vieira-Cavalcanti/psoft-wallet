@@ -2,8 +2,6 @@ package com.ufcg.psoft.commerce.service.client;
 
 import com.ufcg.psoft.commerce.dto.subscription.SubscriptionResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.*;
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseConfirmationByClientDTO;
-import com.ufcg.psoft.commerce.dto.wallet.PurchaseResponseDTO;
 import com.ufcg.psoft.commerce.dto.asset.AssetResponseDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientDeleteRequestDTO;
 import com.ufcg.psoft.commerce.dto.client.ClientPatchFullNameRequestDTO;
@@ -35,13 +33,7 @@ public interface ClientService {
 
     SubscriptionResponseDTO redirectMarkInterestInPriceVariationOfAsset(UUID clientId, ClientMarkInterestInAssetRequestDTO clientMarkInterestInAssetRequestDTO);
 
-    PurchaseResponseDTO purchaseRequestForAvailableAsset(UUID clientId, UUID assetId, ClientPurchaseAssetRequestDTO dto);
-
-    List<PurchaseResponseDTO> getPurchaseHistory(UUID clientId, ClientPurchaseHistoryRequestDTO clientPurchaseHistoryRequestDTO);
-
     ClientModel validateClientAccess(UUID clientId, String accessCode);
-
-    PurchaseResponseDTO purchaseConfirmationByClient(UUID purchaseId, UUID clientId, PurchaseConfirmationByClientDTO dto);
 
     WalletHoldingResponseDTO getClientWalletHolding(UUID clientId, ClientWalletRequestDTO clientWalletRequestDTO);
 }

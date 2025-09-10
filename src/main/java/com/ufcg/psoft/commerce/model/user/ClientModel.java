@@ -52,4 +52,9 @@ public class ClientModel extends UserModel implements ISubscriber {
             LOGGER.info("{}{} (Notified client: {}){}", ANSI_MAGENTA, context, this.getFullName(), ANSI_RESET);
         }
     }
+
+    @Override
+    public boolean isAdmin() {
+        return false;
+    }
 }

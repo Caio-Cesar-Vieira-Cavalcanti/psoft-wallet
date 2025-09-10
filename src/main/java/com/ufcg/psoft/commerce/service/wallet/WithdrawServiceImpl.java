@@ -1,9 +1,156 @@
 package com.ufcg.psoft.commerce.service.wallet;
 
+import com.ufcg.psoft.commerce.dto.client.ClientWithdrawAssetRequestDTO;
+import com.ufcg.psoft.commerce.dto.client.ClientWithdrawHistoryRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawConfirmationRequestDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawResponseDTO;
+import com.ufcg.psoft.commerce.dto.wallet.WithdrawHistoryResponseDTO;
+import com.ufcg.psoft.commerce.enums.WithdrawStateEnum;
+import com.ufcg.psoft.commerce.exception.user.ClientHoldingIsInsufficientException;
+import com.ufcg.psoft.commerce.exception.withdraw.WithdrawNotFoundException;
+import com.ufcg.psoft.commerce.model.asset.AssetModel;
+import com.ufcg.psoft.commerce.model.user.AdminModel;
+import com.ufcg.psoft.commerce.model.user.ClientModel;
+import com.ufcg.psoft.commerce.model.wallet.HoldingModel;
+import com.ufcg.psoft.commerce.model.wallet.WalletModel;
+import com.ufcg.psoft.commerce.model.wallet.WithdrawModel;
+import com.ufcg.psoft.commerce.repository.wallet.WithdrawRepository;
+import com.ufcg.psoft.commerce.service.admin.AdminService;
+import com.ufcg.psoft.commerce.service.asset.AssetService;
+import com.ufcg.psoft.commerce.service.client.ClientService;
+import com.ufcg.psoft.commerce.service.mapper.DTOMapperService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class WithdrawServiceImpl implements WithdrawService {
 
-    // Nothing at the moment, may be used in next stage
+    private static final double MIN_TAXABLE_PROFIT = 0.0;
+
+    @Autowired
+    private ClientService clientService;
+
+    @Autowired
+    private AdminService adminService;
+
+    @Autowired
+    private AssetService assetService;
+
+    @Autowired
+    private WalletService walletService;
+
+    @Autowired
+    private WithdrawRepository withdrawRepository;
+
+    @Autowired
+    private DTOMapperService dtoMapperService;
+
+    @Override
+    public WithdrawResponseDTO withdrawAsset(WalletModel wallet, AssetModel asset, double quantityToWithdraw) {
+        HoldingModel holding = findHolding(wallet, asset);
+        holding.validateQuantityToWithdraw(quantityToWithdraw);
+
+        double tax = calculateWithdrawTax(holding, asset, quantityToWithdraw);
+
+        double withdrawValue = calculateWithdrawValue(asset, quantityToWithdraw, tax);
+
+        WithdrawModel withdrawModel = WithdrawModel.builder()
+                .asset(asset)
+                .wallet(wallet)
+                .quantity(quantityToWithdraw)
+                .date(LocalDate.now())
+                .sellingPrice(asset.getQuotation())
+                .tax(tax)
+                .withdrawValue(withdrawValue)
+                .stateEnum(WithdrawStateEnum.REQUESTED)
+                .build();
+
+        withdrawRepository.save(withdrawModel);
+
+        return dtoMapperService.toWithdrawResponseDTO(withdrawModel);
+    }
+
+    @Override
+    public WithdrawResponseDTO confirmWithdraw(UUID withdrawId, WithdrawConfirmationRequestDTO withdrawConfirmationRequestDTO) {
+        WithdrawModel withdraw = withdrawRepository.findById(withdrawId)
+                .orElseThrow(() -> new WithdrawNotFoundException(withdrawId));
+
+        AdminModel admin = adminService.getAdmin();
+        admin.validateAccess(withdrawConfirmationRequestDTO.getAdminEmail(), withdrawConfirmationRequestDTO.getAdminAccessCode());
+
+        // First modification: REQUESTED -> CONFIRMED
+        withdraw.modify(admin);
+        withdrawRepository.save(withdraw);
+
+        // Second modification: CONFIRMED -> IN_ACCOUNT (auto)
+        withdraw.modify(admin);
+        withdrawRepository.save(withdraw);
+
+        HoldingModel holding = findHolding(withdraw.getWallet(), withdraw.getAsset());
+        walletService.processWithdrawInWallet(holding, withdraw.getWallet(), withdraw.getAsset(), withdraw.getQuantity(), withdraw.getWithdrawValue());
+
+        return dtoMapperService.toWithdrawResponseDTO(withdraw);
+    }
+
+    @Override
+    public List<WithdrawHistoryResponseDTO> getWithdrawHistory(UUID walletId, ClientWithdrawHistoryRequestDTO dto) {
+        return withdrawRepository.findByWalletId(walletId)
+                .stream()
+                .filter(filter1 -> dto.getAssetType() == null || filter1.getAsset().getAssetType().getName().equals(dto.getAssetType().name()))
+                .filter(filter2 -> dto.getWithdrawState() == null || filter2.getStateEnum().equals(dto.getWithdrawState()))
+                .filter(filter3 -> dto.getDate() == null || filter3.getDate().equals(dto.getDate()))
+                .map(dtoMapperService::toWithdrawHistoryResponseDTO)
+                .sorted((w1, w2) -> w2.getDate().compareTo(w1.getDate()))
+                .toList();
+    }
+
+    @Override
+    public WithdrawResponseDTO withdrawClientAsset(UUID clientId, UUID assetId, ClientWithdrawAssetRequestDTO dto) {
+        ClientModel client = clientService.validateClientAccess(clientId, dto.getAccessCode());
+
+        WalletModel wallet = client.getWallet();
+        AssetModel asset = assetService.fetchAsset(assetId);
+
+        return this.withdrawAsset(wallet, asset, dto.getQuantityToWithdraw());
+    }
+
+    @Override
+    public List<WithdrawHistoryResponseDTO> redirectGetWithdrawHistory(UUID clientId, ClientWithdrawHistoryRequestDTO dto) {
+        ClientModel client = clientService.validateClientAccess(clientId, dto.getAccessCode());
+
+        return this.getWithdrawHistory(client.getWallet().getId(), dto);
+    }
+
+    private HoldingModel findHolding(WalletModel wallet, AssetModel asset) {
+        return wallet.getHoldings()
+                .values()
+                .stream()
+                .filter(h -> h.getAsset().equals(asset))
+                .findFirst()
+                .orElseThrow(() -> new ClientHoldingIsInsufficientException(
+                        "Client does not own asset " + asset.getName()
+                ));
+    }
+
+    private double calculateWithdrawTax(HoldingModel holding, AssetModel asset, double quantityToWithdraw) {
+        double avgCost = holding.getAccumulatedPrice() / holding.getQuantity();
+        double costBasis = avgCost * quantityToWithdraw;
+
+        double gross = asset.getQuotation() * quantityToWithdraw;
+        double profit = gross - costBasis;
+
+        // If negative profit, tax will be zero.
+        double taxableProfit = Math.max(MIN_TAXABLE_PROFIT, profit);
+
+        return asset.getAssetType().taxCalculate(taxableProfit);
+    }
+
+    private double calculateWithdrawValue(AssetModel asset, double quantityToWithdraw, double tax) {
+        double gross = asset.getQuotation() * quantityToWithdraw;
+        return gross - tax;
+    }
 }

@@ -38,6 +38,7 @@ public class PurchaseModel extends TransactionModel {
     @Transient
     private PurchaseState state;
 
+    @Override
     @PostLoad
     public void loadState() {
         this.state = STATE_FACTORIES

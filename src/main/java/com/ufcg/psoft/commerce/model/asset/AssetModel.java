@@ -112,11 +112,11 @@ public class AssetModel {
         }
     }
 
-    private void validateAssetIsInactive() {
+    public void validateAssetIsInactive() {
         if (this.isActive()) throw new AssetIsAlreadyActive();
     }
 
-    private void validateAssetIsActive() {
+    public void validateAssetIsActive() {
         if (!this.isActive()) throw new AssetIsInactiveException();
     }
 }

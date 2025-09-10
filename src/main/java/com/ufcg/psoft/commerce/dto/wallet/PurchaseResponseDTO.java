@@ -34,6 +34,10 @@ public class PurchaseResponseDTO {
     @NotNull(message = "The 'quantity' field cannot be null")
     private Double quantity;
 
+    @JsonProperty("acquisitionPrice")
+    @NotNull(message = "The 'acquisitionPrice' field cannot be null")
+    private double acquisitionPrice;
+
     @JsonProperty("state")
     @NotNull(message = "The 'state' field cannot be null")
     private PurchaseStateEnum purchaseState;
